@@ -39,6 +39,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 若在 Vercel 生態系運作但未連結 Blob Store，給予明確提示
+    if (process.env.VERCEL) {
+      return NextResponse.json({
+        ok: false,
+        error: '圖片上傳失敗：未連結 Vercel Blob。請至 Vercel Dashboard -> Storage -> Blob 點擊「Connect to Project」將 Blob 連結至此專案。',
+      }, { status: 400 });
+    }
+
     // 2. 本機開發降級方案：儲存於 public/uploads
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
