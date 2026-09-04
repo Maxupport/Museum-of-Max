@@ -28,9 +28,10 @@ export async function PUT(
     });
 
     return NextResponse.json({ ok: true, data: updated });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Update career item error:', error);
-    return NextResponse.json({ ok: false, error: '更新職涯經歷失敗' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : '更新職涯經歷失敗';
+    return NextResponse.json({ ok: false, error: `更新職涯經歷失敗 (${errorMessage})` }, { status: 500 });
   }
 }
 
@@ -49,8 +50,9 @@ export async function DELETE(
       where: { id },
     });
     return NextResponse.json({ ok: true });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Delete career item error:', error);
-    return NextResponse.json({ ok: false, error: '刪除職涯經歷失敗' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : '刪除職涯經歷失敗';
+    return NextResponse.json({ ok: false, error: `刪除職涯經歷失敗 (${errorMessage})` }, { status: 500 });
   }
 }

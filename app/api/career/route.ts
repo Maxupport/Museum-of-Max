@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, data: newItem });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Create career item error:', error);
-    return NextResponse.json({ ok: false, error: '新增職涯經歷失敗' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : '新增職涯經歷失敗';
+    return NextResponse.json({ ok: false, error: `新增職涯經歷失敗 (${errorMessage})` }, { status: 500 });
   }
 }
