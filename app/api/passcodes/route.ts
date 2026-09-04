@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       note: item.note,
       permissions: parsePermissions(item.permissions),
       createdAt: item.createdAt,
-      pageviewCount: item._count.pageviews,
+      pageviewCount: item._count?.pageviews ?? 0,
     }));
 
     return NextResponse.json({ ok: true, data: formatted });
