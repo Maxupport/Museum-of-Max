@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 網站全域設定 (Site Settings)
+model SiteSetting {
+  key   String @id
+  value String
+}
+
+// 通行密碼與權限 (Passcodes & Permissions)
+model Passcode {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  note        String?  // 備註 (e.g. "給 VC 的訪客")
+  permissions String   @default("[]") // JSON string Array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  pageviews   PageView[]
+}
+
+// 流量統計 (Pageviews)
+model PageView {
+  id         String   @id @default(cuid())
+  notionId   String   // 對應的 Notion Article ID
+  exhibitId  String   // 所屬展區 ID
+  passcodeId String?  // 是用哪組密碼登入看的 (可為空)
+  passcode   Passcode? @relation(fields: [passcodeId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+}
+
+// 職涯經歷 (Career Items)
+model CareerItem {
+  id          String   @id @default(cuid())
+  company     String   // 公司/機構名稱
+  role        String   // 職務/職稱
+  period      String   // 任職時間 (例如 "2022 - 2025")
+  description String   // 說明細節
+  order       Int      @default(0) // 排序 (數字越小越前面)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 風險投資項目 (Venture Capital Items)
+model VentureItem {
+  id          String   @id @default(cuid())
+  category    String   // 子區塊: "早期投資項目" | "創投項目評估" | "天使引路計畫"
+  title       String   // 公司名稱 / 專案名稱
+  logoUrl     String?  // 公司 Logo 圖片 URL
+  period      String   // 執行時間 (例如 "2023 - Present")
+  status      String   // 現況更新
+  description String?  // 補充說明
+  linkUrl     String?  // 外部相關連結 URL
+  order       Int      @default(0) // 排序
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 小說連載訂閱者名單 (Novel Email Subscribers)
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?  // 訂閱者姓名 (選填)
+  novelId   String   @default("all") // 訂閱的小說 ID，預設 "all"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// 小說更新通知日誌 (Novel Update Digest Log)
+model NovelUpdate {
+  id           String    @id @default(cuid())
+  novelTitle   String    // 小說名稱
+  chapterTitle String    // 新更新章節標題
+  summary      String?   // 內容摘要
+  sent         Boolean   @default(false)
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+// 音樂與聲音作品 (Music & Sound Items for YouTube Embeds)
+model MusicItem {
+  id          String   @id @default(cuid())
+  category    String   @default("音樂") // "音樂" | "聲音探尋"
+  title       String   // 曲目 / 創作標題
+  youtubeUrl  String   // YouTube 網址
+  description String?  // 曲目簡介 / 靈感說明
+  order       Int      @default(0) // 排序
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 創作 Lab - 其他文字創作 (Other Writings Items)
+model WritingsItem {
+  id          String   @id @default(cuid())
+  title       String   // 文章/創作標題
+  category    String   @default("其他文字") // 分類 (如 "隨筆", "散文", "新詩", "其他文字")
+  excerpt     String?  // 摘要引言
+  content     String   // 完整內容 (支援多行文字排版)
+  order       Int      @default(0) // 排序
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,0 +1,18 @@
+# Maxupport Private Museum
+
+> Maxupport 的私人策展空間與數位作品集博物館。紀錄超過 14 年跨界職涯軌跡，涵蓋風險投資、金融保險議題分析、聲音探尋、創作 Lab 小說連載與跨世代溝通。
+
+## Core Exhibition Galleries
+
+- [Exhibition Hall](https://maxupport.com/museum): 博物館大廳，全覽 6 大展區。
+- [Venture Capital](https://maxupport.com/museum/vc): 風險投資展區。包含早期投資項目評估、創投案件分析與天使引路計畫。
+- [Career Milestones](https://maxupport.com/museum/career): 職涯經歷時間軸。14 年以上審計、創投與高級顧問歷程。
+- [Financial & Insurance Issues](https://maxupport.com/museum/finance_insurance): 金融保險議題分析。包含投資、保險與財務會計個案洞察。
+- [Sound Exploration](https://maxupport.com/museum/sound): 聲音探尋。人聲優化與青春之歌計畫。
+- [Creation Lab](https://maxupport.com/museum/creation_lab): 創作 Lab。包含小說連載、音樂與跨界實驗。
+- [Cross-gen Communication](https://maxupport.com/museum/communication): 跨世代溝通。Maxupport 生涯擺渡與團隊增員。
+
+## Featured Works & Serials
+
+- [AI 小說共創實錄](https://maxupport.com/museum/creation_lab/novel/ai-novel): 人類創作者與 AI 協同思維的小說連載專案。
+- [跨界者筆記](https://maxupport.com/museum/creation_lab/novel/world-builder): 記錄審計師到風險投資者的世界構建小說。

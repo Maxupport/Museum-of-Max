@@ -1,49 +1,204 @@
+@import "tailwindcss";
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Museum Core Theme */
+  --bg-color: #050505;
+  --text-primary: #f5f5f5;
+  --text-secondary: #888888;
+  
+  /* Glass/Card Effect */
+  --glass-bg: rgba(20, 20, 20, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Theme colors - Hard Skills */
+  --theme-vc: #1a2a40;
+  --theme-corp: #1d3326;
+  --theme-audit: #2a2a2a; /* Steel grey for audit */
+  
+  /* Theme colors - Personal Exploration (More greyscale and muted) */
+  --theme-career: #383533; 
+  --theme-music: #2a2a2a;
+  --theme-possibility: #23252b;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-noto-sans), sans-serif;
+  min-height: 100vh;
+  /* Add a very subtle radial gradient to break the pure black */
+  background-image: radial-gradient(circle at 50% 0%, #151515 0%, #050505 50%);
+  background-attachment: fixed;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-noto-serif), serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.app-container {
+  min-height: 100vh;
+  padding-top: 65px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glassmorphism Panel - Changed to sleek museum display case */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 4px; /* Sharper edges */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.4s ease;
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  /* Glowing LED effect under the display case */
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255,255,255,0.03);
+}
+
+/* Buttons */
+.museum-btn {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  padding: 0.8rem 2rem;
+  border-radius: 2px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font-noto-sans), sans-serif;
+  letter-spacing: 1px;
+}
+
+.museum-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Specific glows for museum exhibits */
+.exhibit-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.exhibit-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.exhibit-card:hover::after {
+  opacity: 1;
+  box-shadow: 0 0 15px currentColor; /* LED strip effect */
+}
+
+/* Inputs */
+.museum-input {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 0.8rem 1.5rem;
+  border-radius: 2px;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 400px;
+  transition: all 0.3s ease;
+  outline: none;
+  font-family: var(--font-noto-sans), sans-serif;
+}
+
+.museum-input:focus {
+  border-color: rgba(255,255,255,0.4);
+  box-shadow: 0 0 10px rgba(255,255,255,0.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Door Opening Animations */
+.door-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  display: flex;
+}
+
+.door-left, .door-right {
+  width: 50%;
+  height: 100%;
+  background-color: var(--bg-color);
+  border-right: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+  transform: scaleX(0);
+  transition: transform 1.5s cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+.door-right {
+  border-right: none;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  transform-origin: right;
+}
+
+.door-left {
+  transform-origin: left;
+}
+
+.door-close .door-left, .door-close .door-right {
+  transform: scaleX(1);
+}
+
+/* Mobile Responsive Optimizations */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.2rem !important;
+    letter-spacing: 4px !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  .museum-input {
+    font-size: 0.9rem;
+    padding: 0.7rem 1rem;
+  }
+
+  .museum-btn {
+    padding: 0.7rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .glass-panel {
+    padding: 1.2rem !important;
   }
 }

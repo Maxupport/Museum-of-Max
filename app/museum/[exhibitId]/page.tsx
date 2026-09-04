@@ -1,0 +1,832 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail } from 'lucide-react';
+import { use, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { EXHIBITS } from '@/lib/constants';
+import { MOCK_NOVELS } from '@/utils/notionNovels';
+import { getYouTubeEmbedUrl } from '@/utils/youtube';
+
+interface CareerItem {
+  id: string;
+  company: string;
+  role: string;
+  period: string;
+  description: string;
+  order: number;
+  createdAt?: string;
+}
+
+interface VentureItem {
+  id: string;
+  category: string;
+  title: string;
+  logoUrl: string | null;
+  period: string;
+  status: string;
+  description: string | null;
+  linkUrl: string | null;
+  order: number;
+  createdAt?: string;
+}
+
+interface MusicItem {
+  id: string;
+  category: string;
+  title: string;
+  youtubeUrl: string;
+  description: string | null;
+  order: number;
+  createdAt?: string;
+}
+
+interface WritingsItem {
+  id: string;
+  title: string;
+  category: string;
+  excerpt: string | null;
+  content: string;
+  order: number;
+  createdAt?: string;
+}
+
+function formatTimestamp(dateStr?: string | Date | null) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `📅 上傳時間：${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
+export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId: string }> }) {
+  const router = useRouter();
+  const unwrappedParams = use(params);
+  const exhibitId = unwrappedParams.exhibitId;
+  const exhibit = EXHIBITS[exhibitId as string];
+
+  // UI States
+  const [activeSubCategory, setActiveSubCategory] = useState<string>(exhibit?.subcategories[0] || '');
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isNovelDirect, setIsNovelDirect] = useState(false);
+  
+  // Career Items state (for career exhibit)
+  const [careerItems, setCareerItems] = useState<CareerItem[]>([]);
+  const [careerLoading, setCareerLoading] = useState(false);
+
+  // Venture Items state (for vc exhibit)
+  const [ventureItems, setVentureItems] = useState<VentureItem[]>([]);
+  const [ventureLoading, setVentureLoading] = useState(false);
+
+  // Music Items state (for creation_lab music subcategory or sound exhibit)
+  const [musicItems, setMusicItems] = useState<MusicItem[]>([]);
+  const [musicLoading, setMusicLoading] = useState(false);
+
+  // Writings Items state (for creation_lab 其他文字 subcategory)
+  const [writingsItems, setWritingsItems] = useState<WritingsItem[]>([]);
+  const [writingsLoading, setWritingsLoading] = useState(false);
+
+  useEffect(() => {
+    if (exhibitId === 'creation_lab' && activeSubCategory === '其他文字') {
+      setWritingsLoading(true);
+      fetch('/api/writings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok) setWritingsItems(data.data);
+        })
+        .finally(() => setWritingsLoading(false));
+    }
+  }, [exhibitId, activeSubCategory]);
+
+  useEffect(() => {
+    if (exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) {
+      setMusicLoading(true);
+      fetch('/api/music')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok) setMusicItems(data.data);
+        })
+        .finally(() => setMusicLoading(false));
+    }
+  }, [exhibitId, activeSubCategory]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const isCuratorCookie = document.cookie.includes('is_curator=true');
+      if (!isCuratorCookie) {
+        const match = document.cookie.match(/(?:^|; )visitor_permissions=([^;]*)/);
+        if (match && match[1]) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(match[1]));
+            if (Array.isArray(perms)) {
+              // Strict boundary check: Verify if visitor is authorized for this exhibitId
+              const isAllowed = perms.includes(exhibitId) || 
+                (exhibitId === 'creation_lab' && perms.includes('creation_lab_novel')) ||
+                (perms.includes('corp') && exhibitId === 'finance_insurance') ||
+                (perms.includes('audit') && exhibitId === 'finance_insurance');
+              
+              if (!isAllowed) {
+                // Unauthorized exhibit access attempt -> Redirect to allowed exhibit or homepage
+                if (perms.includes('creation_lab_novel') || perms.includes('creation_lab')) {
+                  router.replace('/museum/creation_lab');
+                } else if (perms.length > 0 && perms[0] !== exhibitId && perms[0] !== 'creation_lab_novel') {
+                  router.replace(`/museum/${perms[0]}`);
+                } else {
+                  router.replace('/');
+                }
+                return;
+              }
+
+              if (perms.includes('creation_lab_novel') && !perms.includes('vc') && !perms.includes('career')) {
+                setIsNovelDirect(true);
+              }
+            }
+          } catch {}
+        } else {
+          router.replace('/');
+        }
+      }
+    }
+  }, [exhibitId, router]);
+
+  useEffect(() => {
+    if (exhibitId === 'career') {
+      setCareerLoading(true);
+      fetch('/api/career')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok) setCareerItems(data.data);
+        })
+        .finally(() => setCareerLoading(false));
+    } else if (exhibitId === 'vc') {
+      setVentureLoading(true);
+      fetch(`/api/venture${activeSubCategory ? `?category=${encodeURIComponent(activeSubCategory)}` : ''}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok) setVentureItems(data.data);
+        })
+        .finally(() => setVentureLoading(false));
+    } else if (exhibitId) {
+      fetch('/api/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exhibitId, notionId: activeSubCategory || 'main' }),
+      }).catch(() => {});
+    }
+  }, [exhibitId, activeSubCategory]);
+
+  if (!exhibit) {
+    return (
+      <div style={{ textAlign: 'center', padding: '10rem' }}>
+        <h2 style={{ fontFamily: 'var(--font-noto-serif)', color: '#fff', fontSize: '2rem' }}>SECTION NOT FOUND</h2>
+        <button className="museum-btn" onClick={() => router.push('/museum')} style={{ marginTop: '3rem' }}>
+          RETURN TO MAIN HALL
+        </button>
+      </div>
+    );
+  }
+
+  // 模擬 Notion 文章資料 (針對部落格型展區: 金融保險、聲音探索、創作Lab、跨世代溝通)
+  const mockArticles = [
+    { id: 'article-1', title: `【${activeSubCategory || exhibit.title}】核心策略與評估觀點`, date: '2026-08-15', excerpt: '探索團隊在該範疇的關鍵觀察、實務案例分析與長遠策略佈局...' },
+    { id: 'article-2', title: `專題深入探討：${activeSubCategory || exhibit.title} 實戰洞察`, date: '2026-07-20', excerpt: '結合多年經驗歸納出的實務框架與精準執行指標...' },
+    { id: 'article-3', title: `未來趨勢與 ${activeSubCategory || exhibit.title} 的展望`, date: '2026-06-10', excerpt: '前瞻視野分析，預測未來 3-5 年的關鍵變革與機會...' },
+  ];
+
+  const filteredArticles = mockArticles.filter(article => 
+    article.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+    article.excerpt.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
+
+  const filteredVentureItems = ventureItems.filter(item =>
+    item.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+    item.status.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+    (item.description && item.description.toLowerCase().includes(searchKeyword.toLowerCase()))
+  );
+
+  return (
+    <div style={{ padding: '4rem 2rem', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh' }}>
+      {/* 返回展覽大廳按鈕 (若為小說直通讀者則不顯示) */}
+      {!isNovelDirect && (
+        <button 
+          onClick={() => router.push('/museum')}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: 'var(--text-secondary)', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            marginBottom: '4rem',
+            fontSize: '0.9rem',
+            letterSpacing: '2px',
+            textTransform: 'uppercase',
+            transition: 'color 0.3s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+        >
+          <ArrowLeft size={16} />
+          Return to Exhibition Hall
+        </button>
+      )}
+
+      {/* 展區標題 */}
+      <header className="animate-fade-in" style={{ marginBottom: '3.5rem', display: 'flex', alignItems: 'flex-start', gap: '2rem' }}>
+        <div style={{ 
+          width: '3px', 
+          height: '90px', 
+          background: exhibit.color, 
+          boxShadow: `0 0 15px ${exhibit.color}` 
+        }} />
+        <div>
+          <h1 style={{ fontSize: '3.5rem', fontWeight: 300, color: '#fff', marginBottom: '0.5rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.1 }}>
+            {exhibit.title}
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', letterSpacing: '4px', textTransform: 'uppercase' }}>
+            {exhibit.subtitle}
+          </p>
+        </div>
+      </header>
+
+      {/* 子區塊頁籤選單 (Subcategory Filter Tabs) */}
+      {exhibit.subcategories.length > 0 && (
+        <div 
+          className="animate-fade-in" 
+          style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: '1rem', 
+            marginBottom: '3.5rem' 
+          }}
+        >
+          {exhibit.subcategories.map((subCat) => {
+            const isActive = activeSubCategory === subCat;
+            return (
+              <button
+                key={subCat}
+                onClick={() => {
+                  setActiveSubCategory(subCat);
+                  setSearchKeyword(''); 
+                }}
+                style={{
+                  padding: '0.8rem 2rem',
+                  border: '1px solid',
+                  borderColor: isActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.1)',
+                  background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                  fontSize: '0.95rem',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  fontFamily: 'var(--font-noto-sans)',
+                  borderRadius: '2px',
+                  boxShadow: isActive ? `inset 0 -2px 0 ${exhibit.color}, 0 5px 15px rgba(0,0,0,0.5)` : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+                    e.currentTarget.style.color = '#fff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+              >
+                {subCat}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 展區內容區域 */}
+      {exhibitId === 'vc' ? (
+        /* 風險投資 (VC Projects) 後台即時卡片展示 (不連結 Notion) */
+        <div className="animate-fade-in" style={{ padding: '2rem 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '2rem' }}>
+            <div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                PORTFOLIO PROJECTS ({activeSubCategory})
+              </div>
+              <h2 style={{ fontSize: '2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                {activeSubCategory}
+              </h2>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
+              <a
+                href="mailto:maxupport@gmail.com?subject=【風險投資/FA諮詢】來自網站的合作與項目提案"
+                className="museum-btn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.6rem 1.2rem',
+                  fontSize: '0.88rem',
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  borderColor: 'rgba(56, 189, 248, 0.35)',
+                  color: '#38bdf8',
+                  textDecoration: 'none',
+                  borderRadius: '4px',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <Mail size={16} />
+                <span>Email 聯絡策展人</span>
+              </a>
+
+              <div style={{ position: 'relative', width: '100%', maxWidth: '260px' }}>
+                <Search size={18} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                <input 
+                  type="text" 
+                  placeholder="Search venture projects..." 
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  className="museum-input"
+                  style={{
+                    paddingLeft: '3rem',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '0',
+                    background: 'rgba(255,255,255,0.02)'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {ventureLoading ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              載入風險投資項目中...
+            </div>
+          ) : filteredVentureItems.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <TrendingUp size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+              <p style={{ letterSpacing: '1px' }}>此子區塊尚無項目資料，策展人可由【策展人後台】隨時新增與更新。</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+              gap: '2rem'
+            }}>
+              {filteredVentureItems.map((item) => {
+                const CardContent = (
+                  <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color, display: 'flex', flexDirection: 'column', height: '100%', cursor: item.linkUrl ? 'pointer' : 'default' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
+                      {item.logoUrl ? (
+                        <img src={item.logoUrl} alt={item.title} style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', padding: '0.2rem' }} />
+                      ) : (
+                        <div style={{ width: '48px', height: '48px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+                          <Building size={24} />
+                        </div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem' }}>
+                            {item.title}
+                          </h3>
+                          {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)' }} />}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Calendar size={12} />
+                          {item.period}
+                        </div>
+                        {item.createdAt && (
+                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
+                            {formatTimestamp(item.createdAt)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.6rem 1rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8' }} />
+                      <span>現況更新: {item.status}</span>
+                    </div>
+
+                    {item.description && (
+                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: 'auto' }}>
+                        {item.description}
+                      </p>
+                    )}
+
+                    {item.linkUrl && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8', fontSize: '0.85rem', marginTop: '1rem', fontWeight: 500 }}>
+                        <span>前往外部專案連結</span>
+                        <ExternalLink size={14} />
+                      </div>
+                    )}
+                  </div>
+                );
+
+                if (item.linkUrl) {
+                  return (
+                    <a key={item.id} href={item.linkUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                      {CardContent}
+                    </a>
+                  );
+                }
+
+                return <div key={item.id}>{CardContent}</div>;
+              })}
+            </div>
+          )}
+
+          {/* 風險投資 - 專屬 Email 聯絡與諮詢卡片 */}
+          <div
+            className="glass-panel"
+            style={{
+              padding: '2.5rem 2rem',
+              marginTop: '4rem',
+              background: 'rgba(56, 189, 248, 0.03)',
+              border: '1px dashed rgba(56, 189, 248, 0.25)',
+              borderRadius: '4px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem',
+            }}
+          >
+            <h3 style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', letterSpacing: '1px' }}>
+              【{activeSubCategory}】項目諮詢與投資合作提案
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '650px', lineHeight: 1.6, margin: 0 }}>
+              如果您有早期創業項目尋求投資、新創項目評估需求，或欲進一步洽詢募資 FA 顧問服務，歡迎隨時透過 Email 與我聯繫。
+            </p>
+            <a
+              href="mailto:maxupport@gmail.com?subject=【風險投資/FA諮詢】來自網站的合作與項目提案"
+              className="museum-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.8rem 2rem',
+                fontSize: '0.95rem',
+                background: 'rgba(56, 189, 248, 0.2)',
+                borderColor: '#38bdf8',
+                color: '#fff',
+                textDecoration: 'none',
+                borderRadius: '4px',
+                boxShadow: '0 0 20px rgba(56, 189, 248, 0.25)',
+                marginTop: '0.5rem'
+              }}
+            >
+              <Mail size={18} color="#38bdf8" />
+              <span>📧 點擊此處立即寄信聯絡我</span>
+            </a>
+          </div>
+        </div>
+      ) : exhibit.isTimeline ? (
+        /* 職涯經歷 (Career Experience) 時間軸展示 */
+        <div className="animate-fade-in" style={{ padding: '2rem 0' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3rem' }}>
+            Career Timeline & Milestones
+          </div>
+
+          {careerLoading ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              載入職涯經歷中...
+            </div>
+          ) : careerItems.length === 0 ? (
+            <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <Briefcase size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+              <p style={{ letterSpacing: '1px' }}>目前尚無職涯經歷資料，策展人可由【策展人後台】隨時新增編輯。</p>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', paddingLeft: '2rem', borderLeft: '2px solid rgba(255,255,255,0.1)' }}>
+              {careerItems.map((item) => (
+                <div key={item.id} style={{ position: 'relative', marginBottom: '3.5rem' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: '-2.6rem',
+                    top: '0.3rem',
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    background: exhibit.color,
+                    boxShadow: `0 0 10px ${exhibit.color}`
+                  }} />
+
+                  <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem' }}>
+                          {item.company}
+                        </h2>
+                        <h3 style={{ fontSize: '1.1rem', color: 'var(--theme-career)', fontWeight: 400 }}>
+                          {item.role}
+                        </h3>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          <Calendar size={14} />
+                          {item.period}
+                        </div>
+                        {item.createdAt && (
+                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                            {formatTimestamp(item.createdAt)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {item.description && (
+                      <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: '1rem' }}>
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* 部落格型展區 (卡片清單與 Notion Blog 文章入口) */
+        <div 
+          className="animate-fade-in" 
+          style={{ 
+            padding: '2rem 0',
+            borderTop: `1px solid rgba(255,255,255,0.1)`,
+            position: 'relative'
+          }}
+        >
+          {/* LED 亮線裝飾 */}
+          <div style={{
+            position: 'absolute',
+            top: '-1px',
+            left: 0,
+            width: '200px',
+            height: '1px',
+            background: exhibit.color,
+            boxShadow: `0 0 10px ${exhibit.color}, 0 0 20px ${exhibit.color}`
+          }} />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '2rem' }}>
+            <div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                SECTION CONTENT
+              </div>
+              <h2 style={{ fontSize: '2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                {activeSubCategory || exhibit.title}
+              </h2>
+            </div>
+            
+            <div style={{ position: 'relative', width: '100%', maxWidth: '350px' }}>
+              <Search size={18} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+              <input 
+                type="text" 
+                placeholder="Search in this section..." 
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="museum-input"
+                style={{
+                  paddingLeft: '3rem',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '0',
+                  background: 'rgba(255,255,255,0.02)'
+                }}
+              />
+            </div>
+          </div>
+          
+          {/* 音樂與聲音探尋 YouTube 影片嵌入網格 */}
+          {(exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) ? (
+            musicLoading ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂作品載入中...</div>
+            ) : musicItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <p style={{ letterSpacing: '1px' }}>目前尚無音樂作品，策展人可於後台直接貼上 YouTube 連結新增嵌入。</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
+                {musicItems.map((item) => {
+                  const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
+                  return (
+                    <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '0', overflow: 'hidden', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>
+                      {/* 16:9 響應式 YouTube Player */}
+                      <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
+                        {embedUrl ? (
+                          <iframe
+                            src={embedUrl}
+                            title={item.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                          />
+                        ) : (
+                          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                            無效的影片網址
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ padding: '1.5rem 1.8rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{item.category || '音樂創作'}</span>
+                          {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none' }}>{formatTimestamp(item.createdAt)}</span>}
+                        </div>
+                        <h3 style={{ color: '#fff', fontSize: '1.25rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.6rem', lineHeight: 1.4 }}>
+                          {item.title}
+                        </h3>
+                        {item.description && (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, marginTop: 'auto' }}>
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : exhibitId === 'creation_lab' && activeSubCategory === '其他文字' ? (
+            writingsLoading ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
+            ) : writingsItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <p style={{ letterSpacing: '1px' }}>目前尚無其他文字創作，策展人可於後台編輯器發布。</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
+                {writingsItems.map((item) => (
+                  <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '2.2rem', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {item.category || '其他文字'}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        {item.createdAt && (
+                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                            {formatTimestamp(item.createdAt)}
+                          </span>
+                        )}
+                        <Link href="/admin" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.5rem', borderRadius: '2px' }}>
+                          [ 策展人編輯 ]
+                        </Link>
+                      </div>
+                    </div>
+
+                    <h3 style={{ color: '#fff', fontSize: '1.4rem', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
+                      {item.title}
+                    </h3>
+
+                    {item.excerpt && (
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1rem', lineHeight: 1.6 }}>
+                        {item.excerpt}
+                      </p>
+                    )}
+
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: '0.9rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                      {item.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : exhibitId === 'creation_lab' && (activeSubCategory === '小說' || activeSubCategory === '文字') ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+              gap: '2.5rem'
+            }}>
+              {Object.values(MOCK_NOVELS).map((novel) => (
+                <Link key={novel.id} href={`/museum/creation_lab/novel/${novel.id}`} style={{ textDecoration: 'none' }}>
+                  <div className="glass-panel exhibit-card" style={{
+                    padding: '2.2rem',
+                    cursor: 'pointer',
+                    color: exhibit.color,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    transition: 'all 0.4s ease',
+                    position: 'relative'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        小說連載專區
+                      </span>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                        {novel.status} ({novel.totalChapters} 章)
+                      </span>
+                    </div>
+
+                    <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.4rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3 }}>
+                      {novel.title}
+                    </h3>
+                    
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-sans)' }}>
+                      作者：{novel.author} | 最新更新：{novel.latestUpdate}
+                    </p>
+
+                    <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+                      {novel.description}
+                    </p>
+
+                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontSize: '0.9rem', fontWeight: 500 }}>
+                      <Sparkles size={16} color="var(--theme-possibility)" />
+                      <span>進入沉浸式小說閱讀器</span>
+                      <ChevronRight size={16} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : filteredArticles.length > 0 ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+              gap: '2.5rem'
+            }}>
+              {filteredArticles.map((article, index) => (
+                <Link key={article.id} href={`/museum/${exhibit.id}/${article.id}`} style={{ textDecoration: 'none' }}>
+                  <div className="glass-panel exhibit-card" style={{
+                    padding: '0',
+                    cursor: 'pointer',
+                    color: exhibit.color,
+                    animationDelay: `${index * 0.1}s`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    transition: 'all 0.4s ease'
+                  }}>
+                    <div style={{ 
+                      width: '100%', 
+                      height: '180px', 
+                      background: 'rgba(255,255,255,0.03)', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.8rem',
+                      letterSpacing: '2px',
+                      textTransform: 'uppercase',
+                      borderBottom: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                      <BookOpen size={28} style={{ opacity: 0.5 }} />
+                    </div>
+                    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-sans)' }}>
+                        📅 上傳時間：{article.date}
+                      </div>
+                      <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
+                        {article.title}
+                      </h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
+                        {article.excerpt}
+                      </p>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: exhibit.color, fontSize: '0.85rem', fontWeight: 500 }}>
+                        <span>閱讀完整內容</span>
+                        <ChevronRight size={16} />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+              <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem' }}>No exhibits found matching your criteria</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 泛用 Google 表單 / 預約與諮詢問卷 預留區 (Google Form Reservation Box) */}
+      <div
+        className="glass-panel"
+        style={{
+          padding: '3rem 2rem',
+          marginTop: '5rem',
+          background: 'rgba(255, 255, 255, 0.02)',
+          border: '1px dashed rgba(255, 255, 255, 0.15)',
+          borderRadius: '4px',
+          textAlign: 'center',
+        }}
+      >
+        <h3 style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.8rem', letterSpacing: '1px' }}>
+          【{exhibit.title}】專屬表單與問卷預留區
+        </h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '600px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
+          策展人後續可在此處嵌入 Google 表單 (如：預約諮詢、問題反饋、合作提案表單)，讓觀展者可以直接在此填寫提交。
+        </p>
+        <div style={{ display: 'inline-block', padding: '0.6rem 1.4rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.3)', letterSpacing: '1px' }}>
+          📋 GOOGLE FORM RESERVED AREA • 空間已預留完成
+        </div>
+      </div>
+    </div>
+  );
+}
