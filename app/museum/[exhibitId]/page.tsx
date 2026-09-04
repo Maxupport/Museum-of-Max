@@ -527,20 +527,20 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
                   <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.2rem', marginBottom: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
                         {item.logoUrl ? (
                           <img
                             src={item.logoUrl}
                             alt={`${item.company} Logo`}
                             style={{
-                              width: '52px',
-                              height: '52px',
+                              width: '76px',
+                              height: '76px',
                               objectFit: 'contain',
                               background: 'rgba(255, 255, 255, 0.08)',
-                              borderRadius: '8px',
-                              padding: '0.3rem',
-                              border: '1px solid rgba(255, 255, 255, 0.15)',
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                              borderRadius: '12px',
+                              padding: '0.5rem',
+                              border: '1.5px solid rgba(245, 158, 11, 0.35)',
+                              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
                               flexShrink: 0,
                             }}
                           />
@@ -548,11 +548,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           <div
                             title="Company Logo 預留位置"
                             style={{
-                              width: '52px',
-                              height: '52px',
-                              borderRadius: '8px',
-                              border: '2px dashed rgba(245, 158, 11, 0.45)',
-                              background: 'rgba(245, 158, 11, 0.06)',
+                              width: '76px',
+                              height: '76px',
+                              borderRadius: '12px',
+                              border: '2px dashed rgba(245, 158, 11, 0.5)',
+                              background: 'rgba(245, 158, 11, 0.08)',
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
@@ -560,10 +560,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                               color: 'var(--theme-career)',
                               flexShrink: 0,
                               textAlign: 'center',
+                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
                             }}
                           >
-                            <Building2 size={20} style={{ opacity: 0.85, marginBottom: '2px' }} />
-                            <span style={{ fontSize: '0.55rem', opacity: 0.8, letterSpacing: '0.5px' }}>LOGO</span>
+                            <Building2 size={28} style={{ opacity: 0.9, marginBottom: '3px' }} />
+                            <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.9, letterSpacing: '1px' }}>LOGO</span>
                           </div>
                         )}
                         <div>
