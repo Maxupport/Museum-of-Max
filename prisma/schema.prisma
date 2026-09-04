@@ -40,6 +40,8 @@ model CareerItem {
   role        String   // 職務/職稱
   period      String   // 任職時間 (例如 "2022 - 2025")
   description String   // 說明細節
+  logoUrl     String?  // 公司 Logo 圖片 URL
+  photoUrl    String?  // 工作/現場照片 URL
   order       Int      @default(0) // 排序 (數字越小越前面)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

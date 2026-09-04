@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { company, role, period, description, order } = body;
+    const { company, role, period, description, logoUrl, photoUrl, order } = body;
 
     if (!company || !role || !period) {
       return NextResponse.json({ ok: false, error: '請填寫公司、職稱與任職時間' }, { status: 400 });
@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
         role: role.trim(),
         period: period.trim(),
         description: (description || '').trim(),
+        logoUrl: logoUrl ? logoUrl.trim() : null,
+        photoUrl: photoUrl ? photoUrl.trim() : null,
         order: typeof order === 'number' ? order : 0,
       },
     });

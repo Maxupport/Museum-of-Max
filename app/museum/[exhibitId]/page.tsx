@@ -14,6 +14,8 @@ interface CareerItem {
   role: string;
   period: string;
   description: string;
+  logoUrl?: string | null;
+  photoUrl?: string | null;
   order: number;
   createdAt?: string;
 }
@@ -524,14 +526,33 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   }} />
 
                   <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-                      <div>
-                        <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem' }}>
-                          {item.company}
-                        </h2>
-                        <h3 style={{ fontSize: '1.1rem', color: 'var(--theme-career)', fontWeight: 400 }}>
-                          {item.role}
-                        </h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.2rem', marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {item.logoUrl && (
+                          <img
+                            src={item.logoUrl}
+                            alt={`${item.company} Logo`}
+                            style={{
+                              width: '52px',
+                              height: '52px',
+                              objectFit: 'contain',
+                              background: 'rgba(255, 255, 255, 0.08)',
+                              borderRadius: '8px',
+                              padding: '0.3rem',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <div>
+                          <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem' }}>
+                            {item.company}
+                          </h2>
+                          <h3 style={{ fontSize: '1.1rem', color: 'var(--theme-career)', fontWeight: 400 }}>
+                            {item.role}
+                          </h3>
+                        </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
@@ -545,6 +566,22 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         )}
                       </div>
                     </div>
+
+                    {/* 兩張照片空間之二：個人工作照 / 現場照片 (Work Photo) */}
+                    {item.photoUrl && (
+                      <div style={{ margin: '1.2rem 0', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.12)', background: 'rgba(0, 0, 0, 0.3)' }}>
+                        <img
+                          src={item.photoUrl}
+                          alt={`${item.company} 工作現場照片`}
+                          style={{
+                            width: '100%',
+                            maxHeight: '340px',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      </div>
+                    )}
 
                     {item.description && (
                       <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: '1rem' }}>

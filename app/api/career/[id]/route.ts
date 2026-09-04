@@ -14,7 +14,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { company, role, period, description, order } = body;
+    const { company, role, period, description, logoUrl, photoUrl, order } = body;
 
     const updated = await prisma.careerItem.update({
       where: { id },
@@ -23,6 +23,8 @@ export async function PUT(
         ...(role && { role: role.trim() }),
         ...(period && { period: period.trim() }),
         ...(description !== undefined && { description: description.trim() }),
+        ...(logoUrl !== undefined && { logoUrl: logoUrl ? logoUrl.trim() : null }),
+        ...(photoUrl !== undefined && { photoUrl: photoUrl ? photoUrl.trim() : null }),
         ...(order !== undefined && { order: Number(order) }),
       },
     });

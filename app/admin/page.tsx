@@ -31,6 +31,8 @@ interface CareerItemData {
   role: string;
   period: string;
   description: string;
+  logoUrl?: string | null;
+  photoUrl?: string | null;
   order: number;
   createdAt: string;
 }
@@ -129,6 +131,10 @@ export default function AdminDashboardPage() {
   const [role, setRole] = useState('');
   const [period, setPeriod] = useState('');
   const [description, setDescription] = useState('');
+  const [cLogoUrl, setCLogoUrl] = useState('');
+  const [cPhotoUrl, setCPhotoUrl] = useState('');
+  const [uploadingCLogo, setUploadingCLogo] = useState(false);
+  const [uploadingCPhoto, setUploadingCPhoto] = useState(false);
   const [order, setOrder] = useState(0);
   const [creatingCareer, setCreatingCareer] = useState(false);
   const [careerFormError, setCareerFormError] = useState('');
@@ -611,6 +617,59 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Career Image Upload Handlers
+  const handleUploadCLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCLogo(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        setCLogoUrl(data.url);
+      } else {
+        alert(data.error || 'Logo 圖片上傳失敗');
+      }
+    } catch {
+      alert('Logo 圖片上傳連線失敗');
+    } finally {
+      setUploadingCLogo(false);
+    }
+  };
+
+  const handleUploadCPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCPhoto(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        setCPhotoUrl(data.url);
+      } else {
+        alert(data.error || '工作照片上傳失敗');
+      }
+    } catch {
+      alert('工作照片上傳連線失敗');
+    } finally {
+      setUploadingCPhoto(false);
+    }
+  };
+
   // Career Form Handlers
   const handleSaveCareer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -629,7 +688,7 @@ export default function AdminDashboardPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company, role, period, description, order }),
+        body: JSON.stringify({ company, role, period, description, logoUrl: cLogoUrl, photoUrl: cPhotoUrl, order }),
       });
 
       const data = await res.json();
@@ -639,6 +698,8 @@ export default function AdminDashboardPage() {
         setRole('');
         setPeriod('');
         setDescription('');
+        setCLogoUrl('');
+        setCPhotoUrl('');
         setOrder(0);
         setEditingCareerId(null);
         fetchCareerItems();
@@ -658,6 +719,8 @@ export default function AdminDashboardPage() {
     setRole(item.role);
     setPeriod(item.period);
     setDescription(item.description);
+    setCLogoUrl(item.logoUrl || '');
+    setCPhotoUrl(item.photoUrl || '');
     setOrder(item.order);
   };
 
@@ -667,6 +730,8 @@ export default function AdminDashboardPage() {
     setRole('');
     setPeriod('');
     setDescription('');
+    setCLogoUrl('');
+    setCPhotoUrl('');
     setOrder(0);
   };
 
@@ -1429,6 +1494,118 @@ export default function AdminDashboardPage() {
                   className="museum-input"
                   style={{ maxWidth: '100%' }}
                   required
+                />
+              </div>
+
+              {/* 照片空間 1：公司/機構 Logo 照片 */}
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  照片空間一：公司 / 機構 Logo (選填)
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadCLogo}
+                    id="career-logo-file-input"
+                    style={{ display: 'none' }}
+                  />
+                  <label
+                    htmlFor="career-logo-file-input"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#fff',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <Upload size={16} />
+                    {uploadingCLogo ? '上傳中...' : '上傳 Logo 圖片'}
+                  </label>
+                  {cLogoUrl && (
+                    <img
+                      src={cLogoUrl}
+                      alt="Logo Preview"
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        objectFit: 'contain',
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '4px',
+                        padding: '2px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="或貼上 Logo 圖片網址 (選填)"
+                  value={cLogoUrl}
+                  onChange={(e) => setCLogoUrl(e.target.value)}
+                  className="museum-input"
+                  style={{ maxWidth: '100%' }}
+                />
+              </div>
+
+              {/* 照片空間 2：個人工作照 / 現場照片 */}
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  照片空間二：個人工作照 / 團隊現場照片 (選填)
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadCPhoto}
+                    id="career-photo-file-input"
+                    style={{ display: 'none' }}
+                  />
+                  <label
+                    htmlFor="career-photo-file-input"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#fff',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <Upload size={16} />
+                    {uploadingCPhoto ? '上傳中...' : '上傳工作照片'}
+                  </label>
+                  {cPhotoUrl && (
+                    <img
+                      src={cPhotoUrl}
+                      alt="Work Photo Preview"
+                      style={{
+                        width: '60px',
+                        height: '40px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="或貼上工作照片網址 (選填)"
+                  value={cPhotoUrl}
+                  onChange={(e) => setCPhotoUrl(e.target.value)}
+                  className="museum-input"
+                  style={{ maxWidth: '100%' }}
                 />
               </div>
 
