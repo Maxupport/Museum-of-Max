@@ -1,9 +1,8 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, BookOpen, Share2, Check } from 'lucide-react';
-import { useState } from 'react';
 import { EXHIBITS } from '@/lib/constants';
 
 export default function ArticleDetailPage({
@@ -17,6 +16,16 @@ export default function ArticleDetailPage({
   const exhibit = EXHIBITS[exhibitId];
 
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (exhibitId && articleId) {
+      fetch('/api/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exhibitId, notionId: articleId }),
+      }).catch(() => {});
+    }
+  }, [exhibitId, articleId]);
 
   const handleShare = () => {
     if (typeof window !== 'undefined') {

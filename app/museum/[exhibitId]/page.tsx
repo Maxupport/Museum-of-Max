@@ -153,6 +153,17 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     }
   }, [exhibitId, router]);
 
+  // 獨立紀錄所有展區頁面與子分類切換的瀏覽流量
+  useEffect(() => {
+    if (exhibitId) {
+      fetch('/api/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exhibitId, notionId: activeSubCategory || 'main' }),
+      }).catch(() => {});
+    }
+  }, [exhibitId, activeSubCategory]);
+
   useEffect(() => {
     if (exhibitId === 'career') {
       setCareerLoading(true);
@@ -170,12 +181,6 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           if (data.ok) setVentureItems(data.data);
         })
         .finally(() => setVentureLoading(false));
-    } else if (exhibitId) {
-      fetch('/api/pageview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ exhibitId, notionId: activeSubCategory || 'main' }),
-      }).catch(() => {});
     }
   }, [exhibitId, activeSubCategory]);
 

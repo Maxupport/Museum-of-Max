@@ -23,6 +23,16 @@ export default function NovelReaderPage({
   const [subscribing, setSubscribing] = useState(false);
   const [subMessage, setSubMessage] = useState('');
 
+  useEffect(() => {
+    if (novelId) {
+      fetch('/api/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exhibitId: 'creation_lab_novel', notionId: `${novelId}_ch${currentChapterIdx + 1}` }),
+      }).catch(() => {});
+    }
+  }, [novelId, currentChapterIdx]);
+
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subEmail || !subEmail.includes('@')) return;

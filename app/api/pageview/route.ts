@@ -4,13 +4,21 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const { exhibitId, notionId } = await request.json();
-    const passcodeId = request.cookies.get('visitor_token')?.value || null;
+    const rawPasscodeId = request.cookies.get('visitor_token')?.value || null;
 
     if (!exhibitId) {
       return NextResponse.json({ ok: false, error: '展區 ID 為必填' }, { status: 400 });
     }
 
-    await prisma.pageView.create({
+    let passcodeId: string | null = null;
+    if (rawPasscodeId) {
+      const exists = await prisma.passcode.findUnique({ where: { id: rawPasscodeId } });
+      if (exists) {
+        passcodeId = rawPasscodeId;
+      }
+    }
+
+    const record = await prisma.pageView.create({
       data: {
         exhibitId,
         notionId: notionId || 'main',
@@ -18,9 +26,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
+    return NextResponse.json({ ok: true, data: record });
+  } catch (error: unknown) {
     console.error('Pageview record error:', error);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : '記錄流量失敗';
+    return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
   }
 }
+
