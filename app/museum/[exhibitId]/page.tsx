@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2 } from 'lucide-react';
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { EXHIBITS } from '@/lib/constants';
@@ -528,7 +528,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.2rem', marginBottom: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        {item.logoUrl && (
+                        {item.logoUrl ? (
                           <img
                             src={item.logoUrl}
                             alt={`${item.company} Logo`}
@@ -544,6 +544,27 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                               flexShrink: 0,
                             }}
                           />
+                        ) : (
+                          <div
+                            title="Company Logo 預留位置"
+                            style={{
+                              width: '52px',
+                              height: '52px',
+                              borderRadius: '8px',
+                              border: '2px dashed rgba(245, 158, 11, 0.45)',
+                              background: 'rgba(245, 158, 11, 0.06)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'var(--theme-career)',
+                              flexShrink: 0,
+                              textAlign: 'center',
+                            }}
+                          >
+                            <Building2 size={20} style={{ opacity: 0.85, marginBottom: '2px' }} />
+                            <span style={{ fontSize: '0.55rem', opacity: 0.8, letterSpacing: '0.5px' }}>LOGO</span>
+                          </div>
                         )}
                         <div>
                           <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem' }}>
@@ -568,7 +589,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     </div>
 
                     {/* 兩張照片空間之二：個人工作照 / 現場照片 (Work Photo) */}
-                    {item.photoUrl && (
+                    {item.photoUrl ? (
                       <div style={{ margin: '1.2rem 0', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.12)', background: 'rgba(0, 0, 0, 0.3)' }}>
                         <img
                           src={item.photoUrl}
@@ -580,6 +601,31 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             display: 'block',
                           }}
                         />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          margin: '1.2rem 0',
+                          padding: '2.2rem 1rem',
+                          borderRadius: '8px',
+                          border: '2px dashed rgba(245, 158, 11, 0.35)',
+                          background: 'rgba(245, 158, 11, 0.03)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          color: 'rgba(245, 158, 11, 0.85)',
+                          textAlign: 'center',
+                        }}
+                      >
+                        <ImageIcon size={30} style={{ opacity: 0.75 }} />
+                        <span style={{ fontSize: '0.88rem', fontWeight: 500, letterSpacing: '1px' }}>
+                          📷 【工作現場 / 團體照片 預留位置】
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                          在【策展人後台】新增或編輯此歷程時，若上傳工作照片將會滿版展示於此處
+                        </span>
                       </div>
                     )}
 
