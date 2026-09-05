@@ -215,6 +215,28 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     (item.description && item.description.toLowerCase().includes(searchKeyword.toLowerCase()))
   );
 
+  const filteredMusicItems = musicItems.filter((item) => {
+    const matchesSearch = searchKeyword
+      ? item.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchKeyword.toLowerCase()))
+      : true;
+
+    if (!matchesSearch) return false;
+
+    if (exhibitId === 'sound') {
+      if (activeSubCategory) {
+        return item.category === activeSubCategory;
+      }
+      return true;
+    }
+
+    if (exhibitId === 'creation_lab' && activeSubCategory === '音樂') {
+      return item.category === '音樂' || !item.category || item.category === '創作 Lab - 音樂';
+    }
+
+    return true;
+  });
+
   return (
     <div style={{ padding: '4rem 2rem', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh' }}>
       {/* 返回展覽大廳按鈕 (若為小說直通讀者則不顯示) */}
@@ -707,14 +729,18 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           {/* 音樂與聲音探尋 YouTube 影片嵌入網格 */}
           {(exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) ? (
             musicLoading ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂作品載入中...</div>
-            ) : musicItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂與聲音作品載入中...</div>
+            ) : filteredMusicItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前尚無音樂作品，策展人可於後台直接貼上 YouTube 連結新增嵌入。</p>
+                <p style={{ letterSpacing: '1px' }}>
+                  {activeSubCategory
+                    ? `目前【${activeSubCategory}】標籤下尚無作品，策展人可於【策展人後台】指定此標籤新增 YouTube 音樂嵌入。`
+                    : '目前尚無音樂與聲音作品，策展人可於後台貼上 YouTube 連結新增。'}
+                </p>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
-                {musicItems.map((item) => {
+                {filteredMusicItems.map((item) => {
                   const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
                   return (
                     <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '0', overflow: 'hidden', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>

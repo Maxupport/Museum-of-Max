@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music } from 'lucide-react';
+import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 
 interface PasscodeItem {
@@ -73,7 +73,9 @@ const VENTURE_CATEGORIES = ['早期投資', '新創項目評估', '募資 FA 服
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<'passcodes' | 'venture' | 'career' | 'stats' | 'subscribers' | 'music' | 'writings'>('passcodes');
+  const [activeTab, setActiveTab] = useState<'passcodes' | 'venture' | 'career' | 'stats' | 'subscribers' | 'sound' | 'creation_lab'>('passcodes');
+  const [soundSubCategoryFilter, setSoundSubCategoryFilter] = useState<string>('全部分類');
+  const [creationLabSubTab, setCreationLabSubTab] = useState<'music' | 'writings'>('music');
 
   // Passcodes state
   const [passcodes, setPasscodes] = useState<PasscodeItem[]>([]);
@@ -228,13 +230,14 @@ export default function AdminDashboardPage() {
 
   // Music state
   const [musicItems, setMusicItems] = useState<MusicItemData[]>([]);
-  const [mCategory, setMCategory] = useState('音樂');
+  const [mCategory, setMCategory] = useState('個人聲音探索心得');
   const [mTitle, setMTitle] = useState('');
   const [mYoutubeUrl, setMYoutubeUrl] = useState('');
   const [mDescription, setMDescription] = useState('');
   const [mOrder, setMOrder] = useState(0);
   const [creatingMusic, setCreatingMusic] = useState(false);
   const [musicFormError, setMusicFormError] = useState('');
+  const [editingMusicId, setEditingMusicId] = useState<string | null>(null);
 
   const fetchMusicItems = useCallback(async () => {
     try {
@@ -246,7 +249,27 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  const handleCreateMusic = async (e: React.FormEvent) => {
+  const handleEditMusic = (item: MusicItemData) => {
+    setEditingMusicId(item.id);
+    setMCategory(item.category || '個人聲音探索心得');
+    setMTitle(item.title);
+    setMYoutubeUrl(item.youtubeUrl);
+    setMDescription(item.description || '');
+    setMOrder(item.order || 0);
+    setMusicFormError('');
+  };
+
+  const handleCancelMusicEdit = () => {
+    setEditingMusicId(null);
+    setMCategory('個人聲音探索心得');
+    setMTitle('');
+    setMYoutubeUrl('');
+    setMDescription('');
+    setMOrder(0);
+    setMusicFormError('');
+  };
+
+  const handleSaveMusic = async (e: React.FormEvent) => {
     e.preventDefault();
     setMusicFormError('');
     if (!mTitle.trim() || !mYoutubeUrl.trim()) {
@@ -255,8 +278,11 @@ export default function AdminDashboardPage() {
     }
     setCreatingMusic(true);
     try {
-      const res = await fetch('/api/music', {
-        method: 'POST',
+      const url = editingMusicId ? `/api/music/${editingMusicId}` : '/api/music';
+      const method = editingMusicId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: mCategory,
@@ -268,13 +294,10 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.ok) {
-        setMTitle('');
-        setMYoutubeUrl('');
-        setMDescription('');
-        setMOrder(0);
+        handleCancelMusicEdit();
         fetchMusicItems();
       } else {
-        setMusicFormError(data.error || '新增失敗');
+        setMusicFormError(data.error || '儲存失敗');
       }
     } catch {
       setMusicFormError('連線錯誤');
@@ -446,8 +469,11 @@ export default function AdminDashboardPage() {
       if (activeTab === 'career') fetchCareerItems();
       if (activeTab === 'stats') fetchStats();
       if (activeTab === 'subscribers') fetchSubscribers();
-      if (activeTab === 'music') fetchMusicItems();
-      if (activeTab === 'writings') fetchWritingsItems();
+      if (activeTab === 'sound') fetchMusicItems();
+      if (activeTab === 'creation_lab') {
+        fetchMusicItems();
+        fetchWritingsItems();
+      }
     }
   }, [authenticated, activeTab, fetchPasscodes, fetchVentureItems, fetchCareerItems, fetchStats, fetchSubscribers, fetchMusicItems, fetchWritingsItems]);
 
@@ -938,13 +964,13 @@ export default function AdminDashboardPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('music')}
+          onClick={() => setActiveTab('sound')}
           style={{
             padding: '0.8rem 1.8rem',
-            background: activeTab === 'music' ? 'rgba(255,255,255,0.08)' : 'transparent',
+            background: activeTab === 'sound' ? 'rgba(255,255,255,0.08)' : 'transparent',
             border: 'none',
-            borderBottom: activeTab === 'music' ? '2px solid #fff' : '2px solid transparent',
-            color: activeTab === 'music' ? '#fff' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'sound' ? '2px solid var(--theme-music, #ec4899)' : '2px solid transparent',
+            color: activeTab === 'sound' ? '#fff' : 'var(--text-secondary)',
             fontSize: '0.95rem',
             letterSpacing: '1px',
             cursor: 'pointer',
@@ -955,17 +981,17 @@ export default function AdminDashboardPage() {
           }}
         >
           <Music size={18} />
-          音樂與聲音創作 (Music)
+          聲音探索 (Sound Exploration)
         </button>
 
         <button
-          onClick={() => setActiveTab('writings')}
+          onClick={() => setActiveTab('creation_lab')}
           style={{
             padding: '0.8rem 1.8rem',
-            background: activeTab === 'writings' ? 'rgba(255,255,255,0.08)' : 'transparent',
+            background: activeTab === 'creation_lab' ? 'rgba(255,255,255,0.08)' : 'transparent',
             border: 'none',
-            borderBottom: activeTab === 'writings' ? '2px solid #fff' : '2px solid transparent',
-            color: activeTab === 'writings' ? '#fff' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'creation_lab' ? '2px solid var(--theme-possibility, #a855f7)' : '2px solid transparent',
+            color: activeTab === 'creation_lab' ? '#fff' : 'var(--text-secondary)',
             fontSize: '0.95rem',
             letterSpacing: '1px',
             cursor: 'pointer',
@@ -975,8 +1001,8 @@ export default function AdminDashboardPage() {
             transition: 'all 0.3s ease'
           }}
         >
-          <Edit3 size={18} />
-          其他文字創作 (Writings)
+          <Sparkles size={18} />
+          創作 Lab (Creation Lab)
         </button>
       </div>
 
@@ -1993,392 +2019,721 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Tab 6: Music & YouTube Embeds */}
-      {activeTab === 'music' && (
-        <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
-          {/* 左欄：新增音樂與 YouTube 連結 */}
-          <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
-            <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
-              <Plus size={20} />
-              新增音樂創作 (YouTube 嵌入)
-            </h2>
-
-            {musicFormError && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                {musicFormError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateMusic} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  所屬類別 *
-                </label>
-                <select
-                  value={mCategory}
-                  onChange={(e) => setMCategory(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
+      {/* Tab 6: Sound Exploration (聲音探索專用後台頁籤) */}
+      {activeTab === 'sound' && (
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* 子標籤切換選單 */}
+          <div className="glass-panel" style={{ padding: '1.2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              聲音探索子頁籤篩選：
+            </span>
+            {['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '全部分類'].map((subCat) => {
+              const isActive = soundSubCategoryFilter === subCat;
+              return (
+                <button
+                  key={subCat}
+                  onClick={() => {
+                    setSoundSubCategoryFilter(subCat);
+                    if (subCat !== '全部分類') {
+                      setMCategory(subCat);
+                    }
+                  }}
+                  style={{
+                    padding: '0.5rem 1.2rem',
+                    borderRadius: '4px',
+                    border: '1px solid',
+                    borderColor: isActive ? '#ec4899' : 'rgba(255,255,255,0.1)',
+                    background: isActive ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    transition: 'all 0.3s ease',
+                  }}
                 >
-                  <option value="音樂">創作 Lab - 音樂 (Music)</option>
-                  <option value="聲音探尋">聲音探尋 (Sound Exploration)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  曲目 / 創作名稱 *
-                </label>
-                <input
-                  type="text"
-                  placeholder="例如: 【創作 Lab】夜間聲響實驗 #01"
-                  value={mTitle}
-                  onChange={(e) => setMTitle(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  YouTube 連結 (URL) *
-                </label>
-                <input
-                  type="text"
-                  placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
-                  value={mYoutubeUrl}
-                  onChange={(e) => setMYoutubeUrl(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  曲目簡介 / 創作心得 (選填)
-                </label>
-                <textarea
-                  placeholder="簡短寫下音樂創作靈感或紀錄..."
-                  value={mDescription}
-                  onChange={(e) => setMDescription(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  排序權重 (Order, 越小越前面)
-                </label>
-                <input
-                  type="number"
-                  value={mOrder}
-                  onChange={(e) => setMOrder(parseInt(e.target.value) || 0)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="museum-btn"
-                disabled={creatingMusic}
-                style={{ marginTop: '0.5rem', width: '100%' }}
-              >
-                {creatingMusic ? '新增中...' : '確認新增 YouTube 音樂嵌入卡片'}
-              </button>
-            </form>
+                  {subCat}
+                </button>
+              );
+            })}
           </div>
 
-          {/* 右欄：音樂與聲音作品列表 */}
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-                音樂作品列表 ({musicItems.length})
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
+            {/* 左欄：新增 / 編輯聲音探索作品 */}
+            <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                {editingMusicId ? <Edit3 size={20} /> : <Plus size={20} />}
+                {editingMusicId ? '編輯聲音探索作品' : '新增聲音探索作品 (YouTube 嵌入)'}
               </h2>
-              <button onClick={fetchMusicItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-                <RefreshCw size={14} /> 重整
-              </button>
-            </div>
 
-            {musicItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <Music size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                <p style={{ letterSpacing: '1px' }}>目前尚無音樂作品，請於左側貼上 YouTube 網址新增。</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {musicItems.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: 'rgba(0,0,0,0.4)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      padding: '1.2rem',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: '1rem',
-                    }}
+              {musicFormError && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                  {musicFormError}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveMusic} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    聲音探索子頁籤標籤 *
+                  </label>
+                  <select
+                    value={mCategory}
+                    onChange={(e) => setMCategory(e.target.value)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%' }}
                   >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: '#60a5fa', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                          {item.category}
-                        </span>
-                        <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>
-                          {item.title}
-                        </h3>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontFamily: 'monospace' }}>
-                        網址: {item.youtubeUrl}
-                      </div>
-                      {item.description && (
-                        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
+                    <option value="個人聲音探索心得">個人聲音探索心得</option>
+                    <option value="青春之歌計畫">青春之歌計畫</option>
+                    <option value="人聲優化課程">人聲優化課程</option>
+                  </select>
+                </div>
 
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    曲目 / 作品名稱 *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="例如: 【聲音探索】青春之歌計畫 #01"
+                    value={mTitle}
+                    onChange={(e) => setMTitle(e.target.value)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%' }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    YouTube 連結 (URL) *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
+                    value={mYoutubeUrl}
+                    onChange={(e) => setMYoutubeUrl(e.target.value)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%' }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    作品簡介 / 心得紀錄 (選填)
+                  </label>
+                  <textarea
+                    placeholder="簡短寫下聲音錄製靈感或心得紀錄..."
+                    value={mDescription}
+                    onChange={(e) => setMDescription(e.target.value)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    排序權重 (Order, 越小越前面)
+                  </label>
+                  <input
+                    type="number"
+                    value={mOrder}
+                    onChange={(e) => setMOrder(parseInt(e.target.value) || 0)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.5rem' }}>
+                  <button
+                    type="submit"
+                    className="museum-btn"
+                    disabled={creatingMusic}
+                    style={{ flex: 1 }}
+                  >
+                    {creatingMusic ? '儲存中...' : (editingMusicId ? '更新聲音作品' : '確認發布至聲音探索')}
+                  </button>
+                  {editingMusicId && (
                     <button
-                      onClick={() => handleDeleteMusic(item.id)}
+                      type="button"
+                      onClick={handleCancelMusicEdit}
                       style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        color: '#ef4444',
-                        padding: '0.4rem 0.8rem',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'var(--text-secondary)',
+                        padding: '0.5rem 1rem',
                         borderRadius: '2px',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.3rem'
+                        cursor: 'pointer'
                       }}
                     >
-                      <Trash2 size={14} />
-                      刪除
+                      <X size={16} />
                     </button>
-                  </div>
-                ))}
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* 右欄：聲音探索作品列表 */}
+            <div className="glass-panel" style={{ padding: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                  聲音探索作品列表 ({
+                    musicItems.filter(item => ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '')).length
+                  })
+                </h2>
+                <button onClick={fetchMusicItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+                  <RefreshCw size={14} /> 重整
+                </button>
               </div>
-            )}
+
+              {musicItems.filter(item => soundSubCategoryFilter === '全部分類' ? ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '') : item.category === soundSubCategoryFilter).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                  <Music size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p style={{ letterSpacing: '1px' }}>目前【{soundSubCategoryFilter}】標籤尚無作品，請於左側表單新增。</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {musicItems
+                    .filter(item => soundSubCategoryFilter === '全部分類' ? ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '') : item.category === soundSubCategoryFilter)
+                    .map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: 'rgba(0,0,0,0.4)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        padding: '1.2rem',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: '1rem',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                            {item.category || '個人聲音探索心得'}
+                          </span>
+                          <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>
+                            {item.title}
+                          </h3>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontFamily: 'monospace' }}>
+                          網址: {item.youtubeUrl}
+                        </div>
+                        {item.description && (
+                          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handleEditMusic(item)}
+                          style={{
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                            color: '#60a5fa',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '2px',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          <Edit3 size={14} /> 編輯
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMusic(item.id)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#ef4444',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '2px',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          <Trash2 size={14} /> 刪除
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Tab 7: Other Writings Editor */}
-      {activeTab === 'writings' && (
-        <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
-          {/* 左欄：文章編輯器表單 */}
-          <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
-                <Edit3 size={20} />
-                {editingWritingId ? '編輯文章創作' : '發布新文章創作'}
-              </h2>
-              {editingWritingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingWritingId(null);
-                    setWTitle('');
-                    setWExcerpt('');
-                    setWContent('');
-                    setWOrder(0);
-                  }}
-                  style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
-                >
-                  <X size={14} /> 取消編輯
-                </button>
-              )}
-            </div>
-
-            {writingFormError && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                {writingFormError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateOrUpdateWriting} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  文章 / 創作標題 *
-                </label>
-                <input
-                  type="text"
-                  placeholder="例如: 【創作 Lab】時間與聲響的交界——深夜散文手記"
-                  value={wTitle}
-                  onChange={(e) => setWTitle(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  分類標籤
-                </label>
-                <input
-                  type="text"
-                  placeholder="預設: 其他文字 (或自訂如: 隨筆, 散文, 新詩)"
-                  value={wCategory}
-                  onChange={(e) => setWCategory(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  摘要說明 / 引言 (選填)
-                </label>
-                <input
-                  type="text"
-                  placeholder="顯示於前台卡片上的簡短摘要..."
-                  value={wExcerpt}
-                  onChange={(e) => setWExcerpt(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  完整文章內文 * (支援多段落)
-                </label>
-                <textarea
-                  placeholder="在這裡撰寫完整的文字內容，支援分段與多行文字..."
-                  value={wContent}
-                  onChange={(e) => setWContent(e.target.value)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%', minHeight: '220px', resize: 'vertical', lineHeight: 1.6 }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  排序權重 (Order, 越小越前面)
-                </label>
-                <input
-                  type="number"
-                  value={wOrder}
-                  onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
-                  className="museum-input"
-                  style={{ maxWidth: '100%' }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="museum-btn"
-                disabled={creatingWriting}
-                style={{ marginTop: '0.5rem', width: '100%' }}
-              >
-                {creatingWriting ? '儲存中...' : editingWritingId ? '儲存文章更新' : '發布至創作 Lab (其他文字)'}
-              </button>
-            </form>
+      {/* Tab 7: Creation Lab (創作 Lab 專用後台頁籤) */}
+      {activeTab === 'creation_lab' && (
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* 創作 Lab 子分類切換 */}
+          <div className="glass-panel" style={{ padding: '1.2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              創作 Lab 類別管理：
+            </span>
+            <button
+              onClick={() => {
+                setCreationLabSubTab('music');
+                setMCategory('音樂');
+              }}
+              style={{
+                padding: '0.5rem 1.5rem',
+                borderRadius: '4px',
+                border: '1px solid',
+                borderColor: creationLabSubTab === 'music' ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                background: creationLabSubTab === 'music' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                color: creationLabSubTab === 'music' ? '#fff' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <Music size={16} /> 音樂創作 (YouTube 嵌入)
+            </button>
+            <button
+              onClick={() => setCreationLabSubTab('writings')}
+              style={{
+                padding: '0.5rem 1.5rem',
+                borderRadius: '4px',
+                border: '1px solid',
+                borderColor: creationLabSubTab === 'writings' ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                background: creationLabSubTab === 'writings' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                color: creationLabSubTab === 'writings' ? '#fff' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <Edit3 size={16} /> 其他文字創作 (Writings)
+            </button>
           </div>
 
-          {/* 右欄：已發布文章創作列表 */}
-          <div className="glass-panel" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-                其他文字創作列表 ({writingsItems.length})
-              </h2>
-              <button onClick={fetchWritingsItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-                <RefreshCw size={14} /> 重整
-              </button>
-            </div>
+          {/* 創作 Lab - 音樂創作 */}
+          {creationLabSubTab === 'music' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
+              {/* 左欄：新增 / 編輯 Lab 音樂 */}
+              <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
+                <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                  {editingMusicId ? <Edit3 size={20} /> : <Plus size={20} />}
+                  {editingMusicId ? '編輯 Lab 音樂創作' : '發布至創作 Lab - 音樂'}
+                </h2>
 
-            {writingsItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <Edit3 size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                <p style={{ letterSpacing: '1px' }}>目前尚無其他文字創作，請於左側撰寫並發布。</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                {writingsItems.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: 'rgba(0,0,0,0.4)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      padding: '1.4rem',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: '1.5rem',
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: '#a855f7', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                          {item.category}
-                        </span>
-                        <h3 style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 600, fontFamily: 'var(--font-noto-serif)' }}>
-                          {item.title}
-                        </h3>
-                      </div>
-                      {item.excerpt && (
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '0.8rem', lineHeight: 1.5 }}>
-                          {item.excerpt}
-                        </p>
-                      )}
-                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.03)', padding: '0.8rem 1rem', borderRadius: '4px', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
-                        {item.content}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                      <button
-                        onClick={() => handleEditWriting(item)}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          color: '#fff',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '2px',
-                          cursor: 'pointer',
-                          fontSize: '0.8rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.3rem'
-                        }}
-                      >
-                        <Edit3 size={14} />
-                        編輯
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteWriting(item.id)}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          border: '1px solid rgba(239, 68, 68, 0.2)',
-                          color: '#ef4444',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '2px',
-                          cursor: 'pointer',
-                          fontSize: '0.8rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.3rem'
-                        }}
-                      >
-                        <Trash2 size={14} />
-                        刪除
-                      </button>
-                    </div>
+                {musicFormError && (
+                  <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    {musicFormError}
                   </div>
-                ))}
+                )}
+
+                <form onSubmit={handleSaveMusic} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      曲目 / 創作名稱 *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例如: 【創作 Lab】夜間聲響實驗 #01"
+                      value={mTitle}
+                      onChange={(e) => setMTitle(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      YouTube 連結 (URL) *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
+                      value={mYoutubeUrl}
+                      onChange={(e) => setMYoutubeUrl(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      曲目簡介 / 創作心得 (選填)
+                    </label>
+                    <textarea
+                      placeholder="簡短寫下音樂創作靈感或紀錄..."
+                      value={mDescription}
+                      onChange={(e) => setMDescription(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      排序權重 (Order, 越小越前面)
+                    </label>
+                    <input
+                      type="number"
+                      value={mOrder}
+                      onChange={(e) => setMOrder(parseInt(e.target.value) || 0)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.5rem' }}>
+                    <button
+                      type="submit"
+                      className="museum-btn"
+                      disabled={creatingMusic}
+                      style={{ flex: 1 }}
+                    >
+                      {creatingMusic ? '儲存中...' : (editingMusicId ? '更新 Lab 音樂卡片' : '發布至創作 Lab (音樂)')}
+                    </button>
+                    {editingMusicId && (
+                      <button
+                        type="button"
+                        onClick={handleCancelMusicEdit}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          color: 'var(--text-secondary)',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '2px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                </form>
               </div>
-            )}
-          </div>
+
+              {/* 右欄：Lab 音樂作品列表 */}
+              <div className="glass-panel" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                    創作 Lab - 音樂列表 ({musicItems.filter(item => item.category === '音樂' || !item.category).length})
+                  </h2>
+                  <button onClick={fetchMusicItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+                    <RefreshCw size={14} /> 重整
+                  </button>
+                </div>
+
+                {musicItems.filter(item => item.category === '音樂' || !item.category).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <Music size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p style={{ letterSpacing: '1px' }}>目前創作 Lab 尚無音樂作品，請於左側貼上 YouTube 網址發布。</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {musicItems
+                      .filter(item => item.category === '音樂' || !item.category)
+                      .map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          background: 'rgba(0,0,0,0.4)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          padding: '1.2rem',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          gap: '1rem',
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+                            <span style={{ fontSize: '0.75rem', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                              創作 Lab - 音樂
+                            </span>
+                            <h3 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>
+                              {item.title}
+                            </h3>
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', fontFamily: 'monospace' }}>
+                            網址: {item.youtubeUrl}
+                          </div>
+                          {item.description && (
+                            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleEditMusic(item)}
+                            style={{
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              border: '1px solid rgba(59, 130, 246, 0.2)',
+                              color: '#60a5fa',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '2px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            <Edit3 size={14} /> 編輯
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMusic(item.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.2)',
+                              color: '#ef4444',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '2px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            <Trash2 size={14} /> 刪除
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 創作 Lab - 其他文字創作 */}
+          {creationLabSubTab === 'writings' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
+              {/* 左欄：文章編輯器表單 */}
+              <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.2rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                    <Edit3 size={20} />
+                    {editingWritingId ? '編輯文章創作' : '發布新文章創作'}
+                  </h2>
+                  {editingWritingId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingWritingId(null);
+                        setWTitle('');
+                        setWExcerpt('');
+                        setWContent('');
+                        setWOrder(0);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                    >
+                      <X size={14} /> 取消編輯
+                    </button>
+                  )}
+                </div>
+
+                {writingFormError && (
+                  <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                    {writingFormError}
+                  </div>
+                )}
+
+                <form onSubmit={handleCreateOrUpdateWriting} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      文章 / 創作標題 *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例如: 【創作 Lab】時間與聲響的交界——深夜散文手記"
+                      value={wTitle}
+                      onChange={(e) => setWTitle(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      分類標籤
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="預設: 其他文字 (或自訂如: 隨筆, 散文, 新詩)"
+                      value={wCategory}
+                      onChange={(e) => setWCategory(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      摘要說明 / 引言 (選填)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="顯示於前台卡片上的簡短摘要..."
+                      value={wExcerpt}
+                      onChange={(e) => setWExcerpt(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      完整文章內文 * (支援多段落)
+                    </label>
+                    <textarea
+                      placeholder="在這裡撰寫完整的文字內容，支援分段與多行文字..."
+                      value={wContent}
+                      onChange={(e) => setWContent(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%', minHeight: '220px', resize: 'vertical', lineHeight: 1.6 }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      排序權重 (Order, 越小越前面)
+                    </label>
+                    <input
+                      type="number"
+                      value={wOrder}
+                      onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="museum-btn"
+                    disabled={creatingWriting}
+                    style={{ marginTop: '0.5rem', width: '100%' }}
+                  >
+                    {creatingWriting ? '儲存中...' : editingWritingId ? '儲存文章更新' : '發布至創作 Lab (其他文字)'}
+                  </button>
+                </form>
+              </div>
+
+              {/* 右欄：已發布文章創作列表 */}
+              <div className="glass-panel" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                    其他文字創作列表 ({writingsItems.length})
+                  </h2>
+                  <button onClick={fetchWritingsItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+                    <RefreshCw size={14} /> 重整
+                  </button>
+                </div>
+
+                {writingsItems.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <Edit3 size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p style={{ letterSpacing: '1px' }}>目前尚無其他文字創作，請於左側撰寫並發布。</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                    {writingsItems.map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          background: 'rgba(0,0,0,0.4)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          padding: '1.4rem',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          gap: '1.5rem',
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+                            <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', color: '#a855f7', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                              {item.category}
+                            </span>
+                            <h3 style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 600, fontFamily: 'var(--font-noto-serif)' }}>
+                              {item.title}
+                            </h3>
+                          </div>
+                          {item.excerpt && (
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '0.8rem', lineHeight: 1.5 }}>
+                              {item.excerpt}
+                            </p>
+                          )}
+                          <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.03)', padding: '0.8rem 1rem', borderRadius: '4px', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+                            {item.content}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                          <button
+                            onClick={() => handleEditWriting(item)}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.1)',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              color: '#fff',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '2px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            <Edit3 size={14} />
+                            編輯
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteWriting(item.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.2)',
+                              color: '#ef4444',
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '2px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            <Trash2 size={14} />
+                            刪除
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
