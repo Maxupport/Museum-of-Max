@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2 } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, Youtube } from 'lucide-react';
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { EXHIBITS } from '@/lib/constants';
+import { EXHIBITS, YOUTH_SONGS_YOUTUBE_CHANNEL } from '@/lib/constants';
 import { MOCK_NOVELS } from '@/utils/notionNovels';
 import { getYouTubeEmbedUrl } from '@/utils/youtube';
 
@@ -728,18 +728,104 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           
           {/* 音樂與聲音探尋 YouTube 影片嵌入網格 */}
           {(exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) ? (
-            musicLoading ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂與聲音作品載入中...</div>
-            ) : filteredMusicItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>
-                  {activeSubCategory
-                    ? `目前【${activeSubCategory}】標籤下尚無作品，策展人可於【策展人後台】指定此標籤新增 YouTube 音樂嵌入。`
-                    : '目前尚無音樂與聲音作品，策展人可於後台貼上 YouTube 連結新增。'}
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
+            <>
+              {/* 青春之歌計畫專屬 YouTube 頻道 Banner */}
+              {activeSubCategory === '青春之歌計畫' && (
+                <div 
+                  className="glass-panel" 
+                  style={{ 
+                    marginBottom: '2.5rem', 
+                    padding: '1.8rem 2.2rem', 
+                    borderRadius: '8px', 
+                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    boxShadow: '0 8px 32px rgba(239, 68, 68, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1.5rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 0, 0, 0.18)',
+                      border: '1px solid rgba(255, 0, 0, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ff4d4d',
+                      boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)',
+                      flexShrink: 0
+                    }}>
+                      <Youtube size={28} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#ff6b6b', padding: '0.15rem 0.6rem', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.4)', letterSpacing: '1px' }}>
+                          YOUTUBE CHANNEL
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 600, fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
+                        {YOUTH_SONGS_YOUTUBE_CHANNEL.name}
+                      </h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.3rem', margin: 0 }}>
+                        {YOUTH_SONGS_YOUTUBE_CHANNEL.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <a
+                    href={YOUTH_SONGS_YOUTUBE_CHANNEL.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      padding: '0.75rem 1.6rem',
+                      borderRadius: '6px',
+                      background: '#ff0000',
+                      color: '#ffffff',
+                      fontWeight: 600,
+                      fontSize: '0.92rem',
+                      textDecoration: 'none',
+                      boxShadow: '0 4px 15px rgba(255, 0, 0, 0.4)',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 0, 0, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 0, 0, 0.4)';
+                    }}
+                  >
+                    <Youtube size={18} />
+                    <span>造訪 YouTube 頻道</span>
+                    <ExternalLink size={15} />
+                  </a>
+                </div>
+              )}
+
+              {musicLoading ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂與聲音作品載入中...</div>
+              ) : filteredMusicItems.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                  <p style={{ letterSpacing: '1px' }}>
+                    {activeSubCategory
+                      ? `目前【${activeSubCategory}】標籤下尚無作品，策展人可於【策展人後台】指定此標籤新增 YouTube 音樂嵌入。`
+                      : '目前尚無音樂與聲音作品，策展人可於後台貼上 YouTube 連結新增。'}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
+            </>
+          )
                 {filteredMusicItems.map((item) => {
                   const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
                   return (

@@ -93,3 +93,10 @@ export const PASSCODE_PERM_KEYS = [
   'creation_lab_novel',
   'communication',
 ];
+
+export const YOUTH_SONGS_YOUTUBE_CHANNEL = {
+  name: '青春之歌計畫 Youth Songs Channel',
+  url: 'https://www.youtube.com',
+  description: '歡迎訂閱並觀看「青春之歌計畫」最新音樂創作與原創影片'
+};
+
