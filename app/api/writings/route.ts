@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       data: {
         exhibitId: exhibitId || 'creation_lab',
         title: title.trim(),
-        category: category || '其他文字',
+        category: category || 'FB文章備份',
         excerpt: excerpt ? excerpt.trim() : null,
         content: content.trim(),
         youtubeUrl: youtubeUrl ? youtubeUrl.trim() : null,

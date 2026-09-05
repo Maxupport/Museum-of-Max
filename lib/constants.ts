@@ -57,8 +57,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
     title: '創作 Lab',
     subtitle: 'Creation Lab',
     color: 'var(--theme-possibility, #a855f7)',
-    desc: '小說連載 / 音樂創作與探尋 / 其他文字創作',
-    subcategories: ['小說', '音樂', '其他文字'],
+    desc: '小說連載 / FB文章備份',
+    subcategories: ['小說', 'FB文章備份'],
     hasBlog: true,
   },
   communication: {

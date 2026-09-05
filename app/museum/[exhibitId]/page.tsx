@@ -96,7 +96,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   const [musicItems, setMusicItems] = useState<MusicItem[]>([]);
   const [musicLoading, setMusicLoading] = useState(false);
 
-  // Writings Items state (for creation_lab 其他文字 subcategory)
+  // Writings Items state (for creation_lab FB文章備份 subcategory)
   const [writingsItems, setWritingsItems] = useState<WritingsItem[]>([]);
   const [writingsLoading, setWritingsLoading] = useState(false);
 
@@ -968,12 +968,12 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 </div>
               )}
             </>
-          ) : exhibitId === 'creation_lab' && activeSubCategory === '其他文字' ? (
+          ) : exhibitId === 'creation_lab' && activeSubCategory === 'FB文章備份' ? (
             writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : writingsItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前尚無其他文字創作，策展人可於後台編輯器發布。</p>
+                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無備份文章，策展人可於後台【全站文章發布編輯器】發布。</p>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
@@ -981,7 +981,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '2.2rem', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        {item.category || '其他文字'}
+                        {item.category || 'FB文章備份'}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                         {item.createdAt && (

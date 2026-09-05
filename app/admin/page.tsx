@@ -393,7 +393,7 @@ export default function AdminDashboardPage() {
     setEditingWritingId(item.id);
     setWExhibitId(item.exhibitId || 'creation_lab');
     setWTitle(item.title);
-    setWCategory(item.category || '其他文字');
+    setWCategory(item.category || 'FB文章備份');
     setWExcerpt(item.excerpt || '');
     setWContent(item.content);
     setWYoutubeUrl(item.youtubeUrl || '');
@@ -2372,7 +2372,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.3s ease',
               }}
             >
-              <Edit3 size={16} /> 其他文字創作 (Writings)
+              <Edit3 size={16} /> FB文章備份 (Writings)
             </button>
           </div>
 
@@ -2575,7 +2575,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* 創作 Lab - 其他文字創作 */}
+          {/* 創作 Lab - FB文章備份 */}
           {creationLabSubTab === 'writings' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
               {/* 左欄：文章編輯器表單 */}
@@ -2583,7 +2583,7 @@ export default function AdminDashboardPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.2rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
                     <Edit3 size={20} />
-                    {editingWritingId ? '編輯文章創作' : '發布新文章創作'}
+                    {editingWritingId ? '編輯 FB 文章備份' : '發布 FB 文章備份'}
                   </h2>
                   {editingWritingId && (
                     <button
@@ -2615,7 +2615,7 @@ export default function AdminDashboardPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="例如: 【創作 Lab】時間與聲響的交界——深夜散文手記"
+                      placeholder="例如: FB 隨筆備份：寫在無數個深夜之後的思考"
                       value={wTitle}
                       onChange={(e) => setWTitle(e.target.value)}
                       className="museum-input"
@@ -2630,7 +2630,7 @@ export default function AdminDashboardPage() {
                     </label>
                     <input
                       type="text"
-                      placeholder="預設: 其他文字 (或自訂如: 隨筆, 散文, 新詩)"
+                      placeholder="預設: FB文章備份"
                       value={wCategory}
                       onChange={(e) => setWCategory(e.target.value)}
                       className="museum-input"
@@ -2657,7 +2657,7 @@ export default function AdminDashboardPage() {
                       完整文章內文 * (支援多段落)
                     </label>
                     <textarea
-                      placeholder="在這裡撰寫完整的文字內容，支援分段與多行文字..."
+                      placeholder="在這裡撰寫或貼上完整的文字內容，支援分段與多行文字..."
                       value={wContent}
                       onChange={(e) => setWContent(e.target.value)}
                       className="museum-input"
@@ -2685,16 +2685,16 @@ export default function AdminDashboardPage() {
                     disabled={creatingWriting}
                     style={{ marginTop: '0.5rem', width: '100%' }}
                   >
-                    {creatingWriting ? '儲存中...' : editingWritingId ? '儲存文章更新' : '發布至創作 Lab (其他文字)'}
+                    {creatingWriting ? '儲存中...' : editingWritingId ? '儲存文章更新' : '發布至 FB文章備份'}
                   </button>
                 </form>
               </div>
 
-              {/* 右欄：已發布文章創作列表 */}
+              {/* 右欄：已發布 FB 文章備份列表 */}
               <div className="glass-panel" style={{ padding: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-                    其他文字創作列表 ({writingsItems.length})
+                    FB文章備份列表 ({writingsItems.length})
                   </h2>
                   <button onClick={fetchWritingsItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
                     <RefreshCw size={14} /> 重整
@@ -2704,7 +2704,7 @@ export default function AdminDashboardPage() {
                 {writingsItems.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
                     <Edit3 size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                    <p style={{ letterSpacing: '1px' }}>目前尚無其他文字創作，請於左側撰寫並發布。</p>
+                    <p style={{ letterSpacing: '1px' }}>目前尚無 FB 文章備份，請於左側撰寫或貼上文章後發布。</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -2856,7 +2856,7 @@ export default function AdminDashboardPage() {
                         setWExhibitId(newEx);
                         if (newEx === 'finance_insurance') setWCategory('投資');
                         else if (newEx === 'sound') setWCategory('個人聲音探索心得');
-                        else if (newEx === 'creation_lab') setWCategory('其他文字');
+                        else if (newEx === 'creation_lab') setWCategory('FB文章備份');
                         else if (newEx === 'communication') setWCategory('Maxupport 生涯擺渡');
                       }}
                       className="museum-input"
@@ -2893,10 +2893,8 @@ export default function AdminDashboardPage() {
                       )}
                       {wExhibitId === 'creation_lab' && (
                         <>
-                          <option value="其他文字">其他文字</option>
-                          <option value="隨筆">隨筆</option>
-                          <option value="散文">散文</option>
-                          <option value="新詩">新詩</option>
+                          <option value="FB文章備份">FB文章備份</option>
+                          <option value="小說">小說</option>
                         </>
                       )}
                       {wExhibitId === 'communication' && (
