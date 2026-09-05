@@ -54,6 +54,9 @@ interface WritingsItem {
   exhibitId?: string;
   title: string;
   category: string;
+  topic?: string | null;
+  fbUrl?: string | null;
+  fbDate?: string | null;
   excerpt: string | null;
   content: string;
   youtubeUrl?: string | null;
@@ -995,9 +998,36 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       </div>
                     </div>
 
-                    <h3 style={{ color: '#fff', fontSize: '1.4rem', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
+                    <h3 style={{ color: '#fff', fontSize: '1.4rem', marginBottom: '0.4rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
                       {item.title}
                     </h3>
+
+                    {/* 標題下方 3 個標籤: 文章主題, FB 上線時間, FB 連結 */}
+                    {(item.topic || item.fbDate || item.fbUrl) && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem', marginBottom: '0.8rem' }}>
+                        {item.topic && (
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.2rem 0.6rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            📌 主題：{item.topic}
+                          </span>
+                        )}
+                        {item.fbDate && (
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.12)', padding: '0.2rem 0.6rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                            📅 FB發布：{item.fbDate}
+                          </span>
+                        )}
+                        {item.fbUrl && (
+                          <a
+                            href={item.fbUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontSize: '0.75rem', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', padding: '0.2rem 0.6rem', borderRadius: '4px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                          >
+                            🔗 FB 連結
+                          </a>
+                        )}
+                      </div>
+                    )}
 
                     {item.excerpt && (
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1rem', lineHeight: 1.6 }}>

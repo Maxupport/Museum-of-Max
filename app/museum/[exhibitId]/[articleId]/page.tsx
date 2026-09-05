@@ -51,6 +51,9 @@ export default function ArticleDetailPage({
     id: string;
     title: string;
     category: string;
+    topic?: string | null;
+    fbUrl?: string | null;
+    fbDate?: string | null;
     excerpt?: string | null;
     content: string;
     youtubeUrl?: string | null;
@@ -284,11 +287,37 @@ export default function ArticleDetailPage({
             color: '#fff',
             fontFamily: 'var(--font-noto-serif)',
             lineHeight: 1.3,
-            marginBottom: '1.5rem',
+            marginBottom: '1rem',
           }}
         >
           {articleData.title}
         </h1>
+
+        {/* 標題下方 3 個標籤: 文章主題, FB 上線時間, FB 連結 */}
+        {(dbArticle?.topic || dbArticle?.fbDate || dbArticle?.fbUrl) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+            {dbArticle.topic && (
+              <span style={{ fontSize: '0.82rem', background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                📌 主題：{dbArticle.topic}
+              </span>
+            )}
+            {dbArticle.fbDate && (
+              <span style={{ fontSize: '0.82rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.15)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                📅 FB 上線時間：{dbArticle.fbDate}
+              </span>
+            )}
+            {dbArticle.fbUrl && (
+              <a
+                href={dbArticle.fbUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '0.82rem', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', padding: '0.25rem 0.75rem', borderRadius: '4px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                🔗 開啟 FB 原文
+              </a>
+            )}
+          </div>
+        )}
 
         <div
           style={{

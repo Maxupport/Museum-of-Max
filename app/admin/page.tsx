@@ -64,6 +64,9 @@ interface WritingsItemData {
   exhibitId?: string;
   title: string;
   category: string;
+  topic?: string | null;
+  fbUrl?: string | null;
+  fbDate?: string | null;
   excerpt: string | null;
   content: string;
   youtubeUrl?: string | null;
@@ -325,6 +328,9 @@ export default function AdminDashboardPage() {
   const [wExhibitId, setWExhibitId] = useState('finance_insurance');
   const [wCategory, setWCategory] = useState('投資');
   const [wTitle, setWTitle] = useState('');
+  const [wTopic, setWTopic] = useState('');
+  const [wFbUrl, setWFbUrl] = useState('');
+  const [wFbDate, setWFbDate] = useState('');
   const [wExcerpt, setWExcerpt] = useState('');
   const [wContent, setWContent] = useState('');
   const [wYoutubeUrl, setWYoutubeUrl] = useState('');
@@ -364,6 +370,9 @@ export default function AdminDashboardPage() {
           exhibitId: wExhibitId,
           title: wTitle,
           category: wCategory,
+          topic: wTopic,
+          fbUrl: wFbUrl,
+          fbDate: wFbDate,
           excerpt: wExcerpt,
           content: wContent,
           youtubeUrl: wYoutubeUrl,
@@ -373,6 +382,9 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.ok) {
         setWTitle('');
+        setWTopic('');
+        setWFbUrl('');
+        setWFbDate('');
         setWExcerpt('');
         setWContent('');
         setWYoutubeUrl('');
@@ -394,6 +406,9 @@ export default function AdminDashboardPage() {
     setWExhibitId(item.exhibitId || 'creation_lab');
     setWTitle(item.title);
     setWCategory(item.category || 'FB文章備份');
+    setWTopic(item.topic || '');
+    setWFbUrl(item.fbUrl || '');
+    setWFbDate(item.fbDate || '');
     setWExcerpt(item.excerpt || '');
     setWContent(item.content);
     setWYoutubeUrl(item.youtubeUrl || '');
@@ -403,6 +418,9 @@ export default function AdminDashboardPage() {
   const handleCancelWritingEdit = () => {
     setEditingWritingId(null);
     setWTitle('');
+    setWTopic('');
+    setWFbUrl('');
+    setWFbDate('');
     setWExcerpt('');
     setWContent('');
     setWYoutubeUrl('');
@@ -2640,6 +2658,50 @@ export default function AdminDashboardPage() {
 
                   <div>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      文章主題 (選填)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例如: 職涯筆記 / 保險隨想 / 聲音探索"
+                      value={wTopic}
+                      onChange={(e) => setWTopic(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        FB 上線時間 (選填)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例如: 2024-05-20"
+                        value={wFbDate}
+                        onChange={(e) => setWFbDate(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        FB 原文連結 (選填)
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://facebook.com/..."
+                        value={wFbUrl}
+                        onChange={(e) => setWFbUrl(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
                       摘要說明 / 引言 (選填)
                     </label>
                     <input
@@ -2731,6 +2793,25 @@ export default function AdminDashboardPage() {
                               {item.title}
                             </h3>
                           </div>
+                          {(item.topic || item.fbDate || item.fbUrl) && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem', fontSize: '0.75rem' }}>
+                              {item.topic && (
+                                <span style={{ background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
+                                  📌 {item.topic}
+                                </span>
+                              )}
+                              {item.fbDate && (
+                                <span style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
+                                  📅 FB: {item.fbDate}
+                                </span>
+                              )}
+                              {item.fbUrl && (
+                                <a href={item.fbUrl} target="_blank" rel="noopener noreferrer" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', padding: '0.15rem 0.5rem', borderRadius: '3px', textDecoration: 'none' }}>
+                                  🔗 原文連結
+                                </a>
+                              )}
+                            </div>
+                          )}
                           {item.excerpt && (
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '0.8rem', lineHeight: 1.5 }}>
                               {item.excerpt}
@@ -2921,6 +3002,54 @@ export default function AdminDashboardPage() {
                     required
                   />
                 </div>
+
+                {wExhibitId === 'creation_lab' && (
+                  <>
+                    <div>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        文章主題 (選填)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例如: 職涯筆記 / 保險隨想 / 聲音探索"
+                        value={wTopic}
+                        onChange={(e) => setWTopic(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                          FB 上線時間 (選填)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="例如: 2024-05-20"
+                          value={wFbDate}
+                          onChange={(e) => setWFbDate(e.target.value)}
+                          className="museum-input"
+                          style={{ maxWidth: '100%' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                          FB 原文連結 (選填)
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://facebook.com/..."
+                          value={wFbUrl}
+                          onChange={(e) => setWFbUrl(e.target.value)}
+                          className="museum-input"
+                          style={{ maxWidth: '100%' }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
@@ -3143,6 +3272,26 @@ export default function AdminDashboardPage() {
                               {item.title}
                             </h3>
                           </div>
+
+                          {(item.topic || item.fbDate || item.fbUrl) && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem', fontSize: '0.75rem' }}>
+                              {item.topic && (
+                                <span style={{ background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
+                                  📌 主題：{item.topic}
+                                </span>
+                              )}
+                              {item.fbDate && (
+                                <span style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
+                                  📅 FB發布：{item.fbDate}
+                                </span>
+                              )}
+                              {item.fbUrl && (
+                                <a href={item.fbUrl} target="_blank" rel="noopener noreferrer" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', padding: '0.15rem 0.5rem', borderRadius: '3px', textDecoration: 'none' }}>
+                                  🔗 原文連結
+                                </a>
+                              )}
+                            </div>
+                          )}
 
                           {item.excerpt && (
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '0.8rem', lineHeight: 1.5 }}>

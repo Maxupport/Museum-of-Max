@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { exhibitId, title, category, excerpt, content, youtubeUrl, order } = body;
+    const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order } = body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json({ ok: false, error: '請輸入文章標題' }, { status: 400 });
@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
         exhibitId: exhibitId || 'creation_lab',
         title: title.trim(),
         category: category || 'FB文章備份',
+        topic: topic ? topic.trim() : null,
+        fbUrl: fbUrl ? fbUrl.trim() : null,
+        fbDate: fbDate ? fbDate.trim() : null,
         excerpt: excerpt ? excerpt.trim() : null,
         content: content.trim(),
         youtubeUrl: youtubeUrl ? youtubeUrl.trim() : null,
