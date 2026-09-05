@@ -591,14 +591,26 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
                     {/* 兩張照片空間之二：個人工作照 / 現場照片 (Work Photo) */}
                     {item.photoUrl ? (
-                      <div style={{ margin: '1.2rem 0', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.12)', background: 'rgba(0, 0, 0, 0.3)' }}>
+                      <div
+                        style={{
+                          margin: '1.2rem auto',
+                          maxWidth: '520px',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          background: 'rgba(0, 0, 0, 0.45)',
+                          padding: '0.4rem',
+                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                        }}
+                      >
                         <img
                           src={item.photoUrl}
                           alt={`${item.company} 工作現場照片`}
                           style={{
                             width: '100%',
-                            maxHeight: '340px',
-                            objectFit: 'cover',
+                            maxHeight: '260px',
+                            objectFit: 'contain',
+                            borderRadius: '8px',
                             display: 'block',
                           }}
                         />
@@ -606,26 +618,27 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     ) : (
                       <div
                         style={{
-                          margin: '1.2rem 0',
-                          padding: '2.2rem 1rem',
-                          borderRadius: '8px',
+                          margin: '1.2rem auto',
+                          maxWidth: '520px',
+                          padding: '1.8rem 1rem',
+                          borderRadius: '12px',
                           border: '2px dashed rgba(245, 158, 11, 0.35)',
                           background: 'rgba(245, 158, 11, 0.03)',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '0.5rem',
+                          gap: '0.4rem',
                           color: 'rgba(245, 158, 11, 0.85)',
                           textAlign: 'center',
                         }}
                       >
-                        <ImageIcon size={30} style={{ opacity: 0.75 }} />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 500, letterSpacing: '1px' }}>
+                        <ImageIcon size={28} style={{ opacity: 0.75 }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '1px' }}>
                           📷 【工作現場 / 團體照片 預留位置】
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                          在【策展人後台】新增或編輯此歷程時，若上傳工作照片將會滿版展示於此處
+                        <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
+                          在【策展人後台】新增或編輯時上傳照片，將以縮小完整比例展示於此處
                         </span>
                       </div>
                     )}
