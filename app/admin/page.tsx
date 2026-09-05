@@ -864,7 +864,27 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setActiveTab('articles')}
+            style={{
+              background: activeTab === 'articles' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)',
+              border: activeTab === 'articles' ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.15)',
+              color: activeTab === 'articles' ? '#38bdf8' : '#fff',
+              padding: '0.5rem 1.2rem',
+              borderRadius: '2px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.85rem',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <BookOpen size={16} />
+            全站文章發布編輯器 ({writingsItems.length})
+          </button>
+
           <button 
             onClick={() => router.push('/museum')}
             className="museum-btn"
@@ -1022,26 +1042,6 @@ export default function AdminDashboardPage() {
           聲音探索 (Sound Exploration)
         </button>
 
-        <button
-          onClick={() => setActiveTab('articles')}
-          style={{
-            padding: '0.8rem 1.8rem',
-            background: activeTab === 'articles' ? 'rgba(255,255,255,0.08)' : 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'articles' ? '2px solid #38bdf8' : '2px solid transparent',
-            color: activeTab === 'articles' ? '#fff' : 'var(--text-secondary)',
-            fontSize: '0.95rem',
-            letterSpacing: '1px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            transition: 'all 0.3s ease'
-          }}
-        >
-          <BookOpen size={18} />
-          全站文章發布編輯器 ({writingsItems.length})
-        </button>
 
         <button
           onClick={() => setActiveTab('creation_lab')}
