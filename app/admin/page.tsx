@@ -2656,49 +2656,53 @@ export default function AdminDashboardPage() {
                     />
                   </div>
 
-                  <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                      文章主題 (選填)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="例如: 職涯筆記 / 保險隨想 / 聲音探索"
-                      value={wTopic}
-                      onChange={(e) => setWTopic(e.target.value)}
-                      className="museum-input"
-                      style={{ maxWidth: '100%' }}
-                    />
-                  </div>
+                  {wCategory === 'FB文章備份' && (
+                    <>
+                      <div>
+                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                          文章主題 (選填)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="例如: 職涯筆記 / 保險隨想 / 聲音探索"
+                          value={wTopic}
+                          onChange={(e) => setWTopic(e.target.value)}
+                          className="museum-input"
+                          style={{ maxWidth: '100%' }}
+                        />
+                      </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                        FB 上線時間 (選填)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="例如: 2024-05-20"
-                        value={wFbDate}
-                        onChange={(e) => setWFbDate(e.target.value)}
-                        className="museum-input"
-                        style={{ maxWidth: '100%' }}
-                      />
-                    </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                            FB 上線時間 (選填)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="例如: 2024-05-20"
+                            value={wFbDate}
+                            onChange={(e) => setWFbDate(e.target.value)}
+                            className="museum-input"
+                            style={{ maxWidth: '100%' }}
+                          />
+                        </div>
 
-                    <div>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                        FB 原文連結 (選填)
-                      </label>
-                      <input
-                        type="url"
-                        placeholder="https://facebook.com/..."
-                        value={wFbUrl}
-                        onChange={(e) => setWFbUrl(e.target.value)}
-                        className="museum-input"
-                        style={{ maxWidth: '100%' }}
-                      />
-                    </div>
-                  </div>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                            FB 原文連結 (選填)
+                          </label>
+                          <input
+                            type="url"
+                            placeholder="https://facebook.com/..."
+                            value={wFbUrl}
+                            onChange={(e) => setWFbUrl(e.target.value)}
+                            className="museum-input"
+                            style={{ maxWidth: '100%' }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
@@ -3003,7 +3007,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                {wExhibitId === 'creation_lab' && (
+                {wExhibitId === 'creation_lab' && wCategory === 'FB文章備份' && (
                   <>
                     <div>
                       <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
