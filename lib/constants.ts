@@ -95,8 +95,8 @@ export const PASSCODE_PERM_KEYS = [
 ];
 
 export const YOUTH_SONGS_YOUTUBE_CHANNEL = {
-  name: '青春之歌計畫 Youth Songs Channel',
-  url: 'https://www.youtube.com',
-  description: '歡迎訂閱並觀看「青春之歌計畫」最新音樂創作與原創影片'
+  name: '哼唱自己青春的歌 start from 1980',
+  url: 'https://www.youtube.com/@OLDSONGSCOVEREDstartFrom1980',
+  description: '歡迎訂閱「哼唱自己青春的歌 start from 1980」YouTube 頻道，聆聽更多經典青春回憶與音樂創作！'
 };
 

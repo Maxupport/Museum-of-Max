@@ -1,12 +1,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, Youtube } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2 } from 'lucide-react';
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { EXHIBITS, YOUTH_SONGS_YOUTUBE_CHANNEL } from '@/lib/constants';
 import { MOCK_NOVELS } from '@/utils/notionNovels';
 import { getYouTubeEmbedUrl } from '@/utils/youtube';
+
+const YoutubeIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+  </svg>
+);
 
 interface CareerItem {
   id: string;
@@ -761,7 +767,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)',
                       flexShrink: 0
                     }}>
-                      <Youtube size={28} />
+                      <YoutubeIcon size={28} />
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
@@ -805,7 +811,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 0, 0, 0.4)';
                     }}
                   >
-                    <Youtube size={18} />
+                    <YoutubeIcon size={18} />
                     <span>造訪 YouTube 頻道</span>
                     <ExternalLink size={15} />
                   </a>
@@ -824,48 +830,47 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
-            </>
-          )
-                {filteredMusicItems.map((item) => {
-                  const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
-                  return (
-                    <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '0', overflow: 'hidden', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>
-                      {/* 16:9 響應式 YouTube Player */}
-                      <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
-                        {embedUrl ? (
-                          <iframe
-                            src={embedUrl}
-                            title={item.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                          />
-                        ) : (
-                          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                            無效的影片網址
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{ padding: '1.5rem 1.8rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>{item.category || '音樂創作'}</span>
-                          {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none' }}>{formatTimestamp(item.createdAt)}</span>}
+                  {filteredMusicItems.map((item) => {
+                    const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
+                    return (
+                      <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '0', overflow: 'hidden', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>
+                        {/* 16:9 響應式 YouTube Player */}
+                        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
+                          {embedUrl ? (
+                            <iframe
+                              src={embedUrl}
+                              title={item.title}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                            />
+                          ) : (
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                              無效的影片網址
+                            </div>
+                          )}
                         </div>
-                        <h3 style={{ color: '#fff', fontSize: '1.25rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.6rem', lineHeight: 1.4 }}>
-                          {item.title}
-                        </h3>
-                        {item.description && (
-                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, marginTop: 'auto' }}>
-                            {item.description}
-                          </p>
-                        )}
+
+                        <div style={{ padding: '1.5rem 1.8rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>{item.category || '音樂創作'}</span>
+                            {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none' }}>{formatTimestamp(item.createdAt)}</span>}
+                          </div>
+                          <h3 style={{ color: '#fff', fontSize: '1.25rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.6rem', lineHeight: 1.4 }}>
+                            {item.title}
+                          </h3>
+                          {item.description && (
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, marginTop: 'auto' }}>
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : exhibitId === 'creation_lab' && activeSubCategory === '其他文字' ? (
             writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
