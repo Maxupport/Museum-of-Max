@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles } from 'lucide-react';
+import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 
 interface PasscodeItem {
@@ -2055,6 +2055,18 @@ export default function AdminDashboardPage() {
               );
             })}
           </div>
+
+          {soundSubCategoryFilter === '個人聲音探索心得' && (
+            <div style={{ background: 'rgba(236, 72, 153, 0.12)', border: '1px solid rgba(236, 72, 153, 0.35)', padding: '1.2rem 1.5rem', borderRadius: '4px', fontSize: '0.9rem', color: '#fff', lineHeight: 1.6 }}>
+              <div style={{ color: '#f472b6', fontWeight: 600, marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BookOpen size={18} />
+                <span>【個人聲音探索心得】Notion 文章架構說明</span>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.88rem' }}>
+                此子頁籤已調整為與 Notion 聯繫的文章架構！在選定此頁籤時，前台將呈現可包含圖文、照片與嵌入影片的完整 Notion 專題文章。如需新增或編輯影音卡片，請切換至【青春之歌計畫】或【人聲優化課程】標籤。
+              </p>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
             {/* 左欄：新增 / 編輯聲音探索作品 */}

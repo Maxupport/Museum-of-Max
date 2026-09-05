@@ -2,8 +2,9 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, BookOpen, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Share2, Check, Video, Image as ImageIcon } from 'lucide-react';
 import { EXHIBITS } from '@/lib/constants';
+import { getYouTubeEmbedUrl } from '@/utils/youtube';
 
 export default function ArticleDetailPage({
   params
@@ -46,8 +47,68 @@ export default function ArticleDetailPage({
     );
   }
 
-  // 模擬文章詳細資料 (未來由 Notion API 即時渲染內容)
-  const articleData = {
+  // 模擬文章詳細資料 (針對部落格與 Notion 文章專題即時渲染)
+  const isSoundMind = articleId.startsWith('sound-mind');
+
+  const articleData = isSoundMind ? {
+    id: articleId,
+    title: articleId === 'sound-mind-1'
+      ? '【個人聲音探索心得】從發聲到心靈：個人共鳴與身心對話記錄'
+      : articleId === 'sound-mind-2'
+      ? '【聲音靈感筆記】聲音質地優化與日常語調重塑'
+      : '【Notion 專題】聲音探索與音樂創作的雙向交會',
+    date: '2026-08-25',
+    readTime: '6 min read',
+    author: 'Maxupport Curator',
+    content: [
+      {
+        type: 'heading',
+        text: '一、前言：開啟個人聲音覺察之旅',
+      },
+      {
+        type: 'paragraph',
+        text: '聲音不僅是傳遞語意與文字的工具，更是個人情緒、氣場與內在狀態的直接延伸。在這次的個人聲音探索實驗中，我嘗試透過呼吸調整、發聲共鳴位移與日常對話記錄，重新認識屬於自己的真實聲響。',
+      },
+      {
+        type: 'quote',
+        text: '「每一次發聲，都是身心狀態最誠實的鏡像反映。」',
+      },
+      {
+        type: 'heading',
+        text: '二、圖文紀錄：共鳴腔體與呼吸控氣訓練',
+      },
+      {
+        type: 'paragraph',
+        text: '透過胸腔與鼻腔共鳴的調控，能顯著提升語調的圓潤度與穩定度。以下為聲音訓練過程中的現場空間與感官覺察紀錄：',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80',
+        caption: '圖 1：聲音探索實驗室與發聲測試設備記錄',
+      },
+      {
+        type: 'heading',
+        text: '三、影音範例與精選段落演示',
+      },
+      {
+        type: 'paragraph',
+        text: '下方為聲音探索練習時錄製的影音段落，展示語調層次與氣息銜接的微幅轉折：',
+      },
+      {
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        caption: '影片 1：個人聲音共鳴與朗讀語調測試範例',
+      },
+      {
+        type: 'heading',
+        text: '四、結語與 Notion 專題同步規劃',
+      },
+      {
+        type: 'paragraph',
+        text: '本專區未來將持續與 Notion 資料庫即時連動，隨時補充全新的聲音探索日記、圖文紀錄與影音音軌。',
+      },
+    ],
+  } : {
     id: articleId,
     title: `【${exhibit.title}】實務策略洞察與跨界架構`,
     date: '2026-08-20',
@@ -228,6 +289,58 @@ export default function ArticleDetailPage({
               >
                 {block.text}
               </blockquote>
+            );
+          }
+
+          if (block.type === 'image' && block.url) {
+            return (
+              <figure key={i} style={{ margin: '2.5rem 0' }}>
+                <img
+                  src={block.url}
+                  alt={block.caption || 'Notion 文章圖片紀錄'}
+                  style={{
+                    width: '100%',
+                    maxHeight: '480px',
+                    objectFit: 'cover',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+                  }}
+                />
+                {block.caption && (
+                  <figcaption style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
+                    📷 {block.caption}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          }
+
+          if (block.type === 'video' && block.url) {
+            const embedUrl = getYouTubeEmbedUrl(block.url);
+            return (
+              <figure key={i} style={{ margin: '2.5rem 0' }}>
+                <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  {embedUrl ? (
+                    <iframe
+                      src={embedUrl}
+                      title={block.caption || 'Notion 嵌入影片範例'}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                    />
+                  ) : (
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                      無效的影片網址
+                    </div>
+                  )}
+                </div>
+                {block.caption && (
+                  <figcaption style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
+                    🎬 {block.caption}
+                  </figcaption>
+                )}
+              </figure>
             );
           }
 
