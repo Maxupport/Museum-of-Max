@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const exhibitId = searchParams.get('exhibitId');
+    const category = searchParams.get('category');
+
+    const whereClause: Record<string, unknown> = {};
+    if (exhibitId && exhibitId !== 'all') {
+      whereClause.exhibitId = exhibitId;
+    }
+    if (category && category !== '全部分類') {
+      whereClause.category = category;
+    }
+
     const writings = await prisma.writingsItem.findMany({
-      orderBy: [{ createdAt: 'desc' }, { order: 'asc' }],
+      where: whereClause,
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     });
     return NextResponse.json({ ok: true, data: writings });
   } catch (error) {
@@ -21,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, category, excerpt, content, order } = body;
+    const { exhibitId, title, category, excerpt, content, youtubeUrl, order } = body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json({ ok: false, error: '請輸入文章標題' }, { status: 400 });
@@ -33,10 +46,12 @@ export async function POST(request: NextRequest) {
 
     const newItem = await prisma.writingsItem.create({
       data: {
+        exhibitId: exhibitId || 'creation_lab',
         title: title.trim(),
         category: category || '其他文字',
         excerpt: excerpt ? excerpt.trim() : null,
         content: content.trim(),
+        youtubeUrl: youtubeUrl ? youtubeUrl.trim() : null,
         order: typeof order === 'number' ? order : 0,
       },
     });

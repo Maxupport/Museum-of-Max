@@ -51,10 +51,12 @@ interface MusicItem {
 
 interface WritingsItem {
   id: string;
+  exhibitId?: string;
   title: string;
   category: string;
   excerpt: string | null;
   content: string;
+  youtubeUrl?: string | null;
   order: number;
   createdAt?: string;
 }
@@ -99,9 +101,10 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   const [writingsLoading, setWritingsLoading] = useState(false);
 
   useEffect(() => {
-    if (exhibitId === 'creation_lab' && activeSubCategory === '其他文字') {
+    const isBlogExhibit = ['finance_insurance', 'sound', 'creation_lab', 'communication'].includes(exhibitId);
+    if (isBlogExhibit) {
       setWritingsLoading(true);
-      fetch('/api/writings')
+      fetch(`/api/writings?exhibitId=${exhibitId}${activeSubCategory ? `&category=${encodeURIComponent(activeSubCategory)}` : ''}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.ok) setWritingsItems(data.data);
@@ -229,7 +232,17 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     { id: 'article-3', title: `未來趨勢與 ${activeSubCategory || exhibit.title} 的展望`, date: '2026-06-10', excerpt: '前瞻視野分析，預測未來 3-5 年的關鍵變革與機會...' },
   ];
 
-  const filteredArticles = mockArticles.filter(article => 
+  const displayArticles = writingsItems.length > 0
+    ? writingsItems.map(w => ({
+        id: w.id,
+        title: w.title,
+        date: w.createdAt ? formatTimestamp(w.createdAt) || '近期' : '近期',
+        excerpt: w.excerpt || (w.content ? w.content.slice(0, 120) + '...' : ''),
+        category: w.category
+      }))
+    : mockArticles;
+
+  const filteredArticles = displayArticles.filter(article => 
     article.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
     article.excerpt.toLowerCase().includes(searchKeyword.toLowerCase())
   );

@@ -47,10 +47,74 @@ export default function ArticleDetailPage({
     );
   }
 
-  // 模擬文章詳細資料 (針對部落格與 Notion 文章專題即時渲染)
+  const [dbArticle, setDbArticle] = useState<{
+    id: string;
+    title: string;
+    category: string;
+    excerpt?: string | null;
+    content: string;
+    youtubeUrl?: string | null;
+    createdAt?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (articleId) {
+      fetch(`/api/writings/${articleId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok && data.data) {
+            setDbArticle(data.data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [articleId]);
+
+  // 解析來自 Google Docs 貼上或 DB 中的文字內文 (轉換為標題、段落、引言與影片區塊)
+  const parseContentBlocks = (rawContent: string, youtubeUrl?: string | null) => {
+    const lines = rawContent.split('\n').map(l => l.trim()).filter(Boolean);
+    const blocks: Array<{ type: string; text?: string; url?: string; caption?: string }> = [];
+
+    if (youtubeUrl) {
+      blocks.push({
+        type: 'video',
+        url: youtubeUrl,
+        caption: '觀看精選搭配影片 / 影音紀錄',
+      });
+    }
+
+    lines.forEach((line) => {
+      if (line.startsWith('# ') || line.startsWith('## ') || line.startsWith('### ') || /^[一二三四五六七八九十]+[、.]/.test(line)) {
+        blocks.push({
+          type: 'heading',
+          text: line.replace(/^#+\s*/, ''),
+        });
+      } else if (line.startsWith('> ') || line.startsWith('「') || line.startsWith('“')) {
+        blocks.push({
+          type: 'quote',
+          text: line.replace(/^>\s*/, ''),
+        });
+      } else {
+        blocks.push({
+          type: 'paragraph',
+          text: line,
+        });
+      }
+    });
+
+    return blocks;
+  };
+
   const isSoundMind = articleId.startsWith('sound-mind');
 
-  const articleData = isSoundMind ? {
+  const articleData = dbArticle ? {
+    id: dbArticle.id,
+    title: dbArticle.title,
+    date: dbArticle.createdAt ? new Date(dbArticle.createdAt).toLocaleDateString('zh-TW') : '近期發布',
+    readTime: `${Math.max(1, Math.ceil(dbArticle.content.length / 400))} 分鐘閱讀`,
+    author: 'Maxupport Curator',
+    content: parseContentBlocks(dbArticle.content, dbArticle.youtubeUrl),
+  } : isSoundMind ? {
     id: articleId,
     title: articleId === 'sound-mind-1'
       ? '【個人聲音探索心得】從發聲到心靈：個人共鳴與身心對話記錄'

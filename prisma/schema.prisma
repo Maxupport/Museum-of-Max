@@ -95,13 +95,15 @@ model MusicItem {
   updatedAt   DateTime @updatedAt
 }
 
-// 創作 Lab - 其他文字創作 (Other Writings Items)
+// 全站文章與專題創作 (Universal Article / Writings Items)
 model WritingsItem {
   id          String   @id @default(cuid())
+  exhibitId   String   @default("creation_lab") // 所屬展區: "finance_insurance" | "sound" | "creation_lab" | "communication"
+  category    String   @default("其他文字")      // 子類別標籤 (如 "投資", "個人聲音探索心得", "Maxupport 生涯擺渡", "其他文字")
   title       String   // 文章/創作標題
-  category    String   @default("其他文字") // 分類 (如 "隨筆", "散文", "新詩", "其他文字")
   excerpt     String?  // 摘要引言
   content     String   // 完整內容 (支援多行文字排版)
+  youtubeUrl  String?  // 選填 YouTube 影片嵌入網址
   order       Int      @default(0) // 排序
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
