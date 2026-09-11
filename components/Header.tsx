@@ -57,7 +57,8 @@ export function Header() {
     return null;
   }
 
-  const logoHref = isNovelDirect ? '/museum/creation_lab' : '/museum';
+  // Brand title links back to '/' (Passcode entrance / Role switching)
+  const logoHref = '/';
 
   return (
     <header style={{
@@ -83,8 +84,12 @@ export function Header() {
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-        {/* Brand Title (Navigates to /museum/creation_lab for novel direct, or /museum for general) */}
-        <Link href={logoHref} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+        {/* Brand Title (Navigates to / for passcode entry & role switching) */}
+        <Link 
+          href={logoHref} 
+          title="輸入通行密碼 / 切換角色"
+          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.8rem' }}
+        >
           <Compass size={20} style={{ color: 'var(--text-secondary)' }} />
           <span style={{
             fontSize: '1rem',
