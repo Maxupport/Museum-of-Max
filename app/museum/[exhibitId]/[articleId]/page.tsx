@@ -214,9 +214,9 @@ export default function ArticleDetailPage({
   };
 
   return (
-    <div style={{ padding: '4rem 2rem', maxWidth: '900px', margin: '0 auto', minHeight: '100vh' }}>
+    <div style={{ padding: '3.5rem 1.5rem 6rem', maxWidth: '820px', margin: '0 auto', minHeight: '100vh', boxSizing: 'border-box' }}>
       {/* 頂部導覽 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem' }}>
         <button
           onClick={() => router.push(`/museum/${exhibitId}`)}
           style={{
@@ -226,7 +226,7 @@ export default function ArticleDetailPage({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.8rem',
+            gap: '0.6rem',
             fontSize: '0.9rem',
             letterSpacing: '1px',
             transition: 'color 0.3s ease',
@@ -235,7 +235,7 @@ export default function ArticleDetailPage({
           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
           <ArrowLeft size={16} />
-          Back to {exhibit.title}
+          返回【{exhibit.title}】展區
         </button>
 
         <button
@@ -244,30 +244,30 @@ export default function ArticleDetailPage({
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',
             color: 'var(--text-secondary)',
-            padding: '0.5rem 1rem',
+            padding: '0.45rem 0.9rem',
             borderRadius: '4px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             transition: 'all 0.3s ease',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
           onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
           {copied ? <Check size={14} color="#4ade80" /> : <Share2 size={14} />}
-          {copied ? 'Link Copied' : 'Share Article'}
+          {copied ? '已複製連結' : '分享文章'}
         </button>
       </div>
 
       {/* 文章標題區 */}
-      <header className="animate-fade-in" style={{ marginBottom: '3.5rem', position: 'relative' }}>
+      <header className="animate-fade-in" style={{ marginBottom: '3rem', position: 'relative' }}>
         <div
           style={{
             display: 'inline-block',
-            padding: '0.3rem 0.8rem',
-            borderRadius: '2px',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '4px',
             background: 'rgba(255,255,255,0.05)',
             color: exhibit.color,
             fontSize: '0.8rem',
@@ -282,12 +282,12 @@ export default function ArticleDetailPage({
 
         <h1
           style={{
-            fontSize: '2.6rem',
+            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
             fontWeight: 300,
             color: '#fff',
             fontFamily: 'var(--font-noto-serif)',
-            lineHeight: 1.3,
-            marginBottom: '1rem',
+            lineHeight: 1.35,
+            marginBottom: '1.2rem',
           }}
         >
           {articleData.title}
@@ -461,7 +461,7 @@ export default function ArticleDetailPage({
           onClick={() => router.push(`/museum/${exhibitId}`)}
           style={{ fontSize: '0.85rem' }}
         >
-          返回展區選單
+          ← 返回【{exhibit.title}】展區
         </button>
 
         <button
