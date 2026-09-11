@@ -1141,53 +1141,59 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               </div>
             )
           ) : exhibitId === 'creation_lab' && (activeSubCategory === '小說' || activeSubCategory === '文字') ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-              gap: '2.5rem'
-            }}>
-              {Object.values(MOCK_NOVELS).map((novel) => (
-                <Link key={novel.id} href={`/museum/creation_lab/novel/${novel.id}`} style={{ textDecoration: 'none' }}>
-                  <div className="glass-panel exhibit-card" style={{
-                    padding: '2.2rem',
-                    cursor: 'pointer',
-                    color: exhibit.color,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    transition: 'all 0.4s ease',
-                    position: 'relative'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        小說連載專區
-                      </span>
-                      <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                        {novel.status} ({novel.totalChapters} 章)
-                      </span>
+            Object.values(MOCK_NOVELS).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <p style={{ letterSpacing: '1px' }}>目前【小說專區】尚無上架作品，策展人後續可隨時新增發表。</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+                gap: '2.5rem'
+              }}>
+                {Object.values(MOCK_NOVELS).map((novel) => (
+                  <Link key={novel.id} href={`/museum/creation_lab/novel/${novel.id}`} style={{ textDecoration: 'none' }}>
+                    <div className="glass-panel exhibit-card" style={{
+                      padding: '2.2rem',
+                      cursor: 'pointer',
+                      color: exhibit.color,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      height: '100%',
+                      transition: 'all 0.4s ease',
+                      position: 'relative'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                          小說連載專區
+                        </span>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                          {novel.status} ({novel.totalChapters} 章)
+                        </span>
+                      </div>
+
+                      <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.4rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3 }}>
+                        {novel.title}
+                      </h3>
+                      
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-sans)' }}>
+                        作者：{novel.author} | 最新更新：{novel.latestUpdate}
+                      </p>
+
+                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+                        {novel.description}
+                      </p>
+
+                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontSize: '0.9rem', fontWeight: 500 }}>
+                        <Sparkles size={16} color="var(--theme-possibility)" />
+                        <span>進入沉浸式小說閱讀器</span>
+                        <ChevronRight size={16} />
+                      </div>
                     </div>
-
-                    <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.4rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3 }}>
-                      {novel.title}
-                    </h3>
-                    
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-sans)' }}>
-                      作者：{novel.author} | 最新更新：{novel.latestUpdate}
-                    </p>
-
-                    <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
-                      {novel.description}
-                    </p>
-
-                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontSize: '0.9rem', fontWeight: 500 }}>
-                      <Sparkles size={16} color="var(--theme-possibility)" />
-                      <span>進入沉浸式小說閱讀器</span>
-                      <ChevronRight size={16} />
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )
           ) : filteredArticles.length > 0 ? (
             <div style={{
               display: 'grid',
