@@ -111,24 +111,25 @@ export default function MuseumHall() {
         
         {/* 第一頁：個人簡介與空間說明 (100vh 且 Snap) */}
         <section style={{ 
-          height: '100vh', 
+          minHeight: 'calc(100vh - 65px)',
+          marginTop: '65px',
           scrollSnapAlign: 'start',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '2rem',
+          padding: '2rem 1.5rem 3rem 1.5rem',
           position: 'relative'
         }}>
           <header className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '800px', width: '100%' }}>
             
             <div style={{
-              width: '240px',
-              height: '240px',
+              width: '220px',
+              height: '220px',
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.05)',
               border: '2px solid rgba(255,255,255,0.25)',
-              marginBottom: '2.5rem',
+              marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -158,63 +159,64 @@ export default function MuseumHall() {
               width: '40px', 
               height: '2px', 
               background: '#fff', 
-              marginBottom: '2rem' 
+              marginBottom: '1.2rem' 
             }} />
-            <h1 style={{ fontSize: '3rem', letterSpacing: '8px', color: '#fff', marginBottom: '1rem', textTransform: 'uppercase', fontFamily: 'var(--font-noto-serif)', textAlign: 'center' }}>
+            <h1 style={{ fontSize: '2.5rem', letterSpacing: '6px', color: '#fff', marginBottom: '0.4rem', textTransform: 'uppercase', fontFamily: 'var(--font-noto-serif)', textAlign: 'center' }}>
               Exhibition Hall
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '3rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
               Private Collection
             </p>
 
             <div style={{ 
               textAlign: 'center',
-              padding: '2rem',
+              padding: '1.2rem 1.8rem',
               borderTop: '1px solid rgba(255,255,255,0.1)',
-              borderBottom: '1px solid rgba(255,255,255,0.1)'
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.02)',
+              borderRadius: '4px'
             }}>
-              <h2 style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '1rem', fontFamily: 'var(--font-noto-serif)' }}>歡迎來到 Maxupport 的專屬策展空間</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.8, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
+              <h2 style={{ fontSize: '1.35rem', color: '#fff', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)' }}>歡迎來到 Maxupport 的專屬策展空間</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.7, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
                 這裡記錄了 Max 超過 14 年的跨界職涯軌跡，從風險投資、職涯經歷、金融保險議題分析、聲音探索、創作 Lab 到跨世代溝通，每個展區都代表著對不同領域的熱情與實踐。
               </p>
             </div>
-          </header>
 
-          {/* 往下轉動 / 點擊滾動瀏覽展區提示 */}
-          <div 
-            onClick={scrollToGalleries}
-            className="animate-fade-in" 
-            style={{ 
-              position: 'absolute', 
-              bottom: '2rem',
-              animationDelay: '0.5s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              color: '#fff',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              padding: '0.6rem 1.4rem',
-              borderRadius: '30px',
-              backdropFilter: 'blur(10px)',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#38bdf8';
-              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-              e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-            }}
-          >
-            <span style={{ fontSize: '0.85rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 500 }}>
-              向下滾動瀏覽展覽分類
-            </span>
-            <ChevronDown size={18} style={{ color: '#38bdf8' }} />
-          </div>
+            {/* 往下轉動 / 點擊滾動瀏覽展區提示按鈕 (放置於內文正下方，絕對看得見與點擊) */}
+            <div 
+              onClick={scrollToGalleries}
+              style={{ 
+                marginTop: '2rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.8rem',
+                color: '#fff',
+                background: 'rgba(56, 189, 248, 0.12)',
+                border: '1.5px solid #38bdf8',
+                padding: '0.75rem 1.8rem',
+                borderRadius: '30px',
+                backdropFilter: 'blur(10px)',
+                cursor: 'pointer',
+                boxShadow: '0 4px 25px rgba(56, 189, 248, 0.25)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#7dd3fc';
+                e.currentTarget.style.background = 'rgba(56, 189, 248, 0.25)';
+                e.currentTarget.style.transform = 'translateY(2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#38bdf8';
+                e.currentTarget.style.background = 'rgba(56, 189, 248, 0.12)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span style={{ fontSize: '0.9rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 600, color: '#38bdf8' }}>
+                向下滾動瀏覽 6 大展區
+              </span>
+              <ChevronDown size={20} style={{ color: '#38bdf8' }} />
+            </div>
+          </header>
         </section>
 
         {/* 第二頁：6 大展區卡片清單 (100vh 且置中) */}

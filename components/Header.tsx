@@ -94,7 +94,7 @@ export function Header() {
             fontWeight: 400,
             textTransform: 'uppercase'
           }}>
-            MAXUPPORT
+            MUSEUM OF MAX
           </span>
         </Link>
 
