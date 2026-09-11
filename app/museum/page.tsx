@@ -213,7 +213,7 @@ export default function MuseumHall() {
               }}
             >
               <span style={{ fontSize: '0.9rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 600, color: '#38bdf8' }}>
-                向下滾動瀏覽 6 大展區
+                向下滾動繼續瀏覽主題展區
               </span>
               <ChevronDown size={20} style={{ color: '#38bdf8' }} />
             </div>
