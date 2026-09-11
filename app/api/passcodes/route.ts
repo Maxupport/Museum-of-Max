@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       id: item.id,
       code: item.code,
       note: item.note,
+      avatarUrl: item.avatarUrl,
       permissions: parsePermissions(item.permissions),
       createdAt: item.createdAt,
       pageviewCount: item._count?.pageviews ?? 0,
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { code, note, permissions } = await request.json();
+    const { code, note, avatarUrl, permissions } = await request.json();
 
     if (!code || typeof code !== 'string' || !code.trim()) {
       return NextResponse.json({ ok: false, error: '通行密碼不可為空' }, { status: 400 });
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
       data: {
         code: trimmedCode,
         note: note ? note.trim() : null,
+        avatarUrl: avatarUrl ? avatarUrl.trim() : null,
         permissions: stringifyPermissions(permArray),
       },
     });

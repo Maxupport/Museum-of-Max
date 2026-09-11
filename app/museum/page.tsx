@@ -12,10 +12,17 @@ export default function MuseumHall() {
   const [allowedPermissions, setAllowedPermissions] = useState<string[] | null>(null);
   const [checkedAuth, setCheckedAuth] = useState(false);
 
+  const [visitorAvatarUrl, setVisitorAvatarUrl] = useState<string | null>(null);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsOpening(false);
     }, 100);
+
+    const avatarMatch = document.cookie.match(/(?:^|; )visitor_avatar_url=([^;]*)/);
+    if (avatarMatch && avatarMatch[1]) {
+      setVisitorAvatarUrl(decodeURIComponent(avatarMatch[1]));
+    }
 
     fetch('/api/auth/admin')
       .then((res) => res.json())
@@ -104,7 +111,7 @@ export default function MuseumHall() {
               height: '120px',
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '2px solid rgba(255,255,255,0.2)',
               marginBottom: '2rem',
               display: 'flex',
               alignItems: 'center',
@@ -112,9 +119,23 @@ export default function MuseumHall() {
               color: 'var(--text-secondary)',
               fontSize: '0.8rem',
               letterSpacing: '2px',
-              boxShadow: '0 0 30px rgba(0,0,0,0.5)'
+              boxShadow: '0 0 30px rgba(0,0,0,0.5)',
+              overflow: 'hidden',
+              position: 'relative'
             }}>
-              PHOTO
+              {visitorAvatarUrl ? (
+                <img
+                  src={visitorAvatarUrl}
+                  alt="Maxupport Curator Avatar"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                <span style={{ color: 'rgba(255,255,255,0.6)', letterSpacing: '2px', fontSize: '0.75rem' }}>MAXUPPORT</span>
+              )}
             </div>
 
             <div style={{ 

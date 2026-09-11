@@ -9,6 +9,7 @@ interface PasscodeItem {
   id: string;
   code: string;
   note: string | null;
+  avatarUrl?: string | null;
   permissions: string[];
   createdAt: string;
   pageviewCount: number;
@@ -87,7 +88,10 @@ export default function AdminDashboardPage() {
   const [passcodes, setPasscodes] = useState<PasscodeItem[]>([]);
   const [newCode, setNewCode] = useState('');
   const [newNote, setNewNote] = useState('');
+  const [newAvatarUrl, setNewAvatarUrl] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [newPermissions, setNewPermissions] = useState<string[]>(ALL_EXHIBIT_KEYS);
+  const [editingPasscodeId, setEditingPasscodeId] = useState<string | null>(null);
   const [creatingPasscode, setCreatingPasscode] = useState(false);
   const [passcodeFormError, setPasscodeFormError] = useState('');
 
@@ -536,7 +540,34 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleCreatePasscode = async (e: React.FormEvent) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.ok && data.url) {
+        setNewAvatarUrl(data.url);
+      } else {
+        alert(data.error || '圖片上傳失敗');
+      }
+    } catch {
+      alert('圖片上傳發生錯誤');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleCreateOrUpdatePasscode = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasscodeFormError('');
 
@@ -547,12 +578,16 @@ export default function AdminDashboardPage() {
 
     setCreatingPasscode(true);
     try {
-      const res = await fetch('/api/passcodes', {
-        method: 'POST',
+      const url = editingPasscodeId ? `/api/passcodes/${editingPasscodeId}` : '/api/passcodes';
+      const method = editingPasscodeId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: newCode,
           note: newNote,
+          avatarUrl: newAvatarUrl,
           permissions: newPermissions,
         }),
       });
@@ -562,16 +597,34 @@ export default function AdminDashboardPage() {
       if (data.ok) {
         setNewCode('');
         setNewNote('');
+        setNewAvatarUrl('');
+        setEditingPasscodeId(null);
         setNewPermissions(ALL_EXHIBIT_KEYS);
         fetchPasscodes();
       } else {
-        setPasscodeFormError(data.error || '新增失敗');
+        setPasscodeFormError(data.error || '儲存失敗');
       }
     } catch {
       setPasscodeFormError('連線錯誤');
     } finally {
       setCreatingPasscode(false);
     }
+  };
+
+  const handleEditPasscode = (item: PasscodeItem) => {
+    setEditingPasscodeId(item.id);
+    setNewCode(item.code);
+    setNewNote(item.note || '');
+    setNewAvatarUrl(item.avatarUrl || '');
+    setNewPermissions(item.permissions);
+  };
+
+  const handleCancelPasscodeEdit = () => {
+    setEditingPasscodeId(null);
+    setNewCode('');
+    setNewNote('');
+    setNewAvatarUrl('');
+    setNewPermissions(ALL_EXHIBIT_KEYS);
   };
 
   const handleDeletePasscode = async (id: string, code: string) => {
@@ -1069,10 +1122,21 @@ export default function AdminDashboardPage() {
       {activeTab === 'passcodes' && (
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
           <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
-            <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
-              <Plus size={20} />
-              新增通行密碼
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                {editingPasscodeId ? <Edit3 size={20} /> : <Plus size={20} />}
+                {editingPasscodeId ? '編輯通行密碼' : '新增通行密碼'}
+              </h2>
+              {editingPasscodeId && (
+                <button
+                  type="button"
+                  onClick={handleCancelPasscodeEdit}
+                  style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                >
+                  <X size={14} /> 取消編輯
+                </button>
+              )}
+            </div>
 
             {passcodeFormError && (
               <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
@@ -1080,7 +1144,7 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            <form onSubmit={handleCreatePasscode} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+            <form onSubmit={handleCreateOrUpdatePasscode} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
                   通行密碼 (Code) *
@@ -1108,6 +1172,34 @@ export default function AdminDashboardPage() {
                   className="museum-input"
                   style={{ maxWidth: '100%' }}
                 />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  專屬個人形象照圖片 (選填)
+                </label>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                  {newAvatarUrl && (
+                    <img
+                      src={newAvatarUrl}
+                      alt="Avatar Preview"
+                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)' }}
+                    />
+                  )}
+                  <input
+                    type="text"
+                    placeholder="圖片 URL (或點右側上傳)"
+                    value={newAvatarUrl}
+                    onChange={(e) => setNewAvatarUrl(e.target.value)}
+                    className="museum-input"
+                    style={{ flex: 1, maxWidth: '100%' }}
+                  />
+                  <label style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '0.5rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Upload size={14} />
+                    {uploadingAvatar ? '上傳中...' : '選擇照片'}
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={uploadingAvatar} />
+                  </label>
+                </div>
               </div>
 
               <div>
@@ -1155,7 +1247,7 @@ export default function AdminDashboardPage() {
                 disabled={creatingPasscode}
                 style={{ marginTop: '0.5rem', width: '100%' }}
               >
-                {creatingPasscode ? '建立中...' : '確認新增密碼'}
+                {creatingPasscode ? '儲存中...' : editingPasscodeId ? '儲存密碼更新' : '確認新增密碼'}
               </button>
             </form>
           </div>
@@ -1190,60 +1282,95 @@ export default function AdminDashboardPage() {
                       gap: '1rem'
                     }}
                   >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.4rem' }}>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fff', fontFamily: 'monospace', letterSpacing: '2px', background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                          {item.code}
-                        </span>
-                        {item.note && (
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            ({item.note})
-                          </span>
-                        )}
-                      </div>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flex: 1 }}>
+                      {item.avatarUrl ? (
+                        <img
+                          src={item.avatarUrl}
+                          alt={item.code}
+                          style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)', marginTop: '0.2rem' }}
+                        />
+                      ) : (
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                          無頭像
+                        </div>
+                      )}
 
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.6rem' }}>
-                        {item.permissions.map((perm) => (
-                          <span
-                            key={perm}
-                            style={{
-                              fontSize: '0.75rem',
-                              padding: '0.15rem 0.5rem',
-                              borderRadius: '2px',
-                              background: 'rgba(255,255,255,0.05)',
-                              color: 'rgba(255,255,255,0.8)',
-                              border: '1px solid rgba(255,255,255,0.1)'
-                            }}
-                          >
-                            {EXHIBIT_MAP[perm] || perm}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fff', fontFamily: 'monospace', letterSpacing: '2px', background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                            {item.code}
                           </span>
-                        ))}
-                      </div>
+                          {item.note && (
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                              ({item.note})
+                            </span>
+                          )}
+                        </div>
 
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.8rem', display: 'flex', gap: '1rem' }}>
-                        <span>建立時間: {new Date(item.createdAt).toLocaleDateString()}</span>
-                        <span>使用次數: {item.pageviewCount} 次</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.6rem' }}>
+                          {item.permissions.map((perm) => (
+                            <span
+                              key={perm}
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: '2px',
+                                background: 'rgba(255,255,255,0.05)',
+                                color: 'rgba(255,255,255,0.8)',
+                                border: '1px solid rgba(255,255,255,0.1)'
+                              }}
+                            >
+                              {EXHIBIT_MAP[perm] || perm}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.8rem', display: 'flex', gap: '1rem' }}>
+                          <span>建立時間: {new Date(item.createdAt).toLocaleDateString()}</span>
+                          <span>使用次數: {item.pageviewCount} 次</span>
+                        </div>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDeletePasscode(item.id, item.code)}
-                      style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        color: '#f87171',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '2px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        fontSize: '0.8rem',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      <Trash2 size={14} /> 刪除
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button
+                        onClick={() => handleEditPasscode(item)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          color: '#fff',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '2px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <Edit3 size={14} /> 編輯
+                      </button>
+
+                      <button
+                        onClick={() => handleDeletePasscode(item.id, item.code)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          border: '1px solid rgba(239, 68, 68, 0.2)',
+                          color: '#f87171',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '2px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <Trash2 size={14} /> 刪除
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

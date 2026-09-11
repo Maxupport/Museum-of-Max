@@ -32,7 +32,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { code, note, permissions } = await request.json();
+    const { code, note, avatarUrl, permissions } = await request.json();
 
     const permArray = Array.isArray(permissions) ? permissions : [];
     const updated = await prisma.passcode.update({
@@ -40,6 +40,7 @@ export async function PUT(
       data: {
         ...(code ? { code: code.trim() } : {}),
         note: note !== undefined ? (note ? note.trim() : null) : undefined,
+        avatarUrl: avatarUrl !== undefined ? (avatarUrl ? avatarUrl.trim() : null) : undefined,
         permissions: stringifyPermissions(permArray),
       },
     });

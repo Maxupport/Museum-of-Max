@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       permissions: activePermissions,
       redirectUrl,
       note: found.note,
+      avatarUrl: found.avatarUrl,
     });
 
     // Store visitor token and permissions in HTTP-only cookies
@@ -55,6 +56,18 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 30,
       sameSite: 'lax',
     });
+
+    if (found.avatarUrl) {
+      response.cookies.set('visitor_avatar_url', found.avatarUrl, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+    } else {
+      response.cookies.set('visitor_avatar_url', '', { path: '/', maxAge: 0 });
+    }
 
     // Clear any previous curator/admin cookies so visitor test is 100% clean
     response.cookies.set('is_curator', '', { path: '/', maxAge: 0 });

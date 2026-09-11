@@ -17,6 +17,7 @@ model Passcode {
   id          String   @id @default(cuid())
   code        String   @unique
   note        String?  // 備註 (e.g. "給 VC 的訪客")
+  avatarUrl   String?  // 專屬個人形象照圖片 URL
   permissions String   @default("[]") // JSON string Array
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
