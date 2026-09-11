@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parsePermissions } from '@/lib/auth';
+import { parsePermissions, generateAdminToken } from '@/lib/auth';
+import { ALL_EXHIBIT_KEYS } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,9 +80,30 @@ export async function POST(request: NextRequest) {
       response.cookies.set('visitor_avatar_url', '', { path: '/', maxAge: 0 });
     }
 
-    // Clear any previous curator/admin cookies so visitor test is 100% clean
-    response.cookies.set('is_curator', '', { path: '/', maxAge: 0 });
-    response.cookies.set('admin_token', '', { path: '/', maxAge: 0 });
+    const isCuratorPasscode = activePermissions.length >= ALL_EXHIBIT_KEYS.length || 
+      Boolean(found.note && (found.note.toLowerCase().includes('curator') || found.note.includes('策展人') || found.note.includes('管理')));
+
+    if (isCuratorPasscode) {
+      const adminToken = generateAdminToken();
+      response.cookies.set('admin_token', adminToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+      response.cookies.set('is_curator', 'true', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'lax',
+      });
+    } else {
+      // Clear any previous curator/admin cookies so visitor test is 100% clean
+      response.cookies.set('is_curator', '', { path: '/', maxAge: 0 });
+      response.cookies.set('admin_token', '', { path: '/', maxAge: 0 });
+    }
 
     return response;
   } catch (error) {
