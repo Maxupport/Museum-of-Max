@@ -107,19 +107,19 @@ export default function MuseumHall() {
           <header className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '800px', width: '100%' }}>
             
             <div style={{
-              width: '120px',
-              height: '120px',
+              width: '240px',
+              height: '240px',
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.05)',
-              border: '2px solid rgba(255,255,255,0.2)',
-              marginBottom: '2rem',
+              border: '2px solid rgba(255,255,255,0.25)',
+              marginBottom: '2.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--text-secondary)',
-              fontSize: '0.8rem',
+              fontSize: '0.9rem',
               letterSpacing: '2px',
-              boxShadow: '0 0 30px rgba(0,0,0,0.5)',
+              boxShadow: '0 0 40px rgba(0,0,0,0.6)',
               overflow: 'hidden',
               position: 'relative'
             }}>
