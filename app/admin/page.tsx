@@ -1183,7 +1183,7 @@ export default function AdminDashboardPage() {
                     <img
                       src={newAvatarUrl}
                       alt="Avatar Preview"
-                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)' }}
+                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
                     />
                   )}
                   <input
@@ -1287,10 +1287,10 @@ export default function AdminDashboardPage() {
                         <img
                           src={item.avatarUrl}
                           alt={item.code}
-                          style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)', marginTop: '0.2rem' }}
+                          style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)', marginTop: '0.2rem' }}
                         />
                       ) : (
-                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                           無頭像
                         </div>
                       )}

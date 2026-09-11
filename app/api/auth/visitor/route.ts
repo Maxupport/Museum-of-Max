@@ -22,15 +22,25 @@ export async function POST(request: NextRequest) {
 
     const permissions = parsePermissions(found.permissions);
 
-    const isNovelDirect = permissions.includes('creation_lab_novel') || 
+    // Check if passcode ONLY grants access to novel serialization (no other galleries)
+    const isNovelOnlyDirect = (permissions.length === 1 && permissions[0] === 'creation_lab_novel') ||
+      (permissions.includes('creation_lab_novel') && 
+       !permissions.includes('vc') && 
+       !permissions.includes('career') && 
+       !permissions.includes('finance_insurance') && 
+       !permissions.includes('sound') && 
+       !permissions.includes('communication'));
+
+    const hasNovelPermission = permissions.includes('creation_lab_novel') || 
       (found.note && (found.note.includes('小說') || found.note.includes('連載')));
 
-    // If permissions include creation_lab_novel, make sure creation_lab is also granted
-    const activePermissions = (isNovelDirect && !permissions.includes('creation_lab')) 
+    // Ensure creation_lab is granted if creation_lab_novel is present
+    const activePermissions = (hasNovelPermission && !permissions.includes('creation_lab')) 
       ? [...permissions, 'creation_lab']
       : permissions;
 
-    const redirectUrl = isNovelDirect ? '/museum/creation_lab' : '/museum';
+    // All passcodes except novel-only passcodes start at Main Hall (/museum)
+    const redirectUrl = isNovelOnlyDirect ? '/museum/creation_lab' : '/museum';
 
     const response = NextResponse.json({
       ok: true,

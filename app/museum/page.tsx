@@ -48,7 +48,14 @@ export default function MuseumHall() {
                   return p;
                 }) : [];
 
-                if (mappedPerms.includes('creation_lab_novel') && !mappedPerms.includes('vc')) {
+                const isNovelOnly = mappedPerms.includes('creation_lab_novel') &&
+                  !mappedPerms.includes('vc') &&
+                  !mappedPerms.includes('career') &&
+                  !mappedPerms.includes('finance_insurance') &&
+                  !mappedPerms.includes('sound') &&
+                  !mappedPerms.includes('communication');
+
+                if (isNovelOnly) {
                   router.replace('/museum/creation_lab');
                   return;
                 }
@@ -83,6 +90,15 @@ export default function MuseumHall() {
     .filter((exhibit): exhibit is ExhibitConfig => exhibit !== undefined && allowedPermissions.includes(exhibit.id));
 
   const isRestrictedAccess = visibleExhibits.length === 0;
+
+  const scrollToGalleries = () => {
+    const el = document.getElementById('galleries-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+    }
+  };
 
   return (
     <>
@@ -164,32 +180,57 @@ export default function MuseumHall() {
             </div>
           </header>
 
-          <div className="animate-fade-in" style={{ 
-            position: 'absolute', 
-            bottom: '2rem',
-            animationDelay: '1s',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            color: 'var(--text-secondary)',
-            opacity: 0.5
-          }}>
-            <span style={{ fontSize: '0.7rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Scroll to Explore</span>
-            <ChevronDown size={20} />
+          {/* 往下轉動 / 點擊滾動瀏覽展區提示 */}
+          <div 
+            onClick={scrollToGalleries}
+            className="animate-fade-in" 
+            style={{ 
+              position: 'absolute', 
+              bottom: '2rem',
+              animationDelay: '0.5s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              color: '#fff',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              padding: '0.6rem 1.4rem',
+              borderRadius: '30px',
+              backdropFilter: 'blur(10px)',
+              cursor: 'pointer',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#38bdf8';
+              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+            }}
+          >
+            <span style={{ fontSize: '0.85rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 500 }}>
+              向下滾動瀏覽展覽分類
+            </span>
+            <ChevronDown size={18} style={{ color: '#38bdf8' }} />
           </div>
         </section>
 
         {/* 第二頁：6 大展區卡片清單 (100vh 且置中) */}
-        <section style={{ 
-          minHeight: '100vh', 
-          scrollSnapAlign: 'start',
-          padding: '4rem 2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'auto'
-        }}>
+        <section 
+          id="galleries-section"
+          style={{ 
+            minHeight: '100vh', 
+            scrollSnapAlign: 'start',
+            padding: '4rem 2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'auto'
+          }}
+        >
           <div style={{ maxWidth: '1400px', width: '100%' }}>
             
             {isRestrictedAccess ? (
