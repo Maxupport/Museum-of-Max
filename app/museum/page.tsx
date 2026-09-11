@@ -111,25 +111,26 @@ export default function MuseumHall() {
         
         {/* 第一頁：個人簡介與空間說明 (100vh 且 Snap) */}
         <section style={{ 
-          minHeight: 'calc(100vh - 65px)',
+          height: 'calc(100vh - 65px)',
           marginTop: '65px',
           scrollSnapAlign: 'start',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '2rem 1.5rem 3rem 1.5rem',
+          padding: '1.5rem',
+          boxSizing: 'border-box',
           position: 'relative'
         }}>
           <header className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '800px', width: '100%' }}>
             
             <div style={{
-              width: '220px',
-              height: '220px',
+              width: '200px',
+              height: '200px',
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.05)',
               border: '2px solid rgba(255,255,255,0.25)',
-              marginBottom: '1.5rem',
+              marginBottom: '1.2rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
