@@ -108,7 +108,10 @@ model WritingsItem {
   excerpt     String?  // 摘要引言
   content     String   // 完整內容 (支援多行文字排版)
   youtubeUrl  String?  // 選填 YouTube 影片嵌入網址
-  order       Int      @default(0) // 排序
+  isPinned    Boolean  @default(false) // 是否置頂 (該分類頂端)
+  isHidden    Boolean  @default(false) // 是否隱藏 (前台不顯示)
+  views       Int      @default(0)     // 追蹤文章點擊率 / 瀏覽次數
+  order       Int      @default(0)     // 排序 (數字越小越前面)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

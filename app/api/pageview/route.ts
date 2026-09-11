@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (notionId && notionId !== 'main') {
+      try {
+        await prisma.writingsItem.update({
+          where: { id: notionId },
+          data: { views: { increment: 1 } },
+        });
+      } catch {}
+    }
+
     return NextResponse.json({ ok: true, data: record });
   } catch (error: unknown) {
     console.error('Pageview record error:', error);

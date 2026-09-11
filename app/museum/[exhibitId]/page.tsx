@@ -60,6 +60,9 @@ interface WritingsItem {
   excerpt: string | null;
   content: string;
   youtubeUrl?: string | null;
+  isPinned?: boolean;
+  isHidden?: boolean;
+  views?: number;
   order: number;
   createdAt?: string;
 }
@@ -997,18 +1000,34 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     >
                       {/* 頂部：標籤與時間 */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', gap: '0.8rem' }}>
-                        <span style={{ 
-                          fontSize: '0.75rem', 
-                          background: 'rgba(168,85,247,0.15)', 
-                          color: '#c084fc', 
-                          padding: '0.2rem 0.65rem', 
-                          borderRadius: '4px', 
-                          border: '1px solid rgba(168,85,247,0.3)',
-                          whiteSpace: 'nowrap',
-                          fontWeight: 500
-                        }}>
-                          {item.category || 'FB文章備份'}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            background: 'rgba(168,85,247,0.15)', 
+                            color: '#c084fc', 
+                            padding: '0.2rem 0.65rem', 
+                            borderRadius: '4px', 
+                            border: '1px solid rgba(168,85,247,0.3)',
+                            whiteSpace: 'nowrap',
+                            fontWeight: 500
+                          }}>
+                            {item.category || 'FB文章備份'}
+                          </span>
+                          {item.isPinned && (
+                            <span style={{ 
+                              fontSize: '0.72rem', 
+                              background: 'rgba(56, 189, 248, 0.2)', 
+                              color: '#38bdf8', 
+                              padding: '0.15rem 0.5rem', 
+                              borderRadius: '4px', 
+                              border: '1px solid rgba(56, 189, 248, 0.4)',
+                              whiteSpace: 'nowrap',
+                              fontWeight: 600
+                            }}>
+                              📌 置頂
+                            </span>
+                          )}
+                        </div>
                         {item.createdAt && (
                           <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>
                             📅 {formatTimestamp(item.createdAt)}

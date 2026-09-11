@@ -33,7 +33,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order } = body;
+    const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order, isPinned, isHidden, views } = body;
 
     const updated = await prisma.writingsItem.update({
       where: { id },
@@ -47,6 +47,9 @@ export async function PUT(
         excerpt: excerpt !== undefined ? (excerpt ? excerpt.trim() : null) : undefined,
         content: content ? content.trim() : undefined,
         youtubeUrl: youtubeUrl !== undefined ? (youtubeUrl ? youtubeUrl.trim() : null) : undefined,
+        isPinned: typeof isPinned === 'boolean' ? isPinned : undefined,
+        isHidden: typeof isHidden === 'boolean' ? isHidden : undefined,
+        views: typeof views === 'number' ? views : undefined,
         order: typeof order === 'number' ? order : undefined,
       },
     });

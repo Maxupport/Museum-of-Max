@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const exhibitId = searchParams.get('exhibitId');
     const category = searchParams.get('category');
+    const includeHidden = searchParams.get('includeHidden') === 'true';
 
     const whereClause: Record<string, unknown> = {};
     if (exhibitId && exhibitId !== 'all') {
@@ -16,9 +17,14 @@ export async function GET(request: NextRequest) {
       whereClause.category = category;
     }
 
+    const isAdmin = validateAdminRequest(request);
+    if (!isAdmin && !includeHidden) {
+      whereClause.isHidden = false;
+    }
+
     const writings = await prisma.writingsItem.findMany({
       where: whereClause,
-      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ isPinned: 'desc' }, { order: 'asc' }, { createdAt: 'desc' }],
     });
     return NextResponse.json({ ok: true, data: writings });
   } catch (error) {
@@ -34,7 +40,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order } = body;
+    const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order, isPinned, isHidden } = body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json({ ok: false, error: '請輸入文章標題' }, { status: 400 });
@@ -55,6 +61,8 @@ export async function POST(request: NextRequest) {
         excerpt: excerpt ? excerpt.trim() : null,
         content: content.trim(),
         youtubeUrl: youtubeUrl ? youtubeUrl.trim() : null,
+        isPinned: Boolean(isPinned),
+        isHidden: Boolean(isHidden),
         order: typeof order === 'number' ? order : 0,
       },
     });

@@ -71,6 +71,9 @@ interface WritingsItemData {
   excerpt: string | null;
   content: string;
   youtubeUrl?: string | null;
+  isPinned?: boolean;
+  isHidden?: boolean;
+  views?: number;
   order: number;
   createdAt?: string;
 }
@@ -347,13 +350,41 @@ export default function AdminDashboardPage() {
 
   const fetchWritingsItems = useCallback(async () => {
     try {
-      const res = await fetch('/api/writings');
+      const res = await fetch('/api/writings?includeHidden=true');
       const data = await res.json();
       if (data.ok) setWritingsItems(data.data);
     } catch (e) {
       console.error(e);
     }
   }, []);
+
+  const handleToggleWritingPin = async (item: WritingsItemData) => {
+    try {
+      const res = await fetch(`/api/writings/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned: !item.isPinned }),
+      });
+      const data = await res.json();
+      if (data.ok) fetchWritingsItems();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleWritingHidden = async (item: WritingsItemData) => {
+    try {
+      const res = await fetch(`/api/writings/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isHidden: !item.isHidden }),
+      });
+      const data = await res.json();
+      if (data.ok) fetchWritingsItems();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleCreateOrUpdateWriting = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -3392,17 +3423,28 @@ export default function AdminDashboardPage() {
                         }}
                       >
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(56, 189, 248, 0.3)', fontWeight: 500 }}>
                               {EXHIBIT_MAP[item.exhibitId || 'creation_lab'] || item.exhibitId}
                             </span>
                             <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
                               {item.category}
                             </span>
-                            <h3 style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 600, fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
-                              {item.title}
-                            </h3>
+                            {item.isPinned && (
+                              <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.25)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '0.15rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
+                                📌 分類置頂
+                              </span>
+                            )}
+                            {item.isHidden && (
+                              <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.15rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
+                                🙈 已隱藏
+                              </span>
+                            )}
                           </div>
+
+                          <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, fontFamily: 'var(--font-noto-serif)', margin: '0 0 0.5rem 0', lineHeight: 1.4 }}>
+                            {item.title}
+                          </h3>
 
                           {(item.topic || item.fbDate || item.fbUrl) && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem', fontSize: '0.75rem' }}>
@@ -3430,30 +3472,75 @@ export default function AdminDashboardPage() {
                             </p>
                           )}
 
-                          <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <span>建立時間: {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '近期'}</span>
+                          <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', display: 'flex', gap: '1.2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ color: '#4ade80', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                              <Eye size={14} /> 點擊率 (瀏覽數)：{item.views || 0} 次
+                            </span>
+                            <span>建立時間: {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW') : '近期'}</span>
                             {item.youtubeUrl && <span style={{ color: '#ff6b6b' }}>🎬 含內嵌影片</span>}
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {/* 按鈕功能區：置頂、隱藏/顯示、編輯、刪除 */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', minWidth: '200px' }}>
+                          <button
+                            onClick={() => handleToggleWritingPin(item)}
+                            title={item.isPinned ? '取消置頂' : '將此文章置頂於該分類的最上方'}
+                            style={{
+                              background: item.isPinned ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                              border: item.isPinned ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                              color: item.isPinned ? '#38bdf8' : 'var(--text-secondary)',
+                              padding: '0.4rem 0.6rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.78rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            📌 {item.isPinned ? '取消置頂' : '置頂文章'}
+                          </button>
+
+                          <button
+                            onClick={() => handleToggleWritingHidden(item)}
+                            title={item.isHidden ? '取消隱藏，前台恢復顯示' : '將此文章隱藏，前台將不顯示'}
+                            style={{
+                              background: item.isHidden ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                              border: item.isHidden ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                              color: item.isHidden ? '#f87171' : 'var(--text-secondary)',
+                              padding: '0.4rem 0.6rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.78rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            {item.isHidden ? '👁️ 恢復顯示' : '🙈 隱藏文章'}
+                          </button>
+
                           <button
                             onClick={() => handleEditWriting(item)}
                             style={{
                               background: 'rgba(56, 189, 248, 0.1)',
                               border: '1px solid rgba(56, 189, 248, 0.2)',
                               color: '#38bdf8',
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '2px',
+                              padding: '0.4rem 0.6rem',
+                              borderRadius: '4px',
                               cursor: 'pointer',
-                              fontSize: '0.8rem',
+                              fontSize: '0.78rem',
                               display: 'flex',
                               alignItems: 'center',
+                              justifyContent: 'center',
                               gap: '0.3rem'
                             }}
                           >
                             <Edit3 size={14} />
-                            編輯
+                            編輯內容
                           </button>
 
                           <button
@@ -3462,17 +3549,18 @@ export default function AdminDashboardPage() {
                               background: 'rgba(239, 68, 68, 0.1)',
                               border: '1px solid rgba(239, 68, 68, 0.2)',
                               color: '#ef4444',
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '2px',
+                              padding: '0.4rem 0.6rem',
+                              borderRadius: '4px',
                               cursor: 'pointer',
-                              fontSize: '0.8rem',
+                              fontSize: '0.78rem',
                               display: 'flex',
                               alignItems: 'center',
+                              justifyContent: 'center',
                               gap: '0.3rem'
                             }}
                           >
                             <Trash2 size={14} />
-                            刪除
+                            刪除文章
                           </button>
                         </div>
                       </div>
