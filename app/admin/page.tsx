@@ -3405,162 +3405,174 @@ export default function AdminDashboardPage() {
                     <p style={{ letterSpacing: '1px' }}>目前尚無文章，請於左側撰寫並發布。</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    {/* 表格標頭 */}
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between', 
+                      padding: '0.4rem 1.2rem', 
+                      fontSize: '0.75rem', 
+                      color: 'var(--text-secondary)', 
+                      letterSpacing: '1px', 
+                      textTransform: 'uppercase',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      <span style={{ flex: 1 }}>文章主題與標題</span>
+                      <span style={{ width: '110px', textAlign: 'right' }}>點擊率</span>
+                      <span style={{ width: '95px', textAlign: 'right' }}>建立日期</span>
+                      <span style={{ width: '210px', textAlign: 'center' }}>管理操作</span>
+                    </div>
+
                     {writingsItems
                       .filter(item => filterArticleExhibit === 'all' ? true : item.exhibitId === filterArticleExhibit)
                       .map((item) => (
                       <div
                         key={item.id}
                         style={{
-                          background: 'rgba(0,0,0,0.4)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          padding: '1.4rem',
+                          background: 'rgba(0,0,0,0.35)',
+                          border: item.isPinned ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255,255,255,0.08)',
+                          padding: '0.75rem 1.2rem',
                           borderRadius: '4px',
                           display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          gap: '1.5rem',
+                          gap: '1rem',
+                          transition: 'all 0.2s ease',
+                          opacity: item.isHidden ? 0.65 : 1
                         }}
                       >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(56, 189, 248, 0.3)', fontWeight: 500 }}>
-                              {EXHIBIT_MAP[item.exhibitId || 'creation_lab'] || item.exhibitId}
+                        {/* 左側：狀態標籤、展區與文章標題 (單列主體) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
+                          {item.isPinned && (
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '0.1rem 0.45rem', borderRadius: '3px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              📌 置頂
                             </span>
-                            <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                              {item.category}
+                          )}
+                          {item.isHidden && (
+                            <span style={{ fontSize: '0.72rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '3px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              🙈 隱藏
                             </span>
-                            {item.isPinned && (
-                              <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.25)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '0.15rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
-                                📌 分類置頂
-                              </span>
-                            )}
-                            {item.isHidden && (
-                              <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.15rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
-                                🙈 已隱藏
-                              </span>
-                            )}
-                          </div>
+                          )}
 
-                          <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, fontFamily: 'var(--font-noto-serif)', margin: '0 0 0.5rem 0', lineHeight: 1.4 }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', padding: '0.15rem 0.5rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            {EXHIBIT_MAP[item.exhibitId || 'creation_lab']?.split(' ')[0] || item.exhibitId}
+                          </span>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', padding: '0.15rem 0.5rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            {item.category}
+                          </span>
+
+                          <h3 
+                            style={{ 
+                              color: '#fff', 
+                              fontSize: '0.92rem', 
+                              fontWeight: 500, 
+                              fontFamily: 'var(--font-noto-serif)', 
+                              margin: 0,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              flex: 1,
+                              minWidth: 0
+                            }}
+                            title={item.title}
+                          >
                             {item.title}
                           </h3>
-
-                          {(item.topic || item.fbDate || item.fbUrl) && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem', fontSize: '0.75rem' }}>
-                              {item.topic && (
-                                <span style={{ background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
-                                  📌 主題：{item.topic}
-                                </span>
-                              )}
-                              {item.fbDate && (
-                                <span style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.15rem 0.5rem', borderRadius: '3px' }}>
-                                  📅 FB發布：{item.fbDate}
-                                </span>
-                              )}
-                              {item.fbUrl && (
-                                <a href={item.fbUrl} target="_blank" rel="noopener noreferrer" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', padding: '0.15rem 0.5rem', borderRadius: '3px', textDecoration: 'none' }}>
-                                  🔗 原文連結
-                                </a>
-                              )}
-                            </div>
-                          )}
-
-                          {item.excerpt && (
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '0.8rem', lineHeight: 1.5 }}>
-                              {item.excerpt}
-                            </p>
-                          )}
-
-                          <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', display: 'flex', gap: '1.2rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <span style={{ color: '#4ade80', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                              <Eye size={14} /> 點擊率 (瀏覽數)：{item.views || 0} 次
-                            </span>
-                            <span>建立時間: {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW') : '近期'}</span>
-                            {item.youtubeUrl && <span style={{ color: '#ff6b6b' }}>🎬 含內嵌影片</span>}
-                          </div>
                         </div>
 
-                        {/* 按鈕功能區：置頂、隱藏/顯示、編輯、刪除 */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', minWidth: '200px' }}>
+                        {/* 中間：點擊率追蹤 */}
+                        <div style={{ flexShrink: 0, width: '110px', textAlign: 'right' }}>
+                          <span style={{ fontSize: '0.82rem', color: '#4ade80', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                            <Eye size={13} /> {item.views || 0} 次點擊
+                          </span>
+                        </div>
+
+                        {/* 中間：建立時間 */}
+                        <div style={{ flexShrink: 0, width: '95px', textAlign: 'right' }}>
+                          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW') : '近期'}
+                          </span>
+                        </div>
+
+                        {/* 右側：單列管理操作按鈕區 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, width: '210px', justifyContent: 'flex-end' }}>
                           <button
                             onClick={() => handleToggleWritingPin(item)}
-                            title={item.isPinned ? '取消置頂' : '將此文章置頂於該分類的最上方'}
+                            title={item.isPinned ? '取消置頂' : '該分類置頂'}
                             style={{
                               background: item.isPinned ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
                               border: item.isPinned ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
                               color: item.isPinned ? '#38bdf8' : 'var(--text-secondary)',
-                              padding: '0.4rem 0.6rem',
-                              borderRadius: '4px',
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '3px',
                               cursor: 'pointer',
-                              fontSize: '0.78rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.3rem'
+                              fontSize: '0.75rem',
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.2s ease'
                             }}
                           >
-                            📌 {item.isPinned ? '取消置頂' : '置頂文章'}
+                            📌 {item.isPinned ? '取消' : '置頂'}
                           </button>
 
                           <button
                             onClick={() => handleToggleWritingHidden(item)}
-                            title={item.isHidden ? '取消隱藏，前台恢復顯示' : '將此文章隱藏，前台將不顯示'}
+                            title={item.isHidden ? '恢復顯示' : '隱藏文章'}
                             style={{
                               background: item.isHidden ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                               border: item.isHidden ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
                               color: item.isHidden ? '#f87171' : 'var(--text-secondary)',
-                              padding: '0.4rem 0.6rem',
-                              borderRadius: '4px',
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '3px',
                               cursor: 'pointer',
-                              fontSize: '0.78rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.3rem'
+                              fontSize: '0.75rem',
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.2s ease'
                             }}
                           >
-                            {item.isHidden ? '👁️ 恢復顯示' : '🙈 隱藏文章'}
+                            {item.isHidden ? '👁️ 顯示' : '🙈 隱藏'}
                           </button>
 
                           <button
                             onClick={() => handleEditWriting(item)}
+                            title="編輯文章內容"
                             style={{
                               background: 'rgba(56, 189, 248, 0.1)',
-                              border: '1px solid rgba(56, 189, 248, 0.2)',
+                              border: '1px solid rgba(56, 189, 248, 0.25)',
                               color: '#38bdf8',
-                              padding: '0.4rem 0.6rem',
-                              borderRadius: '4px',
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '3px',
                               cursor: 'pointer',
-                              fontSize: '0.78rem',
-                              display: 'flex',
+                              fontSize: '0.75rem',
+                              whiteSpace: 'nowrap',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.3rem'
+                              gap: '0.2rem'
                             }}
                           >
-                            <Edit3 size={14} />
-                            編輯內容
+                            <Edit3 size={13} />
+                            編輯
                           </button>
 
                           <button
                             onClick={() => handleDeleteWriting(item.id)}
+                            title="刪除文章"
                             style={{
                               background: 'rgba(239, 68, 68, 0.1)',
-                              border: '1px solid rgba(239, 68, 68, 0.2)',
+                              border: '1px solid rgba(239, 68, 68, 0.25)',
                               color: '#ef4444',
-                              padding: '0.4rem 0.6rem',
-                              borderRadius: '4px',
+                              padding: '0.3rem 0.55rem',
+                              borderRadius: '3px',
                               cursor: 'pointer',
-                              fontSize: '0.78rem',
-                              display: 'flex',
+                              fontSize: '0.75rem',
+                              whiteSpace: 'nowrap',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.3rem'
+                              gap: '0.2rem'
                             }}
                           >
-                            <Trash2 size={14} />
-                            刪除文章
+                            <Trash2 size={13} />
+                            刪除
                           </button>
                         </div>
                       </div>
