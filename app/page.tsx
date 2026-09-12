@@ -224,8 +224,8 @@ export default function Home() {
                     lineHeight: 1.2
                   }}
                 >
-                  <span>MAXUPPORT</span>
-                  <span style={{ fontSize: 'clamp(1.3rem, 3vw, 1.7rem)', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
+                  <span>Max&apos;s</span>
+                  <span style={{ fontSize: 'clamp(1.2rem, 3.2vw, 1.6rem)', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
                 </h1>
                 
                 <p style={{
@@ -235,7 +235,7 @@ export default function Home() {
                   letterSpacing: '2px',
                   textTransform: 'uppercase'
                 }}>
-                  Curated Exhibition Space • 專屬參觀引路
+                  Max / Maxupport / yuo1238
                 </p>
 
                 {/* Modal / Card when an option is clicked */}
@@ -442,17 +442,17 @@ export default function Home() {
                     lineHeight: 1.2
                   }}
                 >
-                  <span>MAXUPPORT</span>
-                  <span style={{ fontSize: '1.8rem', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
+                  <span>Max&apos;s</span>
+                  <span style={{ fontSize: '1.6rem', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
                 </h1>
                 <p style={{
                   color: 'var(--text-secondary)',
                   marginBottom: '2.5rem',
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   letterSpacing: '2px',
                   textTransform: 'uppercase'
                 }}>
-                  Curated Exhibition Space
+                  Max / Maxupport / yuo1238
                 </p>
 
                 <form onSubmit={handleVisitorEnter} style={{
