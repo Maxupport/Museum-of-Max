@@ -376,13 +376,8 @@ export default function Home() {
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                             <span style={{ fontSize: '1.25rem' }}>{opt.icon}</span>
-                            <div>
-                              <div style={{ color: '#fff', fontSize: '0.92rem', fontWeight: 500, letterSpacing: '0.5px' }}>
-                                {opt.label}
-                              </div>
-                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: '0.15rem' }}>
-                                專屬密碼: <span style={{ color: '#38bdf8', fontFamily: 'monospace', fontWeight: 600 }}>{opt.code}</span>
-                              </div>
+                            <div style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 500, letterSpacing: '0.5px' }}>
+                              {opt.label}
                             </div>
                           </div>
 
