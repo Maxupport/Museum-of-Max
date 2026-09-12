@@ -100,7 +100,7 @@ model MusicItem {
 model WritingsItem {
   id          String   @id @default(cuid())
   exhibitId   String   @default("creation_lab") // 所屬展區: "finance_insurance" | "sound" | "creation_lab" | "communication"
-  category    String   @default("FB文章備份")      // 子類別標籤 (如 "FB文章備份", "小說", "投資", "保險" 等)
+  category    String   @default("社群隨筆")      // 子類別標籤 (如 "社群隨筆", "小說", "投資", "保險" 等)
   title       String   // 文章/創作標題
   topic       String?  // 文章主題 (如: 隨筆/創投/職涯...)
   fbUrl       String?  // FB 原始貼文連結

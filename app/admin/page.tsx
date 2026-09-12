@@ -446,7 +446,7 @@ export default function AdminDashboardPage() {
     setEditingWritingId(item.id);
     setWExhibitId(item.exhibitId || 'creation_lab');
     setWTitle(item.title);
-    setWCategory(item.category || 'FB文章備份');
+    setWCategory(item.category || '社群隨筆');
     setWTopic(item.topic || '');
     setWFbUrl(item.fbUrl || '');
     setWFbDate(item.fbDate || '');
@@ -2582,7 +2582,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.3s ease',
               }}
             >
-              <Edit3 size={16} /> FB文章備份 / 文章創作 ({
+              <Edit3 size={16} /> 社群隨筆 / 文章創作 ({
                 writingsItems.filter(item => item.exhibitId === 'creation_lab' || !item.exhibitId).length
               })
             </button>
@@ -2775,12 +2775,12 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* 創作 Lab - FB文章備份 / 文章創作 (獨立全寬精簡卡片呈現，無編輯器表單，無全文Dump) */}
+          {/* 創作 Lab - 社群隨筆 / 文章創作 */}
           {creationLabSubTab === 'writings' && (
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
-                  FB文章備份與文章創作列表 ({writingsItems.filter(item => item.exhibitId === 'creation_lab' || !item.exhibitId).length})
+                  社群隨筆與文章創作列表 ({writingsItems.filter(item => item.exhibitId === 'creation_lab' || !item.exhibitId).length})
                 </h2>
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                   <button
@@ -3501,7 +3501,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                {wExhibitId === 'creation_lab' && wCategory === 'FB文章備份' && (
+                {wExhibitId === 'creation_lab' && (wCategory === '社群隨筆' || wCategory === 'FB文章備份') && (
                   <>
                     <div>
                       <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>

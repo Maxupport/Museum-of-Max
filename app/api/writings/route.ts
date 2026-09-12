@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       data: {
         exhibitId: exhibitId || 'creation_lab',
         title: title.trim(),
-        category: category || 'FB文章備份',
+        category: category || '社群隨筆',
         topic: topic ? topic.trim() : null,
         fbUrl: fbUrl ? fbUrl.trim() : null,
         fbDate: fbDate ? fbDate.trim() : null,

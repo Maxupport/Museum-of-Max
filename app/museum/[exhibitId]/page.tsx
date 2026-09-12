@@ -1049,7 +1049,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 </div>
               )}
             </>
-          ) : exhibitId === 'creation_lab' && activeSubCategory === 'FB文章備份' ? (
+          ) : exhibitId === 'creation_lab' && (activeSubCategory === '社群隨筆' || activeSubCategory === 'FB文章備份') ? (
             writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : writingsItems.length === 0 ? (
@@ -1103,7 +1103,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                                 whiteSpace: 'nowrap',
                                 fontWeight: 500
                               }}>
-                                {item.category || 'FB文章備份'}
+                                {item.category === 'FB文章備份' ? '社群隨筆' : (item.category || '社群隨筆')}
                               </span>
                               {item.isPinned && (
                                 <span style={{ 
