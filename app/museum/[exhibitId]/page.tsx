@@ -120,7 +120,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   }, [exhibitId, activeSubCategory]);
 
   useEffect(() => {
-    if (exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) {
+    if (exhibitId === 'sound' || exhibitId === 'creation_lab') {
       setMusicLoading(true);
       fetch('/api/music')
         .then((res) => res.json())
@@ -129,7 +129,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
         })
         .finally(() => setMusicLoading(false));
     }
-  }, [exhibitId, activeSubCategory]);
+  }, [exhibitId]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -274,8 +274,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       return item.category !== '個人聲音探索心得';
     }
 
-    if (exhibitId === 'creation_lab' && activeSubCategory === '音樂') {
-      return item.category === '音樂' || !item.category || item.category === '創作 Lab - 音樂';
+    if (exhibitId === 'creation_lab') {
+      if (activeSubCategory === '音樂') {
+        return true;
+      }
+      return item.category === '音樂' || item.category === '創作 Lab - 音樂' || !item.category || !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '');
     }
 
     return true;
