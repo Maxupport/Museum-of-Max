@@ -231,9 +231,12 @@ export default function Home() {
                 <p style={{
                   color: 'var(--text-secondary)',
                   marginBottom: '2rem',
-                  fontSize: '0.85rem',
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase'
+                  fontSize: 'clamp(0.68rem, 2.7vw, 0.85rem)',
+                  letterSpacing: '1px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%'
                 }}>
                   董鈺新 Max / yuo1238 / Maxupport / Nathan
                 </p>
@@ -355,13 +358,14 @@ export default function Home() {
                             background: 'rgba(255, 255, 255, 0.03)',
                             border: '1px solid rgba(255, 255, 255, 0.12)',
                             borderRadius: '6px',
-                            padding: '0.95rem 1.2rem',
+                            padding: '0.9rem 1rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             cursor: 'pointer',
                             transition: 'all 0.25s ease',
-                            textAlign: 'left'
+                            textAlign: 'left',
+                            gap: '0.9rem'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
@@ -374,23 +378,25 @@ export default function Home() {
                             e.currentTarget.style.transform = 'translateY(0)';
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                            <span style={{ fontSize: '1.25rem' }}>{opt.icon}</span>
-                            <div style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 500, letterSpacing: '0.5px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{opt.icon}</span>
+                            <div style={{ color: '#fff', fontSize: 'clamp(0.83rem, 2.5vw, 0.95rem)', fontWeight: 500, letterSpacing: '0.3px', lineHeight: 1.4 }}>
                               {opt.label}
                             </div>
                           </div>
 
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            color: '#e2e8f0',
+                            background: 'rgba(56, 189, 248, 0.1)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            color: '#7dd3fc',
                             fontSize: '0.78rem',
-                            padding: '0.35rem 0.75rem',
+                            fontWeight: 500,
+                            padding: '0.38rem 0.75rem',
                             borderRadius: '4px',
                             whiteSpace: 'nowrap',
                             letterSpacing: '1px',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            marginLeft: '0.5rem'
                           }}>
                             取得通行碼
                           </div>
@@ -448,9 +454,12 @@ export default function Home() {
                 <p style={{
                   color: 'var(--text-secondary)',
                   marginBottom: '2.5rem',
-                  fontSize: '0.85rem',
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase'
+                  fontSize: 'clamp(0.68rem, 2.7vw, 0.85rem)',
+                  letterSpacing: '1px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%'
                 }}>
                   董鈺新 Max / yuo1238 / Maxupport / Nathan
                 </p>

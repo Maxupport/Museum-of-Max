@@ -49,8 +49,8 @@ export function ContactCuratorWidget() {
     setMailtoUrl(`mailto:maxupport@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   }, [pathname]);
 
-  // Hide widget on admin login or management dashboard
-  if (pathname === '/admin' || pathname === '/admin/login') {
+  // Hide widget on entrance page or admin pages
+  if (pathname === '/' || pathname === '/admin' || pathname === '/admin/login') {
     return null;
   }
 
