@@ -210,31 +210,33 @@ export default function MuseumHall() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.6rem',
-                color: '#fff',
-                background: 'rgba(56, 189, 248, 0.12)',
-                border: '1.5px solid #38bdf8',
-                padding: '0.65rem 1.6rem',
+                color: 'rgba(255, 255, 255, 0.75)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                padding: '0.6rem 1.4rem',
                 borderRadius: '30px',
                 backdropFilter: 'blur(10px)',
                 cursor: 'pointer',
-                boxShadow: '0 4px 25px rgba(56, 189, 248, 0.25)',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.3)',
                 transition: 'all 0.3s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#7dd3fc';
-                e.currentTarget.style.background = 'rgba(56, 189, 248, 0.25)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.45)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                e.currentTarget.style.color = '#ffffff';
                 e.currentTarget.style.transform = 'translateY(2px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#38bdf8';
-                e.currentTarget.style.background = 'rgba(56, 189, 248, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.75)';
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <span style={{ fontSize: '0.85rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 600, color: '#38bdf8' }}>
+              <span style={{ fontSize: '0.82rem', letterSpacing: '1.8px', fontFamily: 'var(--font-noto-sans)', fontWeight: 500 }}>
                 向下滾動繼續瀏覽主題展區
               </span>
-              <ChevronDown size={18} style={{ color: '#38bdf8' }} />
+              <ChevronDown size={16} style={{ opacity: 0.8 }} />
             </div>
           </header>
         </section>
