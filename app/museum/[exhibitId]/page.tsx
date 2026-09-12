@@ -456,34 +456,99 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               gap: '2rem'
             }}>
               {filteredVentureItems.map((item) => {
+                const isCenteredLogo = ['早期投資', '早期投資項目', '新創項目評估', '創投項目評估'].includes(item.category);
+
                 const CardContent = (
                   <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color, display: 'flex', flexDirection: 'column', height: '100%', cursor: item.linkUrl ? 'pointer' : 'default' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
-                      {item.logoUrl ? (
-                        <img src={item.logoUrl} alt={item.title} style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', padding: '0.2rem' }} />
-                      ) : (
-                        <div style={{ width: '48px', height: '48px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
-                          <Building size={24} />
-                        </div>
-                      )}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem' }}>
-                            {item.title}
-                          </h3>
-                          {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)' }} />}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <Calendar size={12} />
-                          {item.period}
-                        </div>
-                        {item.createdAt && (
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
-                            {formatTimestamp(item.createdAt)}
+                    {isCenteredLogo ? (
+                      /* 早期投資 & 新創項目評估：Logo 置中大圖呈現 */
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.2rem' }}>
+                        {item.logoUrl ? (
+                          <img
+                            src={item.logoUrl}
+                            alt={item.title}
+                            style={{
+                              width: '96px',
+                              height: '96px',
+                              objectFit: 'contain',
+                              borderRadius: '12px',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              padding: '0.6rem',
+                              border: '1px solid rgba(56, 189, 248, 0.25)',
+                              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                              marginBottom: '1rem',
+                              transition: 'transform 0.3s ease',
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '96px',
+                              height: '96px',
+                              borderRadius: '12px',
+                              background: 'rgba(56, 189, 248, 0.08)',
+                              border: '1.5px dashed rgba(56, 189, 248, 0.35)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#38bdf8',
+                              marginBottom: '1rem',
+                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                            }}
+                          >
+                            <Building size={36} style={{ opacity: 0.9, marginBottom: '2px' }} />
+                            <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.8, letterSpacing: '1px' }}>LOGO</span>
                           </div>
                         )}
+
+                        <div style={{ width: '100%' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
+                              {item.title}
+                            </h3>
+                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)' }} />}
+                          </div>
+                          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                            <Calendar size={13} />
+                            {item.period}
+                          </div>
+                          {item.createdAt && (
+                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
+                              {formatTimestamp(item.createdAt)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* 其他分類：原有橫向圖標排列 */
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
+                        {item.logoUrl ? (
+                          <img src={item.logoUrl} alt={item.title} style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', padding: '0.2rem' }} />
+                        ) : (
+                          <div style={{ width: '48px', height: '48px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+                            <Building size={24} />
+                          </div>
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem' }}>
+                              {item.title}
+                            </h3>
+                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)' }} />}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Calendar size={12} />
+                            {item.period}
+                          </div>
+                          {item.createdAt && (
+                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
+                              {formatTimestamp(item.createdAt)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.6rem 1rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8' }} />
