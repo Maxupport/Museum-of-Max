@@ -327,7 +327,7 @@ export default function Home() {
                   /* Standard 5 Options List */
                   <div>
                     <div style={{
-                      fontSize: '0.9rem',
+                      fontSize: 'clamp(0.72rem, 2.5vw, 0.9rem)',
                       color: '#e2e8f0',
                       marginBottom: '1.5rem',
                       letterSpacing: '1px',
@@ -335,10 +335,14 @@ export default function Home() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.5rem'
+                      gap: '0.4rem',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      width: '100%'
                     }}>
-                      <Sparkles size={16} style={{ color: '#38bdf8' }} />
-                      請點選您本次的參觀意圖以取得通行碼：
+                      <Sparkles size={16} style={{ color: '#38bdf8', flexShrink: 0 }} />
+                      <span>請根據參觀動機點選以取得專屬通行碼</span>
                     </div>
 
                     <div style={{
@@ -685,12 +689,17 @@ export default function Home() {
           width: '100%',
           maxWidth: '500px',
           color: 'var(--text-secondary)',
-          fontSize: '0.8rem',
-          letterSpacing: '2px',
+          fontSize: 'clamp(0.65rem, 2.3vw, 0.8rem)',
+          letterSpacing: '1.5px',
           textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
           animationDelay: '0.3s'
         }}>
-          <div>© 2026 MAXUPPORT • ALL RIGHTS RESERVED</div>
+          <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            © 2026 MAXUPPORT • ALL RIGHTS RESERVED
+          </div>
         </footer>
       </div>
 
