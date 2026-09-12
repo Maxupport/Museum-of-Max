@@ -80,8 +80,7 @@ export async function POST(request: NextRequest) {
       response.cookies.set('visitor_avatar_url', '', { path: '/', maxAge: 0 });
     }
 
-    const isCuratorPasscode = activePermissions.length >= ALL_EXHIBIT_KEYS.length || 
-      Boolean(found.note && (found.note.toLowerCase().includes('curator') || found.note.includes('策展人') || found.note.includes('管理')));
+    const isCuratorPasscode = Boolean(found.note && (found.note.toLowerCase().includes('curator') || found.note.includes('策展人') || found.note.includes('管理員')));
 
     if (isCuratorPasscode) {
       const adminToken = generateAdminToken();

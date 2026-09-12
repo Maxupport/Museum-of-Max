@@ -447,7 +447,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           ) : filteredVentureItems.length === 0 ? (
             <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <TrendingUp size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-              <p style={{ letterSpacing: '1px' }}>此子區塊尚無項目資料，策展人可由【策展人後台】隨時新增與更新。</p>
+              <p style={{ letterSpacing: '1px' }}>此子區塊尚無項目資料。</p>
             </div>
           ) : (
             <div style={{
@@ -642,7 +642,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           ) : careerItems.length === 0 ? (
             <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <Briefcase size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-              <p style={{ letterSpacing: '1px' }}>目前尚無職涯經歷資料，策展人可由【策展人後台】隨時新增編輯。</p>
+              <p style={{ letterSpacing: '1px' }}>目前尚無職涯經歷資料。</p>
             </div>
           ) : (
             <div style={{ position: 'relative', paddingLeft: '2rem', borderLeft: '2px solid rgba(255,255,255,0.1)' }}>
@@ -772,7 +772,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           📷 【工作現場 / 團體照片 預留位置】
                         </span>
                         <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
-                          在【策展人後台】新增或編輯時上傳照片，將以縮小完整比例展示於此處
+                          工作現場與團體照片專屬展示區塊
                         </span>
                       </div>
                     )}
@@ -995,8 +995,8 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
                   <p style={{ letterSpacing: '1px' }}>
                     {activeSubCategory
-                      ? `目前【${activeSubCategory}】標籤下尚無作品，策展人可於【策展人後台】指定此標籤新增 YouTube 音樂嵌入。`
-                      : '目前尚無音樂與聲音作品，策展人可於後台貼上 YouTube 連結新增。'}
+                      ? `目前【${activeSubCategory}】標籤下尚無作品。`
+                      : '目前尚無音樂與聲音作品。'}
                   </p>
                 </div>
               ) : (
@@ -1047,7 +1047,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : writingsItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無備份文章，策展人可於後台【全站文章發布編輯器】發布。</p>
+                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無備份文章。</p>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
@@ -1230,7 +1230,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           ) : exhibitId === 'creation_lab' && (activeSubCategory === '小說' || activeSubCategory === '文字') ? (
             Object.values(MOCK_NOVELS).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【小說專區】尚無上架作品，策展人後續可隨時新增發表。</p>
+                <p style={{ letterSpacing: '1px' }}>目前【小說專區】尚無上架作品。</p>
               </div>
             ) : (
               <div style={{
