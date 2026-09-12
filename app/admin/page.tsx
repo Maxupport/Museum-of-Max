@@ -3027,10 +3027,10 @@ export default function AdminDashboardPage() {
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   {[
                     { id: 'all', name: '全部展區' },
-                    { id: 'finance_insurance', name: '金融保險' },
+                    { id: 'finance_insurance', name: '商業議題分析' },
                     { id: 'sound', name: '聲音探索' },
                     { id: 'creation_lab', name: '創作 Lab' },
-                    { id: 'communication', name: '跨世代溝通' },
+                    { id: 'communication', name: '生涯 / 職涯擺渡' },
                   ].map((tab) => {
                     const isActive = filterArticleExhibit === tab.id;
                     return (
@@ -3441,10 +3441,10 @@ export default function AdminDashboardPage() {
                       className="museum-input"
                       style={{ maxWidth: '100%', padding: '0.75rem' }}
                     >
-                      <option value="finance_insurance">金融保險議題分析</option>
+                      <option value="finance_insurance">商業議題分析</option>
                       <option value="sound">聲音探索</option>
                       <option value="creation_lab">創作 Lab</option>
-                      <option value="communication">跨世代溝通</option>
+                      <option value="communication">生涯 / 職涯擺渡</option>
                     </select>
                   </div>
 

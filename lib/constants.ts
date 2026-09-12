@@ -17,8 +17,8 @@ export interface ExhibitConfig {
 export const EXHIBITS: Record<string, ExhibitConfig> = {
   vc: {
     id: 'vc',
-    title: '風險投資',
-    subtitle: 'Venture Capital',
+    title: '新創 / 風險投資',
+    subtitle: 'Investment Experience',
     color: 'var(--theme-vc, #38bdf8)',
     desc: '早期投資 / 創投項目評估 / 天使引路計畫 / 募資 FA 服務',
     subcategories: ['早期投資', '創投項目評估', '天使引路計畫', '募資 FA 服務'],
@@ -26,8 +26,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
   },
   career: {
     id: 'career',
-    title: '職涯經歷',
-    subtitle: 'Career Experience',
+    title: '職涯履歷',
+    subtitle: 'Max’s Career / About Max',
     color: 'var(--theme-career, #f59e0b)',
     desc: '跨界職涯軌跡 / 時間軸歷程 / 重點里程碑與成果',
     subcategories: [],
@@ -36,8 +36,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
   },
   finance_insurance: {
     id: 'finance_insurance',
-    title: '金融保險議題分析',
-    subtitle: 'Financial & Insurance Issues',
+    title: '商業議題分析',
+    subtitle: 'Business Insights',
     color: 'var(--theme-audit, #10b981)',
     desc: '投資趨勢 / 保險規劃與風險控管 / 財務會計稽核實務',
     subcategories: ['投資', '保險', '財務會計'],
@@ -63,8 +63,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
   },
   communication: {
     id: 'communication',
-    title: '跨世代溝通',
-    subtitle: 'Cross-gen Communication',
+    title: '生涯 / 職涯擺渡',
+    subtitle: 'Career Re-Evaluation',
     color: 'var(--theme-corp, #6366f1)',
     desc: 'Maxupport 生涯擺渡 / 保險團隊增員計畫',
     subcategories: ['Maxupport 生涯擺渡', '保險團隊增員'],
@@ -73,13 +73,13 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
 };
 
 export const EXHIBIT_MAP: Record<string, string> = {
-  vc: '風險投資 (Venture Capital)',
-  career: '職涯經歷 (Career Experience)',
-  finance_insurance: '金融保險議題分析 (Financial & Insurance)',
+  vc: '新創 / 風險投資 (Investment Experience)',
+  career: '職涯履歷 (Max’s Career / About Max)',
+  finance_insurance: '商業議題分析 (Business Insights)',
   sound: '聲音探索 (Sound Exploration)',
   creation_lab: '創作 Lab (Creation Lab)',
   creation_lab_novel: '創作 Lab - 小說連載 (直通門票)',
-  communication: '跨世代溝通 (Cross-gen Communication)',
+  communication: '生涯 / 職涯擺渡 (Career Re-Evaluation)',
 };
 
 export const ALL_EXHIBIT_KEYS = Object.keys(EXHIBITS);
