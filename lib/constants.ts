@@ -63,11 +63,11 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
   },
   communication: {
     id: 'communication',
-    title: '生涯 / 職涯擺渡',
+    title: '人生擺渡',
     subtitle: 'Career Re-Evaluation',
     color: 'var(--theme-corp, #6366f1)',
-    desc: 'Maxupport 生涯擺渡 / 保險團隊增員計畫',
-    subcategories: ['Maxupport 生涯擺渡', '保險團隊增員'],
+    desc: 'Maxupport 人生擺渡 / 保險團隊增員計畫',
+    subcategories: ['Maxupport 人生擺渡', '保險團隊增員'],
     hasBlog: true,
   },
 };
@@ -79,7 +79,7 @@ export const EXHIBIT_MAP: Record<string, string> = {
   sound: '聲音探索 (Sound Exploration)',
   creation_lab: '創作 Lab (Creation Lab)',
   creation_lab_novel: '創作 Lab - 小說連載 (直通門票)',
-  communication: '生涯 / 職涯擺渡 (Career Re-Evaluation)',
+  communication: '人生擺渡 (Career Re-Evaluation)',
 };
 
 export const ALL_EXHIBIT_KEYS = Object.keys(EXHIBITS);

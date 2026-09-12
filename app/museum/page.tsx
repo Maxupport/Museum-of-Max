@@ -179,7 +179,7 @@ export default function MuseumHall() {
             }}>
               <h2 style={{ fontSize: 'clamp(1.15rem, 3.5vw, 1.35rem)', color: '#fff', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)' }}>歡迎來到 Maxupport 的專屬策展空間</h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: 1.7, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
-                這裡記錄了 Max 超過 14 年的跨界職涯軌跡，從新創 / 風險投資、職涯履歷、商業議題分析、聲音探索、創作 Lab 到生涯 / 職涯擺渡，每個展區都代表著對不同領域的熱情與實踐。
+                這裡記錄了 Max 超過 14 年的跨界職涯軌跡，從新創 / 風險投資、職涯履歷、商業議題分析、聲音探索、創作 Lab 到人生擺渡，每個展區都代表著對不同領域的熱情與實踐。
               </p>
             </div>
 

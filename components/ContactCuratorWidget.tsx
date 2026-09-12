@@ -11,7 +11,7 @@ const EXHIBIT_NAME_MAP: Record<string, string> = {
   '/museum/finance_insurance': '商業議題分析',
   '/museum/sound': '聲音探索',
   '/museum/creation_lab': '創作 Lab',
-  '/museum/communication': '生涯 / 職涯擺渡',
+  '/museum/communication': '人生擺渡',
   '/museum': '展覽大廳 (Museum Overview)',
   '/projects': '過往專案與案例',
 };

@@ -3030,7 +3030,7 @@ export default function AdminDashboardPage() {
                     { id: 'finance_insurance', name: '商業議題分析' },
                     { id: 'sound', name: '聲音探索' },
                     { id: 'creation_lab', name: '創作 Lab' },
-                    { id: 'communication', name: '生涯 / 職涯擺渡' },
+                    { id: 'communication', name: '人生擺渡' },
                   ].map((tab) => {
                     const isActive = filterArticleExhibit === tab.id;
                     return (
@@ -3435,8 +3435,8 @@ export default function AdminDashboardPage() {
                         setWExhibitId(newEx);
                         if (newEx === 'finance_insurance') setWCategory('投資');
                         else if (newEx === 'sound') setWCategory('個人聲音探索心得');
-                        else if (newEx === 'creation_lab') setWCategory('FB文章備份');
-                        else if (newEx === 'communication') setWCategory('Maxupport 生涯擺渡');
+                        else if (newEx === 'creation_lab') setWCategory('社群隨筆');
+                        else if (newEx === 'communication') setWCategory('Maxupport 人生擺渡');
                       }}
                       className="museum-input"
                       style={{ maxWidth: '100%', padding: '0.75rem' }}
@@ -3444,7 +3444,7 @@ export default function AdminDashboardPage() {
                       <option value="finance_insurance">商業議題分析</option>
                       <option value="sound">聲音探索</option>
                       <option value="creation_lab">創作 Lab</option>
-                      <option value="communication">生涯 / 職涯擺渡</option>
+                      <option value="communication">人生擺渡</option>
                     </select>
                   </div>
 
@@ -3472,13 +3472,13 @@ export default function AdminDashboardPage() {
                       )}
                       {wExhibitId === 'creation_lab' && (
                         <>
-                          <option value="FB文章備份">FB文章備份</option>
+                          <option value="社群隨筆">社群隨筆</option>
                           <option value="小說">小說</option>
                         </>
                       )}
                       {wExhibitId === 'communication' && (
                         <>
-                          <option value="Maxupport 生涯擺渡">Maxupport 生涯擺渡</option>
+                          <option value="Maxupport 人生擺渡">Maxupport 人生擺渡</option>
                           <option value="保險團隊增員">保險團隊增員</option>
                         </>
                       )}
