@@ -2,15 +2,67 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, User, Lock, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, User, Lock, ArrowLeft, KeyRound, Sparkles, ArrowRight } from 'lucide-react';
+
+interface IntentOption {
+  id: string;
+  label: string;
+  code: string;
+  description: string;
+  icon: string;
+}
+
+const INTENT_OPTIONS: IntentOption[] = [
+  {
+    id: 'vc',
+    label: '我想了解 Max 有什麼專業。',
+    code: 'VC',
+    description: '開放展區：新創 / 風險投資、商業議題分析、職涯履歷',
+    icon: '💼',
+  },
+  {
+    id: 'nvc',
+    label: '我想了解 Max 除了專業還會什麼！',
+    code: 'NVC',
+    description: '開放展區：聲音探索、創作 Lab、人生擺渡',
+    icon: '✨',
+  },
+  {
+    id: 'max',
+    label: '我想知道 Max 創作過什麼',
+    code: 'Max',
+    description: '開放展區：創作 Lab (文章與小說)、聲音探索',
+    icon: '🎨',
+  },
+  {
+    id: 'vvip',
+    label: '我想知道 Max 的所有事情！',
+    code: 'VVIP',
+    description: '開放權限：全站 6 大展區完整探索通行證',
+    icon: '👑',
+  },
+  {
+    id: 'series',
+    label: '我想看連載故事！',
+    code: 'Series',
+    description: '直通門票：創作 Lab 小說連載區',
+    icon: '📖',
+  },
+];
 
 export default function Home() {
   const router = useRouter();
 
-  // Mode: 'visitor' (default passcode mode) vs 'admin' (easter egg unlocked curator login)
+  // Mode: 'visitor' (default) vs 'admin' (easter egg unlocked curator login)
   const [mode, setMode] = useState<'visitor' | 'admin'>('visitor');
 
-  // Visitor state
+  // Visitor step: 'welcome' (default choice screen) vs 'passcode' (input form)
+  const [visitorStep, setVisitorStep] = useState<'welcome' | 'passcode'>('welcome');
+
+  // Selected Option for Unlocked Passcode Modal / Card
+  const [selectedOption, setSelectedOption] = useState<IntentOption | null>(null);
+
+  // Visitor input state
   const [passcode, setPasscode] = useState('');
   const [isEntering, setIsEntering] = useState(false);
   const [visitorError, setVisitorError] = useState('');
@@ -22,6 +74,38 @@ export default function Home() {
   const [adminPass, setAdminPass] = useState('');
   const [adminError, setAdminError] = useState('');
   const [adminLoading, setAdminLoading] = useState(false);
+
+  // Auto-verify & enter with code
+  const handleAutoEnterWithCode = async (codeToUse: string) => {
+    setPasscode(codeToUse);
+    setVisitorError('');
+    setVisitorLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: codeToUse }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        setIsEntering(true);
+        setTimeout(() => {
+          router.push(data.redirectUrl || '/museum');
+        }, 1200);
+      } else {
+        setVisitorError(data.error || '通行密碼驗證失敗，請手動確認');
+        setVisitorStep('passcode');
+      }
+    } catch {
+      setVisitorError('連線失敗，請檢查網路設定');
+      setVisitorStep('passcode');
+    } finally {
+      setVisitorLoading(false);
+    }
+  };
 
   // Visitor form submit
   const handleVisitorEnter = async (e: React.FormEvent) => {
@@ -102,104 +186,355 @@ export default function Home() {
   return (
     <>
       <div style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '2rem',
-        position: 'relative'
+        padding: '2rem 1.2rem',
+        position: 'relative',
+        boxSizing: 'border-box'
       }}>
         <div className="glass-panel animate-fade-in" style={{
-          maxWidth: '500px',
+          maxWidth: visitorStep === 'welcome' && !selectedOption ? '640px' : '520px',
           width: '100%',
-          padding: '4rem 3rem',
+          padding: visitorStep === 'welcome' && !selectedOption ? '3.5rem 2.2rem' : '3.5rem 2.5rem',
           textAlign: 'center',
-          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+          transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
         }}>
           {mode === 'visitor' ? (
-            /* Visitor Passcode Mode (Clean & Default) */
-            <>
-              <h1 
-                onClick={handleTitleClick}
-                style={{
-                  fontSize: '2.4rem',
-                  fontWeight: 300,
-                  marginBottom: '1rem',
-                  letterSpacing: '4px',
-                  color: '#fff',
-                  fontFamily: 'var(--font-noto-serif)',
-                  cursor: 'default',
-                  userSelect: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.4rem',
-                  alignItems: 'center',
-                  lineHeight: 1.2
-                }}
-              >
-                <span>MAXUPPORT</span>
-                <span style={{ fontSize: '1.8rem', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
-              </h1>
-              <p style={{
-                color: 'var(--text-secondary)',
-                marginBottom: '3rem',
-                fontSize: '0.9rem',
-                letterSpacing: '2px',
-                textTransform: 'uppercase'
-              }}>
-                Curated Exhibition Space
-              </p>
-
-              <form onSubmit={handleVisitorEnter} style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.5rem',
-                alignItems: 'center'
-              }}>
-                <input
-                  type="password"
-                  value={passcode}
-                  onChange={(e) => {
-                    setPasscode(e.target.value);
-                    if (visitorError) setVisitorError('');
-                  }}
-                  placeholder="ENTER PASSCODE"
-                  className="museum-input"
+            visitorStep === 'welcome' ? (
+              /* Welcome Step: 5 Intent Options */
+              <div>
+                <h1 
+                  onClick={handleTitleClick}
                   style={{
-                    textAlign: 'center',
+                    fontSize: 'clamp(1.8rem, 4vw, 2.3rem)',
+                    fontWeight: 300,
+                    marginBottom: '0.4rem',
                     letterSpacing: '4px',
-                    borderColor: visitorError ? 'rgba(239, 68, 68, 0.6)' : undefined
+                    color: '#fff',
+                    fontFamily: 'var(--font-noto-serif)',
+                    cursor: 'default',
+                    userSelect: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.3rem',
+                    alignItems: 'center',
+                    lineHeight: 1.2
                   }}
-                  disabled={visitorLoading || isEntering}
-                  autoFocus
-                />
+                >
+                  <span>MAXUPPORT</span>
+                  <span style={{ fontSize: 'clamp(1.3rem, 3vw, 1.7rem)', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
+                </h1>
+                
+                <p style={{
+                  color: 'var(--text-secondary)',
+                  marginBottom: '2rem',
+                  fontSize: '0.85rem',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase'
+                }}>
+                  Curated Exhibition Space • 專屬參觀引路
+                </p>
 
-                {visitorError && (
-                  <div style={{
-                    color: '#f87171',
-                    fontSize: '0.85rem',
-                    letterSpacing: '1px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '2px',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                    width: '100%',
-                    maxWidth: '400px'
-                  }}>
-                    {visitorError}
+                {/* Modal / Card when an option is clicked */}
+                {selectedOption ? (
+                  <div className="animate-fade-in" style={{ padding: '0.5rem 0' }}>
+                    <div style={{
+                      background: 'rgba(56, 189, 248, 0.08)',
+                      border: '1.5px solid rgba(56, 189, 248, 0.3)',
+                      borderRadius: '8px',
+                      padding: '2rem 1.5rem',
+                      marginBottom: '2rem',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }}>{selectedOption.icon}</div>
+                      <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.5rem', letterSpacing: '1px' }}>
+                        您選擇的參觀意圖：
+                      </div>
+                      <div style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 600, marginBottom: '1.2rem', fontFamily: 'var(--font-noto-serif)' }}>
+                        {selectedOption.label}
+                      </div>
+
+                      <div style={{
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px dashed rgba(56, 189, 248, 0.4)',
+                        padding: '1.2rem',
+                        borderRadius: '6px',
+                        marginBottom: '1rem'
+                      }}>
+                        <div style={{ fontSize: '0.8rem', color: '#38bdf8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.3rem', fontWeight: 500 }}>
+                          🔑 您的專屬通行密碼
+                        </div>
+                        <div style={{ fontSize: '2.2rem', color: '#38bdf8', fontFamily: 'monospace', fontWeight: 700, letterSpacing: '4px' }}>
+                          {selectedOption.code}
+                        </div>
+                      </div>
+
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5, margin: 0 }}>
+                        {selectedOption.description}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <button
+                        onClick={() => handleAutoEnterWithCode(selectedOption.code)}
+                        className="museum-btn"
+                        disabled={visitorLoading || isEntering}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(56, 189, 248, 0.18)',
+                          borderColor: '#38bdf8',
+                          color: '#fff',
+                          fontWeight: 600,
+                          fontSize: '1rem',
+                          padding: '0.9rem 1.5rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.6rem',
+                          boxShadow: '0 4px 20px rgba(56, 189, 248, 0.25)'
+                        }}
+                      >
+                        {visitorLoading ? '驗證進入中...' : '帶入通行碼並進入博物館'}
+                        {!visitorLoading && <ArrowRight size={18} />}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setPasscode(selectedOption.code);
+                          setSelectedOption(null);
+                          setVisitorStep('passcode');
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          letterSpacing: '1px'
+                        }}
+                      >
+                        手動切換至密碼輸入頁面
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Standard 5 Options List */
+                  <div>
+                    <div style={{
+                      fontSize: '0.9rem',
+                      color: '#e2e8f0',
+                      marginBottom: '1.5rem',
+                      letterSpacing: '1px',
+                      fontFamily: 'var(--font-noto-serif)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <Sparkles size={16} style={{ color: '#38bdf8' }} />
+                      請點選您本次的參觀意圖以取得通行碼：
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.85rem',
+                      marginBottom: '2rem'
+                    }}>
+                      {INTENT_OPTIONS.map((opt) => (
+                        <div
+                          key={opt.id}
+                          onClick={() => {
+                            setSelectedOption(opt);
+                            setPasscode(opt.code);
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            borderRadius: '6px',
+                            padding: '0.95rem 1.2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            transition: 'all 0.25s ease',
+                            textAlign: 'left'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                            <span style={{ fontSize: '1.25rem' }}>{opt.icon}</span>
+                            <div>
+                              <div style={{ color: '#fff', fontSize: '0.92rem', fontWeight: 500, letterSpacing: '0.5px' }}>
+                                {opt.label}
+                              </div>
+                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: '0.15rem' }}>
+                                專屬密碼: <span style={{ color: '#38bdf8', fontFamily: 'monospace', fontWeight: 600 }}>{opt.code}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: '#e2e8f0',
+                            fontSize: '0.78rem',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap',
+                            letterSpacing: '1px',
+                            flexShrink: 0
+                          }}>
+                            取得密碼
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setVisitorStep('passcode')}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        letterSpacing: '1px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                    >
+                      <KeyRound size={15} />
+                      我已有通行碼，直接手動輸入
+                    </button>
                   </div>
                 )}
+              </div>
+            ) : (
+              /* Passcode Form Step */
+              <>
+                <h1 
+                  onClick={handleTitleClick}
+                  style={{
+                    fontSize: '2.4rem',
+                    fontWeight: 300,
+                    marginBottom: '1rem',
+                    letterSpacing: '4px',
+                    color: '#fff',
+                    fontFamily: 'var(--font-noto-serif)',
+                    cursor: 'default',
+                    userSelect: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                    alignItems: 'center',
+                    lineHeight: 1.2
+                  }}
+                >
+                  <span>MAXUPPORT</span>
+                  <span style={{ fontSize: '1.8rem', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
+                </h1>
+                <p style={{
+                  color: 'var(--text-secondary)',
+                  marginBottom: '2.5rem',
+                  fontSize: '0.9rem',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase'
+                }}>
+                  Curated Exhibition Space
+                </p>
+
+                <form onSubmit={handleVisitorEnter} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1.5rem',
+                  alignItems: 'center'
+                }}>
+                  <input
+                    type="password"
+                    value={passcode}
+                    onChange={(e) => {
+                      setPasscode(e.target.value);
+                      if (visitorError) setVisitorError('');
+                    }}
+                    placeholder="ENTER PASSCODE"
+                    className="museum-input"
+                    style={{
+                      textAlign: 'center',
+                      letterSpacing: '4px',
+                      borderColor: visitorError ? 'rgba(239, 68, 68, 0.6)' : undefined
+                    }}
+                    disabled={visitorLoading || isEntering}
+                    autoFocus
+                  />
+
+                  {visitorError && (
+                    <div style={{
+                      color: '#f87171',
+                      fontSize: '0.85rem',
+                      letterSpacing: '1px',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '2px',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      width: '100%',
+                      maxWidth: '400px'
+                    }}>
+                      {visitorError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="museum-btn"
+                    disabled={visitorLoading || isEntering}
+                  >
+                    {visitorLoading ? 'VERIFYING...' : 'ENTER'}
+                  </button>
+                </form>
 
                 <button
-                  type="submit"
-                  className="museum-btn"
-                  disabled={visitorLoading || isEntering}
+                  onClick={() => {
+                    setVisitorStep('welcome');
+                    setSelectedOption(null);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.8rem',
+                    letterSpacing: '1px',
+                    marginTop: '2rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    cursor: 'pointer',
+                    transition: 'color 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
-                  {visitorLoading ? 'VERIFYING...' : 'ENTER'}
+                  <ArrowLeft size={14} />
+                  返回選擇參觀意圖頁面
                 </button>
-              </form>
-            </>
+              </>
+            )
           ) : (
             /* Admin Mode (Unlocked by 5 clicks easter egg) */
             <div className="animate-fade-in">
@@ -317,7 +652,6 @@ export default function Home() {
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-secondary)',
-                  cursor: 'pointer',
                   fontSize: '0.8rem',
                   letterSpacing: '1px',
                   marginTop: '2rem',
@@ -338,9 +672,9 @@ export default function Home() {
 
         {/* Pure & Clean Footer (Zero public links) */}
         <footer className="animate-fade-in" style={{
-          marginTop: '6rem',
+          marginTop: '4rem',
           borderTop: '1px solid rgba(255,255,255,0.1)',
-          paddingTop: '2rem',
+          paddingTop: '1.5rem',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',

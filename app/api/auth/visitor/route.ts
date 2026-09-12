@@ -3,6 +3,39 @@ import { prisma } from '@/lib/prisma';
 import { parsePermissions, generateAdminToken } from '@/lib/auth';
 import { ALL_EXHIBIT_KEYS } from '@/lib/constants';
 
+const PRESET_PASSCODES: Record<string, { id: string; code: string; note: string; permissions: string[] }> = {
+  vc: {
+    id: 'preset-vc',
+    code: 'VC',
+    note: '我想了解 Max 有什麼專業。 (新創風投、商業議題分析、職涯履歷)',
+    permissions: ['vc', 'finance_insurance', 'career'],
+  },
+  nvc: {
+    id: 'preset-nvc',
+    code: 'NVC',
+    note: '我想了解 Max 除了專業還會什麼！ (聲音探索、創作 Lab、人生擺渡)',
+    permissions: ['sound', 'creation_lab', 'communication'],
+  },
+  max: {
+    id: 'preset-max',
+    code: 'Max',
+    note: '我想知道 Max 創作過什麼 (創作 Lab、聲音探索)',
+    permissions: ['creation_lab', 'sound'],
+  },
+  vvip: {
+    id: 'preset-vvip',
+    code: 'VVIP',
+    note: '我想知道 Max 的所有事情！ (VVIP 全站展區通行證)',
+    permissions: ['vc', 'career', 'finance_insurance', 'sound', 'creation_lab', 'communication'],
+  },
+  series: {
+    id: 'preset-series',
+    code: 'Series',
+    note: '我想看連載故事！ (創作 Lab 小說連載直通門票)',
+    permissions: ['creation_lab_novel'],
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -15,7 +48,20 @@ export async function POST(request: NextRequest) {
     const trimmedCode = passcode.trim().toLowerCase();
 
     const allPasscodes = await prisma.passcode.findMany();
-    const found = allPasscodes.find((p) => p.code.trim().toLowerCase() === trimmedCode);
+    let found = allPasscodes.find((p) => p.code.trim().toLowerCase() === trimmedCode);
+
+    if (!found && PRESET_PASSCODES[trimmedCode]) {
+      const preset = PRESET_PASSCODES[trimmedCode];
+      found = {
+        id: preset.id,
+        code: preset.code,
+        note: preset.note,
+        permissions: JSON.stringify(preset.permissions),
+        avatarUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
 
     if (!found) {
       return NextResponse.json({ ok: false, error: '通行密碼無效，請確認後重試' }, { status: 401 });
