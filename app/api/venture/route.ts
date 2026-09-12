@@ -6,9 +6,17 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
+    let whereCondition: { category?: string | { in: string[] } } | undefined = undefined;
+    if (category) {
+      if (category === '創投項目評估') {
+        whereCondition = { category: { in: ['創投項目評估', '新創項目評估'] } };
+      } else {
+        whereCondition = { category };
+      }
+    }
 
     const items = await prisma.ventureItem.findMany({
-      where: category ? { category } : undefined,
+      where: whereCondition,
       orderBy: [
         { createdAt: 'desc' },
         { order: 'asc' },

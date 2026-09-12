@@ -20,8 +20,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
     title: '風險投資',
     subtitle: 'Venture Capital',
     color: 'var(--theme-vc, #38bdf8)',
-    desc: '早期投資 / 新創項目評估 / 募資 FA 服務',
-    subcategories: ['早期投資', '新創項目評估', '募資 FA 服務'],
+    desc: '早期投資 / 創投項目評估 / 天使/個人項目評估 / 募資 FA 服務',
+    subcategories: ['早期投資', '創投項目評估', '天使/個人項目評估', '募資 FA 服務'],
     hasBlog: false,
   },
   career: {
