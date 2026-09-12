@@ -28,14 +28,21 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: var(--font-noto-sans), sans-serif;
   min-height: 100vh;
+  min-height: 100dvh;
   /* Add a very subtle radial gradient to break the pure black */
   background-image: radial-gradient(circle at 50% 0%, #151515 0%, #050505 50%);
   background-attachment: fixed;
+  overscroll-behavior-y: none;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -46,9 +53,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .app-container {
   min-height: 100vh;
+  min-height: 100dvh;
   padding-top: 65px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Glassmorphism Panel - Changed to sleek museum display case */

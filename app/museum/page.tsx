@@ -94,43 +94,40 @@ export default function MuseumHall() {
   const scrollToGalleries = () => {
     const el = document.getElementById('galleries-section');
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+      const headerOffset = 65;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: Math.max(0, offsetPosition),
+        behavior: 'smooth'
+      });
     }
   };
 
   return (
     <>
-      <div style={{ 
-        height: '100vh', 
-        overflowY: 'auto', 
-        scrollSnapType: 'y mandatory',
-        scrollBehavior: 'smooth'
-      }}>
+      <div style={{ width: '100%' }}>
         
-        {/* 第一頁：個人簡介與空間說明 (100vh 且 Snap) */}
+        {/* 第一頁：個人簡介與空間說明 (動態視埠 100dvh, 無頂部重複扣除) */}
         <section style={{ 
-          height: 'calc(100vh - 65px)',
-          marginTop: '65px',
-          scrollSnapAlign: 'start',
+          minHeight: 'calc(100dvh - 65px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '1.5rem',
+          padding: '2rem 1.2rem 3rem',
           boxSizing: 'border-box',
           position: 'relative'
         }}>
-          <header className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '800px', width: '100%' }}>
+          <header className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
             
             <div style={{
-              width: '200px',
-              height: '200px',
+              width: 'clamp(130px, 32vw, 190px)',
+              height: 'clamp(130px, 32vw, 190px)',
               borderRadius: '50%',
               background: 'rgba(255,255,255,0.05)',
               border: '2px solid rgba(255,255,255,0.25)',
-              marginBottom: '1.2rem',
+              marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -139,7 +136,8 @@ export default function MuseumHall() {
               letterSpacing: '2px',
               boxShadow: '0 0 40px rgba(0,0,0,0.6)',
               overflow: 'hidden',
-              position: 'relative'
+              position: 'relative',
+              flexShrink: 0
             }}>
               {visitorAvatarUrl ? (
                 <img
@@ -160,41 +158,43 @@ export default function MuseumHall() {
               width: '40px', 
               height: '2px', 
               background: '#fff', 
-              marginBottom: '1.2rem' 
+              marginBottom: '1rem' 
             }} />
-            <h1 style={{ fontSize: '2.5rem', letterSpacing: '6px', color: '#fff', marginBottom: '0.4rem', textTransform: 'uppercase', fontFamily: 'var(--font-noto-serif)', textAlign: 'center' }}>
+            <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', letterSpacing: '6px', color: '#fff', marginBottom: '0.3rem', textTransform: 'uppercase', fontFamily: 'var(--font-noto-serif)', textAlign: 'center' }}>
               Exhibition Hall
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '1.2rem' }}>
               Private Collection
             </p>
 
             <div style={{ 
               textAlign: 'center',
-              padding: '1.2rem 1.8rem',
+              padding: '1.2rem 1.6rem',
               borderTop: '1px solid rgba(255,255,255,0.1)',
               borderBottom: '1px solid rgba(255,255,255,0.1)',
               background: 'rgba(255,255,255,0.02)',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
-              <h2 style={{ fontSize: '1.35rem', color: '#fff', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)' }}>歡迎來到 Maxupport 的專屬策展空間</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.7, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
+              <h2 style={{ fontSize: 'clamp(1.15rem, 3.5vw, 1.35rem)', color: '#fff', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)' }}>歡迎來到 Maxupport 的專屬策展空間</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: 1.7, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
                 這裡記錄了 Max 超過 14 年的跨界職涯軌跡，從新創 / 風險投資、職涯履歷、商業議題分析、聲音探索、創作 Lab 到生涯 / 職涯擺渡，每個展區都代表著對不同領域的熱情與實踐。
               </p>
             </div>
 
-            {/* 往下轉動 / 點擊滾動瀏覽展區提示按鈕 (放置於內文正下方，絕對看得見與點擊) */}
+            {/* 往下轉動 / 點擊滾動瀏覽展區提示按鈕 */}
             <div 
               onClick={scrollToGalleries}
               style={{ 
-                marginTop: '2rem',
+                marginTop: '1.8rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.8rem',
+                gap: '0.6rem',
                 color: '#fff',
                 background: 'rgba(56, 189, 248, 0.12)',
                 border: '1.5px solid #38bdf8',
-                padding: '0.75rem 1.8rem',
+                padding: '0.65rem 1.6rem',
                 borderRadius: '30px',
                 backdropFilter: 'blur(10px)',
                 cursor: 'pointer',
@@ -212,26 +212,25 @@ export default function MuseumHall() {
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <span style={{ fontSize: '0.9rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 600, color: '#38bdf8' }}>
+              <span style={{ fontSize: '0.85rem', letterSpacing: '2px', fontFamily: 'var(--font-noto-sans)', fontWeight: 600, color: '#38bdf8' }}>
                 向下滾動繼續瀏覽主題展區
               </span>
-              <ChevronDown size={20} style={{ color: '#38bdf8' }} />
+              <ChevronDown size={18} style={{ color: '#38bdf8' }} />
             </div>
           </header>
         </section>
 
-        {/* 第二頁：6 大展區卡片清單 (100vh 且置中) */}
+        {/* 第二頁：6 大展區卡片清單 */}
         <section 
           id="galleries-section"
           style={{ 
-            minHeight: '100vh', 
-            scrollSnapAlign: 'start',
-            padding: '4rem 2rem',
+            minHeight: 'calc(100dvh - 65px)', 
+            padding: '3.5rem 1.5rem 6rem',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'auto'
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ maxWidth: '1400px', width: '100%' }}>
@@ -265,7 +264,7 @@ export default function MuseumHall() {
 
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
                   gap: '1.8rem' 
                 }}>
                   {visibleExhibits.map((exhibit, index) => (
@@ -273,7 +272,7 @@ export default function MuseumHall() {
                       <div 
                         className="glass-panel exhibit-card" 
                         style={{ 
-                          height: '240px',
+                          minHeight: '230px',
                           padding: '1.8rem 2rem', 
                           display: 'flex', 
                           flexDirection: 'column', 
