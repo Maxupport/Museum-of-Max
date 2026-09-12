@@ -262,11 +262,7 @@ export default function MuseumHall() {
                   6 Exhibition Galleries
                 </div>
 
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-                  gap: '1.8rem' 
-                }}>
+                <div className="gallery-grid">
                   {visibleExhibits.map((exhibit, index) => (
                     <Link href={`/museum/${exhibit.id}`} key={exhibit.id} style={{ textDecoration: 'none' }}>
                       <div 
@@ -294,7 +290,16 @@ export default function MuseumHall() {
                         </div>
                         
                         <div style={{ marginTop: 'auto' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.85rem', lineHeight: 1.5, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+                          <p style={{
+                            color: 'rgba(255,255,255,0.65)',
+                            fontSize: '0.82rem',
+                            lineHeight: 1.5,
+                            borderTop: '1px solid rgba(255,255,255,0.1)',
+                            paddingTop: '1rem',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
                             {exhibit.desc}
                           </p>
                         </div>
