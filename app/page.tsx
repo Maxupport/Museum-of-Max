@@ -392,7 +392,7 @@ export default function Home() {
                             letterSpacing: '1px',
                             flexShrink: 0
                           }}>
-                            取得密碼
+                            取得通行碼
                           </div>
                         </div>
                       ))}
