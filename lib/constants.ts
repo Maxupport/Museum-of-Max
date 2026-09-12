@@ -66,8 +66,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
     title: '人生擺渡',
     subtitle: 'Career Re-Evaluation',
     color: 'var(--theme-corp, #6366f1)',
-    desc: 'Maxupport 人生擺渡 / 保險團隊增員計畫',
-    subcategories: ['Maxupport 人生擺渡', '保險團隊增員'],
+    desc: 'Maxupport 人生擺渡 / 團隊增員計畫',
+    subcategories: ['Maxupport 人生擺渡', '團隊增員'],
     hasBlog: true,
   },
 };

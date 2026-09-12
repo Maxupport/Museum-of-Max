@@ -3479,7 +3479,7 @@ export default function AdminDashboardPage() {
                       {wExhibitId === 'communication' && (
                         <>
                           <option value="Maxupport 人生擺渡">Maxupport 人生擺渡</option>
-                          <option value="保險團隊增員">保險團隊增員</option>
+                          <option value="團隊增員">團隊增員</option>
                         </>
                       )}
                     </select>
