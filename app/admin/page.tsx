@@ -346,6 +346,7 @@ export default function AdminDashboardPage() {
   const [creatingWriting, setCreatingWriting] = useState(false);
   const [writingFormError, setWritingFormError] = useState('');
   const [showArticlePreview, setShowArticlePreview] = useState(false);
+  const [articleSubTab, setArticleSubTab] = useState<'list' | 'editor' | 'preview'>('list');
   const [filterArticleExhibit, setFilterArticleExhibit] = useState<string>('all');
 
   const fetchWritingsItems = useCallback(async () => {
@@ -426,6 +427,7 @@ export default function AdminDashboardPage() {
         setWOrder(0);
         setEditingWritingId(null);
         fetchWritingsItems();
+        setArticleSubTab('list');
       } else {
         setWritingFormError(data.error || '儲存失敗');
       }
@@ -448,6 +450,7 @@ export default function AdminDashboardPage() {
     setWContent(item.content);
     setWYoutubeUrl(item.youtubeUrl || '');
     setWOrder(item.order);
+    setArticleSubTab('editor');
   };
 
   const handleCancelWritingEdit = () => {
@@ -460,6 +463,7 @@ export default function AdminDashboardPage() {
     setWContent('');
     setWYoutubeUrl('');
     setWOrder(0);
+    setArticleSubTab('list');
   };
 
   const handleDeleteWriting = async (id: string) => {
@@ -3033,63 +3037,406 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Tab 8: Universal Article Publisher (全站專題文章發布與管理編輯器) */}
+      {/* Tab 8: Universal Article Publisher (全站專題文章發布與管理編輯器 - 獨立頁籤架構) */}
       {activeTab === 'articles' && (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {/* 頂部功能說明 */}
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* 頂部功能說明與獨立子頁籤控制列 */}
           <div className="glass-panel" style={{ padding: '1.5rem 2rem', borderLeft: '4px solid #38bdf8' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h2 style={{ fontSize: '1.3rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
-                  <BookOpen size={24} style={{ color: '#38bdf8' }} />
-                  全站文章發布編輯中心
-                </h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '0.4rem', margin: 0, lineHeight: 1.6 }}>
-                  在此統一管理金融保險、聲音探索、創作 Lab 與跨世代溝通四大展區的所有專題文章！支援直接從 Google Docs 複製貼上內文，前台即時生成高質感文章卡片與沉浸式閱讀頁面。
-                </p>
-              </div>
+            <div style={{ marginBottom: '1.2rem' }}>
+              <h2 style={{ fontSize: '1.3rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
+                <BookOpen size={24} style={{ color: '#38bdf8' }} />
+                全站文章發布與編輯中心
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '0.4rem', margin: 0, lineHeight: 1.6 }}>
+                在此統一管理金融保險、聲音探索、創作 Lab 與跨世代溝通四大展區的所有專題文章！獨立頁籤切換，享受完整寬度的列表管理與順暢的撰寫編輯體驗。
+              </p>
+            </div>
+
+            {/* 主功能頁籤導覽按鈕 */}
+            <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
               <button
                 type="button"
-                onClick={() => setShowArticlePreview(!showArticlePreview)}
+                onClick={() => setArticleSubTab('list')}
                 style={{
-                  padding: '0.6rem 1.2rem',
+                  padding: '0.6rem 1.4rem',
                   borderRadius: '4px',
                   border: '1px solid',
-                  borderColor: showArticlePreview ? '#38bdf8' : 'rgba(255,255,255,0.2)',
-                  background: showArticlePreview ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.05)',
-                  color: showArticlePreview ? '#38bdf8' : '#fff',
+                  borderColor: articleSubTab === 'list' ? '#38bdf8' : 'rgba(255,255,255,0.15)',
+                  background: articleSubTab === 'list' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255,255,255,0.04)',
+                  color: articleSubTab === 'list' ? '#38bdf8' : '#fff',
                   cursor: 'pointer',
-                  fontSize: '0.85rem',
+                  fontSize: '0.88rem',
+                  fontWeight: 500,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <Eye size={16} />
-                {showArticlePreview ? '關閉即時預覽' : '開啟即時排版預覽'}
+                <BookOpen size={17} />
+                📚 全站文章列表與管理 ({writingsItems.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!editingWritingId) {
+                    handleCancelWritingEdit();
+                  }
+                  setArticleSubTab('editor');
+                }}
+                style={{
+                  padding: '0.6rem 1.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid',
+                  borderColor: articleSubTab === 'editor' ? '#38bdf8' : 'rgba(255,255,255,0.15)',
+                  background: articleSubTab === 'editor' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255,255,255,0.04)',
+                  color: articleSubTab === 'editor' ? '#38bdf8' : '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.88rem',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {editingWritingId ? <Edit3 size={17} /> : <Plus size={17} />}
+                {editingWritingId ? `✏️ 編輯文章：${wTitle || '未命名'}` : '✍️ 撰寫與發布新文章'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setArticleSubTab('preview')}
+                style={{
+                  padding: '0.6rem 1.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid',
+                  borderColor: articleSubTab === 'preview' ? '#38bdf8' : 'rgba(255,255,255,0.15)',
+                  background: articleSubTab === 'preview' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255,255,255,0.04)',
+                  color: articleSubTab === 'preview' ? '#38bdf8' : '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.88rem',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Eye size={17} />
+                👁️ 前台閱讀內頁實時預覽
               </button>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
-            {/* 左欄：文章撰寫 / 編輯表單 */}
-            <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
-              <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
-                {editingWritingId ? <Edit3 size={20} style={{ color: '#38bdf8' }} /> : <Plus size={20} style={{ color: '#38bdf8' }} />}
-                {editingWritingId ? '編輯專題文章' : '撰寫與發布新文章'}
-              </h2>
+          {/* 子頁籤 1：📚 文章列表與管理 (獨立全寬顯示) */}
+          {articleSubTab === 'list' && (
+            <div className="glass-panel animate-fade-in" style={{ padding: '2rem' }}>
+              {/* 頂部分類篩選與快速按鈕 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {[
+                    { id: 'all', name: '全部展區' },
+                    { id: 'finance_insurance', name: '金融保險' },
+                    { id: 'sound', name: '聲音探索' },
+                    { id: 'creation_lab', name: '創作 Lab' },
+                    { id: 'communication', name: '跨世代溝通' },
+                  ].map((tab) => {
+                    const isActive = filterArticleExhibit === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setFilterArticleExhibit(tab.id)}
+                        style={{
+                          padding: '0.45rem 1rem',
+                          borderRadius: '3px',
+                          border: '1px solid',
+                          borderColor: isActive ? '#38bdf8' : 'rgba(255,255,255,0.1)',
+                          background: isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                          color: isActive ? '#fff' : 'var(--text-secondary)',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {tab.name}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                  <button
+                    onClick={() => {
+                      handleCancelWritingEdit();
+                      setArticleSubTab('editor');
+                    }}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid #38bdf8',
+                      color: '#38bdf8',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '4px',
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    <Plus size={15} /> 撰寫新文章
+                  </button>
+
+                  <button onClick={fetchWritingsItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
+                    <RefreshCw size={14} /> 重整
+                  </button>
+                </div>
+              </div>
+
+              {writingsItems.filter(item => filterArticleExhibit === 'all' ? true : item.exhibitId === filterArticleExhibit).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                  <BookOpen size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p style={{ letterSpacing: '1px' }}>目前尚無文章，點擊右上角「撰寫新文章」開始發布。</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  {/* 全寬表格標頭 */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: '0.5rem 1.2rem', 
+                    fontSize: '0.78rem', 
+                    color: 'var(--text-secondary)', 
+                    letterSpacing: '1px', 
+                    textTransform: 'uppercase',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                    <span style={{ flex: 1 }}>文章主題與標題</span>
+                    <span style={{ width: '130px', textAlign: 'center' }}>點擊率</span>
+                    <span style={{ width: '110px', textAlign: 'center' }}>建立日期</span>
+                    <span style={{ width: '230px', textAlign: 'center' }}>管理操作</span>
+                  </div>
+
+                  {writingsItems
+                    .filter(item => filterArticleExhibit === 'all' ? true : item.exhibitId === filterArticleExhibit)
+                    .map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: 'rgba(0,0,0,0.35)',
+                        border: item.isPinned ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255,255,255,0.08)',
+                        padding: '0.8rem 1.2rem',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1.2rem',
+                        transition: 'all 0.2s ease',
+                        opacity: item.isHidden ? 0.65 : 1
+                      }}
+                    >
+                      {/* 左側：狀態標籤、展區與文章標題 (單列全寬主體) */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', flex: 1, minWidth: 0 }}>
+                        {item.isPinned && (
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '0.15rem 0.5rem', borderRadius: '3px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            📌 置頂
+                          </span>
+                        )}
+                        {item.isHidden && (
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.15rem 0.5rem', borderRadius: '3px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            🙈 隱藏
+                          </span>
+                        )}
+
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', padding: '0.18rem 0.55rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {EXHIBIT_MAP[item.exhibitId || 'creation_lab']?.split(' ')[0] || item.exhibitId}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', padding: '0.18rem 0.55rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {item.category}
+                        </span>
+
+                        <h3 
+                          style={{ 
+                            color: '#fff', 
+                            fontSize: '0.95rem', 
+                            fontWeight: 500, 
+                            fontFamily: 'var(--font-noto-serif)', 
+                            margin: 0,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            flex: 1,
+                            minWidth: 0
+                          }}
+                          title={item.title}
+                        >
+                          {item.title}
+                        </h3>
+                      </div>
+
+                      {/* 中間：點擊率追蹤 */}
+                      <div style={{ flexShrink: 0, width: '130px', textAlign: 'center' }}>
+                        <span style={{ fontSize: '0.85rem', color: '#4ade80', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                          <Eye size={14} /> {item.views || 0} 次點擊
+                        </span>
+                      </div>
+
+                      {/* 中間：建立時間 */}
+                      <div style={{ flexShrink: 0, width: '110px', textAlign: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW') : '近期'}
+                        </span>
+                      </div>
+
+                      {/* 右側：單列管理操作按鈕區 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, width: '230px', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => handleToggleWritingPin(item)}
+                          title={item.isPinned ? '取消置頂' : '該分類置頂'}
+                          style={{
+                            background: item.isPinned ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                            border: item.isPinned ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                            color: item.isPinned ? '#38bdf8' : 'var(--text-secondary)',
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '0.78rem',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          📌 {item.isPinned ? '取消' : '置頂'}
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleWritingHidden(item)}
+                          title={item.isHidden ? '恢復顯示' : '隱藏文章'}
+                          style={{
+                            background: item.isHidden ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                            border: item.isHidden ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                            color: item.isHidden ? '#f87171' : 'var(--text-secondary)',
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '0.78rem',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {item.isHidden ? '👁️ 顯示' : '🙈 隱藏'}
+                        </button>
+
+                        <button
+                          onClick={() => handleEditWriting(item)}
+                          title="編輯文章內容"
+                          style={{
+                            background: 'rgba(56, 189, 248, 0.1)',
+                            border: '1px solid rgba(56, 189, 248, 0.25)',
+                            color: '#38bdf8',
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '0.78rem',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          <Edit3 size={14} />
+                          編輯
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteWriting(item.id)}
+                          title="刪除文章"
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            color: '#ef4444',
+                            padding: '0.3rem 0.6rem',
+                            borderRadius: '3px',
+                            cursor: 'pointer',
+                            fontSize: '0.78rem',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          刪除
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 子頁籤 2：✍️ 撰寫與發布新文章 / ✏️ 編輯文章 (獨立全寬顯示) */}
+          {articleSubTab === 'editor' && (
+            <div className="glass-panel animate-fade-in" style={{ padding: '2.5rem', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <h2 style={{ fontSize: '1.3rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
+                  {editingWritingId ? <Edit3 size={22} style={{ color: '#38bdf8' }} /> : <Plus size={22} style={{ color: '#38bdf8' }} />}
+                  {editingWritingId ? '編輯專題文章內文與屬性' : '撰寫與發布全新專題文章'}
+                </h2>
+
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setArticleSubTab('preview')}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: '#fff',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    <Eye size={15} /> 實時排版預覽
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancelWritingEdit}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'var(--text-secondary)',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    <X size={15} /> 返回列表
+                  </button>
+                </div>
+              </div>
 
               {writingFormError && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#f87171', padding: '0.8rem 1rem', borderRadius: '4px', fontSize: '0.88rem', marginBottom: '1.5rem' }}>
                   {writingFormError}
                 </div>
               )}
 
-              <form onSubmit={handleCreateOrUpdateWriting} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <form onSubmit={handleCreateOrUpdateWriting} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
                       目標展區 *
                     </label>
                     <select
@@ -3103,7 +3450,7 @@ export default function AdminDashboardPage() {
                         else if (newEx === 'communication') setWCategory('Maxupport 生涯擺渡');
                       }}
                       className="museum-input"
-                      style={{ maxWidth: '100%' }}
+                      style={{ maxWidth: '100%', padding: '0.75rem' }}
                     >
                       <option value="finance_insurance">金融保險議題分析</option>
                       <option value="sound">聲音探索</option>
@@ -3113,14 +3460,14 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
                       子標籤 / 分類 *
                     </label>
                     <select
                       value={wCategory}
                       onChange={(e) => setWCategory(e.target.value)}
                       className="museum-input"
-                      style={{ maxWidth: '100%' }}
+                      style={{ maxWidth: '100%', padding: '0.75rem' }}
                     >
                       {wExhibitId === 'finance_insurance' && (
                         <>
@@ -3151,7 +3498,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
                     文章標題 *
                   </label>
                   <input
@@ -3160,7 +3507,7 @@ export default function AdminDashboardPage() {
                     value={wTitle}
                     onChange={(e) => setWTitle(e.target.value)}
                     className="museum-input"
-                    style={{ maxWidth: '100%' }}
+                    style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1.05rem' }}
                     required
                   />
                 </div>
@@ -3168,7 +3515,7 @@ export default function AdminDashboardPage() {
                 {wExhibitId === 'creation_lab' && wCategory === 'FB文章備份' && (
                   <>
                     <div>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
                         文章主題 (選填)
                       </label>
                       <input
@@ -3177,13 +3524,13 @@ export default function AdminDashboardPage() {
                         value={wTopic}
                         onChange={(e) => setWTopic(e.target.value)}
                         className="museum-input"
-                        style={{ maxWidth: '100%' }}
+                        style={{ maxWidth: '100%', padding: '0.7rem' }}
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                       <div>
-                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
                           FB 上線時間 (選填)
                         </label>
                         <input
@@ -3192,12 +3539,12 @@ export default function AdminDashboardPage() {
                           value={wFbDate}
                           onChange={(e) => setWFbDate(e.target.value)}
                           className="museum-input"
-                          style={{ maxWidth: '100%' }}
+                          style={{ maxWidth: '100%', padding: '0.7rem' }}
                         />
                       </div>
 
                       <div>
-                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
                           FB 原文連結 (選填)
                         </label>
                         <input
@@ -3206,7 +3553,7 @@ export default function AdminDashboardPage() {
                           value={wFbUrl}
                           onChange={(e) => setWFbUrl(e.target.value)}
                           className="museum-input"
-                          style={{ maxWidth: '100%' }}
+                          style={{ maxWidth: '100%', padding: '0.7rem' }}
                         />
                       </div>
                     </div>
@@ -3214,9 +3561,9 @@ export default function AdminDashboardPage() {
                 )}
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                      摘要引言 (選填，顯示於卡片)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
+                      摘要引言 (選填，顯示於前台卡片)
                     </label>
                     {wContent.trim() && (
                       <button
@@ -3225,9 +3572,9 @@ export default function AdminDashboardPage() {
                           const clean = wContent.replace(/^[#>]\s*/gm, '').trim();
                           setWExcerpt(clean.slice(0, 100) + (clean.length > 100 ? '...' : ''));
                         }}
-                        style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.75rem', cursor: 'pointer' }}
+                        style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
                       >
-                        ⚡ 自內文自動擷取摘要
+                        ⚡ 自內文自動擷取 100 字摘要
                       </button>
                     )}
                   </div>
@@ -3236,15 +3583,15 @@ export default function AdminDashboardPage() {
                     value={wExcerpt}
                     onChange={(e) => setWExcerpt(e.target.value)}
                     className="museum-input"
-                    style={{ maxWidth: '100%', minHeight: '60px', resize: 'vertical' }}
+                    style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical', padding: '0.75rem' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', fontWeight: 500 }}>
                     文章內文 (支援從 Google Docs 直接複製貼上) *
                   </label>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
                     💡 提示：輸入 <code style={{ color: '#38bdf8' }}>一、</code> 或 <code style={{ color: '#38bdf8' }}>#</code> 可轉為章節標題；段落開頭輸入 <code style={{ color: '#f472b6' }}>&gt; </code> 可轉為亮點金句引言框。
                   </div>
                   <textarea
@@ -3252,336 +3599,117 @@ export default function AdminDashboardPage() {
                     value={wContent}
                     onChange={(e) => setWContent(e.target.value)}
                     className="museum-input"
-                    style={{ maxWidth: '100%', minHeight: '260px', resize: 'vertical', lineHeight: '1.7', fontFamily: 'var(--font-noto-sans)' }}
+                    style={{ maxWidth: '100%', minHeight: '380px', resize: 'vertical', lineHeight: '1.75', fontFamily: 'var(--font-noto-sans)', padding: '1rem', fontSize: '0.95rem' }}
                     required
                   />
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                    YouTube 影片連結 (選填，文章內頁自動內嵌)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
-                    value={wYoutubeUrl}
-                    onChange={(e) => setWYoutubeUrl(e.target.value)}
-                    className="museum-input"
-                    style={{ maxWidth: '100%' }}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                      YouTube 影片連結 (選填，文章內頁自動內嵌)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
+                      value={wYoutubeUrl}
+                      onChange={(e) => setWYoutubeUrl(e.target.value)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%', padding: '0.7rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                      排序權重 (Order, 越小越靠前)
+                    </label>
+                    <input
+                      type="number"
+                      value={wOrder}
+                      onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
+                      className="museum-input"
+                      style={{ maxWidth: '100%', padding: '0.7rem' }}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                    排序權重 (Order, 越小越前面)
-                  </label>
-                  <input
-                    type="number"
-                    value={wOrder}
-                    onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
-                    className="museum-input"
-                    style={{ maxWidth: '100%' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                   <button
                     type="submit"
                     className="museum-btn"
                     disabled={creatingWriting}
-                    style={{ flex: 1, background: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.35)', color: '#38bdf8' }}
+                    style={{ flex: 1, background: 'rgba(56, 189, 248, 0.2)', borderColor: '#38bdf8', color: '#fff', fontSize: '1rem', padding: '0.8rem', fontWeight: 600 }}
                   >
-                    {creatingWriting ? '發布中...' : (editingWritingId ? '更新文章內容' : '發布文章至展區')}
+                    {creatingWriting ? '發布儲存中...' : (editingWritingId ? '💾 儲存文章變更並返回列表' : '🚀 發布文章至全站展區')}
                   </button>
-                  {editingWritingId && (
-                    <button
-                      type="button"
-                      onClick={handleCancelWritingEdit}
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'var(--text-secondary)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '2px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleCancelWritingEdit}
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'var(--text-secondary)',
+                      padding: '0.8rem 1.5rem',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    取消
+                  </button>
                 </div>
               </form>
             </div>
+          )}
 
-            {/* 右欄：即時效果預覽 或 全站文章列表 */}
-            {showArticlePreview ? (
-              <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '0.8rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ fontSize: '0.85rem', color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Eye size={16} />
-                    前台閱讀內頁實時預覽
-                  </div>
-                  <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                    {EXHIBIT_MAP[wExhibitId] || wExhibitId} • {wCategory}
-                  </span>
+          {/* 子頁籤 3：👁️ 前台閱讀內頁實時預覽 (獨立全寬顯示) */}
+          {articleSubTab === 'preview' && (
+            <div className="glass-panel animate-fade-in" style={{ padding: '2.5rem', maxWidth: '900px', margin: '0 auto', width: '100%', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontSize: '0.9rem', color: '#38bdf8', letterSpacing: '1px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                  <Eye size={18} />
+                  前台閱讀內頁實時預覽
                 </div>
-
-                <div style={{ color: '#fff' }}>
-                  <h1 style={{ fontSize: '1.8rem', fontWeight: 300, fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3, marginBottom: '1rem' }}>
-                    {wTitle || '（尚未輸入文章標題）'}
-                  </h1>
-
-                  {wExcerpt && (
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem', fontStyle: 'italic', paddingLeft: '0.8rem', borderLeft: '2px solid rgba(255,255,255,0.2)' }}>
-                      {wExcerpt}
-                    </p>
-                  )}
-
-                  {wYoutubeUrl && (
-                    <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '6px', overflow: 'hidden', margin: '1.5rem 0', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', fontSize: '0.88rem' }}>
-                        🎬 預覽內嵌播放器: {wYoutubeUrl}
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: '0.95rem', lineHeight: 1.8, color: 'rgba(255,255,255,0.85)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.2rem' }}>
-                    {wContent.trim() ? wContent.split('\n').map((line, idx) => {
-                      const trimmed = line.trim();
-                      if (!trimmed) return null;
-                      if (trimmed.startsWith('#') || /^[一二三四五六七八九十]+[、.]/.test(trimmed)) {
-                        return <h3 key={idx} style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginTop: '1.5rem', marginBottom: '0.8rem', borderLeft: '3px solid #38bdf8', paddingLeft: '0.8rem' }}>{trimmed.replace(/^#+\s*/, '')}</h3>;
-                      }
-                      if (trimmed.startsWith('>') || trimmed.startsWith('「')) {
-                        return <blockquote key={idx} style={{ margin: '1.2rem 0', padding: '1rem 1.4rem', background: 'rgba(255,255,255,0.03)', borderLeft: '3px solid #f472b6', borderRadius: '0 4px 4px 0', fontSize: '1rem', fontStyle: 'italic', color: '#fff' }}>{trimmed.replace(/^>\s*/, '')}</blockquote>;
-                      }
-                      return <p key={idx} style={{ marginBottom: '1rem', whiteSpace: 'pre-line' }}>{trimmed}</p>;
-                    }) : <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>請在左側輸入或貼上文章內文...</div>}
-                  </div>
-                </div>
+                <span style={{ fontSize: '0.8rem', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', padding: '0.3rem 0.8rem', borderRadius: '4px', fontWeight: 500 }}>
+                  {EXHIBIT_MAP[wExhibitId] || wExhibitId} • {wCategory}
+                </span>
               </div>
-            ) : (
-              <div className="glass-panel" style={{ padding: '2rem' }}>
-                {/* 分類篩選頁籤 */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {[
-                      { id: 'all', name: '全部展區' },
-                      { id: 'finance_insurance', name: '金融保險' },
-                      { id: 'sound', name: '聲音探索' },
-                      { id: 'creation_lab', name: '創作 Lab' },
-                      { id: 'communication', name: '跨世代溝通' },
-                    ].map((tab) => {
-                      const isActive = filterArticleExhibit === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => setFilterArticleExhibit(tab.id)}
-                          style={{
-                            padding: '0.4rem 0.9rem',
-                            borderRadius: '3px',
-                            border: '1px solid',
-                            borderColor: isActive ? '#38bdf8' : 'rgba(255,255,255,0.1)',
-                            background: isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                            color: isActive ? '#fff' : 'var(--text-secondary)',
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {tab.name}
-                        </button>
-                      );
-                    })}
-                  </div>
 
-                  <button onClick={fetchWritingsItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-                    <RefreshCw size={14} /> 重整
-                  </button>
-                </div>
+              <div style={{ color: '#fff' }}>
+                <h1 style={{ fontSize: '2.1rem', fontWeight: 300, fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4, marginBottom: '1.2rem', color: '#fff' }}>
+                  {wTitle || '（尚未輸入文章標題）'}
+                </h1>
 
-                {writingsItems.filter(item => filterArticleExhibit === 'all' ? true : item.exhibitId === filterArticleExhibit).length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                    <BookOpen size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                    <p style={{ letterSpacing: '1px' }}>目前尚無文章，請於左側撰寫並發布。</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                    {/* 表格標頭 */}
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between', 
-                      padding: '0.4rem 1.2rem', 
-                      fontSize: '0.75rem', 
-                      color: 'var(--text-secondary)', 
-                      letterSpacing: '1px', 
-                      textTransform: 'uppercase',
-                      borderBottom: '1px solid rgba(255,255,255,0.1)'
-                    }}>
-                      <span style={{ flex: 1 }}>文章主題與標題</span>
-                      <span style={{ width: '110px', textAlign: 'right' }}>點擊率</span>
-                      <span style={{ width: '95px', textAlign: 'right' }}>建立日期</span>
-                      <span style={{ width: '210px', textAlign: 'center' }}>管理操作</span>
+                {wExcerpt && (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '2rem', fontStyle: 'italic', paddingLeft: '1rem', borderLeft: '3px solid rgba(56, 189, 248, 0.5)' }}>
+                    {wExcerpt}
+                  </p>
+                )}
+
+                {wYoutubeUrl && (
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '8px', overflow: 'hidden', margin: '2rem 0', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', fontSize: '0.95rem' }}>
+                      🎬 預覽內嵌播放器: {wYoutubeUrl}
                     </div>
-
-                    {writingsItems
-                      .filter(item => filterArticleExhibit === 'all' ? true : item.exhibitId === filterArticleExhibit)
-                      .map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          background: 'rgba(0,0,0,0.35)',
-                          border: item.isPinned ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255,255,255,0.08)',
-                          padding: '0.75rem 1.2rem',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '1rem',
-                          transition: 'all 0.2s ease',
-                          opacity: item.isHidden ? 0.65 : 1
-                        }}
-                      >
-                        {/* 左側：狀態標籤、展區與文章標題 (單列主體) */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                          {item.isPinned && (
-                            <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '0.1rem 0.45rem', borderRadius: '3px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                              📌 置頂
-                            </span>
-                          )}
-                          {item.isHidden && (
-                            <span style={{ fontSize: '0.72rem', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '3px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                              🙈 隱藏
-                            </span>
-                          )}
-
-                          <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', padding: '0.15rem 0.5rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            {EXHIBIT_MAP[item.exhibitId || 'creation_lab']?.split(' ')[0] || item.exhibitId}
-                          </span>
-                          <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', padding: '0.15rem 0.5rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            {item.category}
-                          </span>
-
-                          <h3 
-                            style={{ 
-                              color: '#fff', 
-                              fontSize: '0.92rem', 
-                              fontWeight: 500, 
-                              fontFamily: 'var(--font-noto-serif)', 
-                              margin: 0,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              flex: 1,
-                              minWidth: 0
-                            }}
-                            title={item.title}
-                          >
-                            {item.title}
-                          </h3>
-                        </div>
-
-                        {/* 中間：點擊率追蹤 */}
-                        <div style={{ flexShrink: 0, width: '110px', textAlign: 'right' }}>
-                          <span style={{ fontSize: '0.82rem', color: '#4ade80', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
-                            <Eye size={13} /> {item.views || 0} 次點擊
-                          </span>
-                        </div>
-
-                        {/* 中間：建立時間 */}
-                        <div style={{ flexShrink: 0, width: '95px', textAlign: 'right' }}>
-                          <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>
-                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW') : '近期'}
-                          </span>
-                        </div>
-
-                        {/* 右側：單列管理操作按鈕區 */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, width: '210px', justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={() => handleToggleWritingPin(item)}
-                            title={item.isPinned ? '取消置頂' : '該分類置頂'}
-                            style={{
-                              background: item.isPinned ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                              border: item.isPinned ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
-                              color: item.isPinned ? '#38bdf8' : 'var(--text-secondary)',
-                              padding: '0.3rem 0.55rem',
-                              borderRadius: '3px',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              whiteSpace: 'nowrap',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            📌 {item.isPinned ? '取消' : '置頂'}
-                          </button>
-
-                          <button
-                            onClick={() => handleToggleWritingHidden(item)}
-                            title={item.isHidden ? '恢復顯示' : '隱藏文章'}
-                            style={{
-                              background: item.isHidden ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                              border: item.isHidden ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-                              color: item.isHidden ? '#f87171' : 'var(--text-secondary)',
-                              padding: '0.3rem 0.55rem',
-                              borderRadius: '3px',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              whiteSpace: 'nowrap',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            {item.isHidden ? '👁️ 顯示' : '🙈 隱藏'}
-                          </button>
-
-                          <button
-                            onClick={() => handleEditWriting(item)}
-                            title="編輯文章內容"
-                            style={{
-                              background: 'rgba(56, 189, 248, 0.1)',
-                              border: '1px solid rgba(56, 189, 248, 0.25)',
-                              color: '#38bdf8',
-                              padding: '0.3rem 0.55rem',
-                              borderRadius: '3px',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              whiteSpace: 'nowrap',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.2rem'
-                            }}
-                          >
-                            <Edit3 size={13} />
-                            編輯
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteWriting(item.id)}
-                            title="刪除文章"
-                            style={{
-                              background: 'rgba(239, 68, 68, 0.1)',
-                              border: '1px solid rgba(239, 68, 68, 0.25)',
-                              color: '#ef4444',
-                              padding: '0.3rem 0.55rem',
-                              borderRadius: '3px',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              whiteSpace: 'nowrap',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.2rem'
-                            }}
-                          >
-                            <Trash2 size={13} />
-                            刪除
-                          </button>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
+
+                <div style={{ fontSize: '1.05rem', lineHeight: 1.9, color: 'rgba(255,255,255,0.88)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.8rem' }}>
+                  {wContent.trim() ? wContent.split('\n').map((line, idx) => {
+                    const trimmed = line.trim();
+                    if (!trimmed) return null;
+                    if (trimmed.startsWith('#') || /^[一二三四五六七八九十]+[、.]/.test(trimmed)) {
+                      return <h3 key={idx} style={{ fontSize: '1.4rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginTop: '2rem', marginBottom: '1rem', borderLeft: '4px solid #38bdf8', paddingLeft: '0.9rem' }}>{trimmed.replace(/^#+\s*/, '')}</h3>;
+                    }
+                    if (trimmed.startsWith('>') || trimmed.startsWith('「')) {
+                      return <blockquote key={idx} style={{ margin: '1.5rem 0', padding: '1.2rem 1.6rem', background: 'rgba(255,255,255,0.03)', borderLeft: '4px solid #f472b6', borderRadius: '0 4px 4px 0', fontSize: '1.05rem', fontStyle: 'italic', color: '#fff' }}>{trimmed.replace(/^>\s*/, '')}</blockquote>;
+                    }
+                    return <p key={idx} style={{ marginBottom: '1.2rem', whiteSpace: 'pre-line' }}>{trimmed}</p>;
+                  }) : <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', padding: '3rem 0' }}>請在左側輸入或貼上文章內文以查看預覽...</div>}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
