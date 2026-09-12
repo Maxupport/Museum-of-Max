@@ -79,7 +79,7 @@ interface WritingsItemData {
   createdAt?: string;
 }
 
-const VENTURE_CATEGORIES = ['早期投資', '創投項目評估', '天使/個人項目評估', '募資 FA 服務'];
+const VENTURE_CATEGORIES = ['早期投資', '創投項目評估', '天使引路計畫', '募資 FA 服務'];
 
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);

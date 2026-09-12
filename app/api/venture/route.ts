@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     if (category) {
       if (category === '創投項目評估') {
         whereCondition = { category: { in: ['創投項目評估', '新創項目評估'] } };
+      } else if (category === '天使引路計畫') {
+        whereCondition = { category: { in: ['天使引路計畫', '天使/個人項目評估'] } };
       } else {
         whereCondition = { category };
       }
