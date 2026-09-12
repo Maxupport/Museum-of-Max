@@ -235,7 +235,7 @@ export default function Home() {
                   letterSpacing: '2px',
                   textTransform: 'uppercase'
                 }}>
-                  Max / Maxupport / yuo1238
+                  董鈺新 Max / yuo1238 / Maxupport / Nathan
                 </p>
 
                 {/* Modal / Card when an option is clicked */}
@@ -452,7 +452,7 @@ export default function Home() {
                   letterSpacing: '2px',
                   textTransform: 'uppercase'
                 }}>
-                  Max / Maxupport / yuo1238
+                  董鈺新 Max / yuo1238 / Maxupport / Nathan
                 </p>
 
                 <form onSubmit={handleVisitorEnter} style={{
