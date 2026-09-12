@@ -1054,7 +1054,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : writingsItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無備份文章。</p>
+                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory === 'FB文章備份' ? '社群隨筆' : activeSubCategory}】尚無文章。</p>
               </div>
             ) : (
               <>
