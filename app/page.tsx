@@ -16,14 +16,14 @@ const INTENT_OPTIONS: IntentOption[] = [
   {
     id: 'vc',
     label: '我想了解 Max 有什麼專業。',
-    code: 'VC',
+    code: 'VC2026',
     description: '開放展區：新創 / 風險投資、商業議題分析、職涯履歷',
     icon: '💼',
   },
   {
     id: 'nvc',
     label: '我想了解 Max 除了專業還會什麼！',
-    code: 'NVC',
+    code: 'NVC2026',
     description: '開放展區：聲音探索、創作 Lab、人生擺渡',
     icon: '✨',
   },

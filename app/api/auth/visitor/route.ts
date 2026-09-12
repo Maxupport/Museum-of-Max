@@ -4,15 +4,27 @@ import { parsePermissions, generateAdminToken } from '@/lib/auth';
 import { ALL_EXHIBIT_KEYS } from '@/lib/constants';
 
 const PRESET_PASSCODES: Record<string, { id: string; code: string; note: string; permissions: string[] }> = {
-  vc: {
-    id: 'preset-vc',
-    code: 'VC',
+  vc2026: {
+    id: 'preset-vc2026',
+    code: 'VC2026',
     note: '我想了解 Max 有什麼專業。 (新創風投、商業議題分析、職涯履歷)',
     permissions: ['vc', 'finance_insurance', 'career'],
   },
+  vc: {
+    id: 'preset-vc',
+    code: 'VC2026',
+    note: '我想了解 Max 有什麼專業。 (新創風投、商業議題分析、職涯履歷)',
+    permissions: ['vc', 'finance_insurance', 'career'],
+  },
+  nvc2026: {
+    id: 'preset-nvc2026',
+    code: 'NVC2026',
+    note: '我想了解 Max 除了專業還會什麼！ (聲音探索、創作 Lab、人生擺渡)',
+    permissions: ['sound', 'creation_lab', 'communication'],
+  },
   nvc: {
     id: 'preset-nvc',
-    code: 'NVC',
+    code: 'NVC2026',
     note: '我想了解 Max 除了專業還會什麼！ (聲音探索、創作 Lab、人生擺渡)',
     permissions: ['sound', 'creation_lab', 'communication'],
   },
