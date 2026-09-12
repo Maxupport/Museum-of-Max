@@ -213,6 +213,14 @@ export default function ArticleDetailPage({
     ],
   };
 
+  const [isCurator, setIsCurator] = useState(false);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setIsCurator(document.cookie.includes('is_curator=true'));
+    }
+  }, []);
+
   return (
     <div style={{ padding: '3.5rem 1.5rem 6rem', maxWidth: '820px', margin: '0 auto', minHeight: '100vh', boxSizing: 'border-box' }}>
       {/* 頂部導覽 */}
@@ -330,10 +338,12 @@ export default function ArticleDetailPage({
             paddingBottom: '1.5rem',
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Calendar size={14} />
-            {articleData.date}
-          </span>
+          {isCurator && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Calendar size={14} />
+              {articleData.date}
+            </span>
+          )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <BookOpen size={14} />
             {articleData.readTime}

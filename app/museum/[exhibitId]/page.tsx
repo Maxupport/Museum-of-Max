@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2 } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2 } from 'lucide-react';
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { EXHIBITS, YOUTH_SONGS_YOUTUBE_CHANNEL } from '@/lib/constants';
@@ -89,6 +89,13 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   const [activeSubCategory, setActiveSubCategory] = useState<string>(exhibit?.subcategories[0] || '');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [isNovelDirect, setIsNovelDirect] = useState(false);
+  const [isCurator, setIsCurator] = useState(false);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setIsCurator(document.cookie.includes('is_curator=true'));
+    }
+  }, []);
   
   // Career Items state (for career exhibit)
   const [careerItems, setCareerItems] = useState<CareerItem[]>([]);
@@ -1050,182 +1057,219 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無備份文章。</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
-                {writingsItems.map((item) => (
-                  <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
-                    <div 
-                      className="glass-panel exhibit-card" 
-                      style={{ 
-                        padding: '1.8rem 2rem', 
-                        color: exhibit.color, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        height: '100%',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                        boxSizing: 'border-box'
-                      }}
-                    >
-                      {/* 頂部：標籤與時間 */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', gap: '0.8rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <span style={{ 
-                            fontSize: '0.75rem', 
-                            background: 'rgba(168,85,247,0.15)', 
-                            color: '#c084fc', 
-                            padding: '0.2rem 0.65rem', 
-                            borderRadius: '4px', 
-                            border: '1px solid rgba(168,85,247,0.3)',
-                            whiteSpace: 'nowrap',
-                            fontWeight: 500
-                          }}>
-                            {item.category || 'FB文章備份'}
-                          </span>
-                          {item.isPinned && (
-                            <span style={{ 
-                              fontSize: '0.72rem', 
-                              background: 'rgba(56, 189, 248, 0.2)', 
-                              color: '#38bdf8', 
-                              padding: '0.15rem 0.5rem', 
-                              borderRadius: '4px', 
-                              border: '1px solid rgba(56, 189, 248, 0.4)',
-                              whiteSpace: 'nowrap',
-                              fontWeight: 600
-                            }}>
-                              📌 置頂
-                            </span>
-                          )}
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.8rem' }}>
+                  {writingsItems.map((item) => (
+                    <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
+                      <div 
+                        className="glass-panel exhibit-card" 
+                        style={{ 
+                          padding: '0', 
+                          color: exhibit.color, 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          height: '100%',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                          boxSizing: 'border-box',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {/* 縮圖 Header */}
+                        <div style={{ 
+                          width: '100%', 
+                          height: '135px', 
+                          background: 'rgba(255,255,255,0.03)', 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: exhibit.color,
+                          borderBottom: '1px solid rgba(255,255,255,0.06)'
+                        }}>
+                          <BookOpen size={30} style={{ opacity: 0.7 }} />
                         </div>
-                        {item.createdAt && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>
-                            📅 {formatTimestamp(item.createdAt)}
-                          </span>
-                        )}
-                      </div>
 
-                      {/* 主標題 (為主軸，簡潔 2 行截斷，排版不亂跳) */}
-                      <h3 style={{ 
-                        color: '#fff', 
-                        fontSize: '1.3rem', 
-                        marginBottom: '0.6rem', 
-                        fontFamily: 'var(--font-noto-serif)', 
-                        lineHeight: 1.45,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }}>
-                        {item.title}
-                      </h3>
-
-                      {/* 標題下方 3 個標籤: 文章主題, FB 發布時間, FB 連結 */}
-                      {(item.topic || item.fbDate || item.fbUrl) && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', marginBottom: '0.8rem' }}>
-                          {item.topic && (
-                            <span style={{ 
-                              fontSize: '0.75rem', 
-                              background: 'rgba(168,85,247,0.15)', 
-                              color: '#c084fc', 
-                              border: '1px solid rgba(168,85,247,0.3)', 
-                              padding: '0.2rem 0.6rem', 
-                              borderRadius: '4px', 
-                              whiteSpace: 'nowrap',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.3rem'
-                            }}>
-                              📌 主題：{item.topic}
-                            </span>
-                          )}
-                          {item.fbDate && (
-                            <span style={{ 
-                              fontSize: '0.75rem', 
-                              background: 'rgba(255,255,255,0.06)', 
-                              color: 'var(--text-secondary)', 
-                              border: '1px solid rgba(255,255,255,0.12)', 
-                              padding: '0.2rem 0.6rem', 
-                              borderRadius: '4px', 
-                              whiteSpace: 'nowrap',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.3rem'
-                            }}>
-                              📅 FB發布：{item.fbDate}
-                            </span>
-                          )}
-                          {item.fbUrl && (
-                            <a
-                              href={item.fbUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{ 
+                        <div style={{ padding: '1.5rem 1.6rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                          {/* 頂部：標籤與時間 */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', gap: '0.8rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              <span style={{ 
                                 fontSize: '0.75rem', 
-                                background: 'rgba(59,130,246,0.15)', 
-                                color: '#60a5fa', 
-                                border: '1px solid rgba(59,130,246,0.3)', 
-                                padding: '0.2rem 0.6rem', 
+                                background: 'rgba(168,85,247,0.15)', 
+                                color: '#c084fc', 
+                                padding: '0.2rem 0.65rem', 
                                 borderRadius: '4px', 
-                                textDecoration: 'none', 
+                                border: '1px solid rgba(168,85,247,0.3)',
                                 whiteSpace: 'nowrap',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.3rem'
-                              }}
-                            >
-                              🔗 FB 連結
-                            </a>
+                                fontWeight: 500
+                              }}>
+                                {item.category || 'FB文章備份'}
+                              </span>
+                              {item.isPinned && (
+                                <span style={{ 
+                                  fontSize: '0.72rem', 
+                                  background: 'rgba(56, 189, 248, 0.2)', 
+                                  color: '#38bdf8', 
+                                  padding: '0.15rem 0.5rem', 
+                                  borderRadius: '4px', 
+                                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                                  whiteSpace: 'nowrap',
+                                  fontWeight: 600
+                                }}>
+                                  📌 置頂
+                                </span>
+                              )}
+                            </div>
+                            {isCurator && item.createdAt && (
+                              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>
+                                📅 {formatTimestamp(item.createdAt)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 主標題 (為主軸，簡潔 2 行截斷) */}
+                          <h3 style={{ 
+                            color: '#fff', 
+                            fontSize: '1.25rem', 
+                            marginBottom: '0.6rem', 
+                            fontFamily: 'var(--font-noto-serif)', 
+                            lineHeight: 1.4,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            wordBreak: 'break-word',
+                            textWrap: 'balance'
+                          }}>
+                            {item.title}
+                          </h3>
+
+                          {/* 標題下方標籤: 文章主題, FB 發布時間, FB 連結 */}
+                          {(item.topic || item.fbDate || item.fbUrl) && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', marginBottom: '0.8rem' }}>
+                              {item.topic && (
+                                <span style={{ 
+                                  fontSize: '0.73rem', 
+                                  background: 'rgba(168,85,247,0.15)', 
+                                  color: '#c084fc', 
+                                  border: '1px solid rgba(168,85,247,0.3)', 
+                                  padding: '0.15rem 0.55rem', 
+                                  borderRadius: '4px', 
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  📌 {item.topic}
+                                </span>
+                              )}
+                              {item.fbDate && (
+                                <span style={{ 
+                                  fontSize: '0.73rem', 
+                                  background: 'rgba(255,255,255,0.06)', 
+                                  color: 'var(--text-secondary)', 
+                                  border: '1px solid rgba(255,255,255,0.12)', 
+                                  padding: '0.15rem 0.55rem', 
+                                  borderRadius: '4px', 
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  📅 FB：{item.fbDate}
+                                </span>
+                              )}
+                              {item.fbUrl && (
+                                <a
+                                  href={item.fbUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{ 
+                                    fontSize: '0.73rem', 
+                                    background: 'rgba(59,130,246,0.15)', 
+                                    color: '#60a5fa', 
+                                    border: '1px solid rgba(59,130,246,0.3)', 
+                                    padding: '0.15rem 0.55rem', 
+                                    borderRadius: '4px', 
+                                    textDecoration: 'none', 
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  🔗 FB 連結
+                                </a>
+                              )}
+                            </div>
                           )}
-                        </div>
-                      )}
 
-                      {/* 文章簡介 (只保留乾淨的 3 行預覽，不硬塞全文) */}
-                      <p style={{ 
-                        color: 'var(--text-secondary)', 
-                        fontSize: '0.88rem', 
-                        lineHeight: 1.65, 
-                        display: '-webkit-box', 
-                        WebkitLineClamp: 3, 
-                        WebkitBoxOrient: 'vertical', 
-                        overflow: 'hidden', 
-                        marginTop: 'auto',
-                        marginBottom: '1.2rem' 
-                      }}>
-                        {item.excerpt || item.content}
-                      </p>
+                          {/* 很短摘要 (精簡 2 行預覽) */}
+                          <p style={{ 
+                            color: 'var(--text-secondary)', 
+                            fontSize: '0.86rem', 
+                            lineHeight: 1.6, 
+                            display: '-webkit-box', 
+                            WebkitLineClamp: 2, 
+                            WebkitBoxOrient: 'vertical', 
+                            overflow: 'hidden', 
+                            marginTop: 'auto',
+                            marginBottom: '1.2rem' 
+                          }}>
+                            {item.excerpt || item.content.replace(/^[#>]\s*/gm, '')}
+                          </p>
 
-                      {/* 卡片底欄行動提示 */}
-                      <div style={{ 
-                        marginTop: 'auto', 
-                        paddingTop: '0.9rem', 
-                        borderTop: '1px solid rgba(255,255,255,0.08)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: exhibit.color, fontSize: '0.85rem', fontWeight: 500 }}>
-                          <span>閱讀完整文章</span>
-                          <ChevronRight size={16} />
+                          {/* 卡片底欄行動提示 */}
+                          <div style={{ 
+                            marginTop: 'auto', 
+                            paddingTop: '0.8rem', 
+                            borderTop: '1px solid rgba(255,255,255,0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: exhibit.color, fontSize: '0.84rem', fontWeight: 500 }}>
+                              <span>閱讀完整內容</span>
+                              <ChevronRight size={15} />
+                            </div>
+                            {isCurator && (
+                              <Link 
+                                href="/admin" 
+                                onClick={(e) => e.stopPropagation()} 
+                                style={{ 
+                                  fontSize: '0.72rem', 
+                                  color: 'rgba(255,255,255,0.4)', 
+                                  textDecoration: 'none', 
+                                  background: 'rgba(255,255,255,0.05)', 
+                                  padding: '0.15rem 0.5rem', 
+                                  borderRadius: '2px' 
+                                }}
+                              >
+                                [ 編輯 ]
+                              </Link>
+                            )}
+                          </div>
                         </div>
-                        <Link 
-                          href="/admin" 
-                          onClick={(e) => e.stopPropagation()} 
-                          style={{ 
-                            fontSize: '0.72rem', 
-                            color: 'rgba(255,255,255,0.4)', 
-                            textDecoration: 'none', 
-                            background: 'rgba(255,255,255,0.05)', 
-                            padding: '0.15rem 0.5rem', 
-                            borderRadius: '2px' 
-                          }}
-                        >
-                          [ 編輯 ]
-                        </Link>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* 下面還有更多提示標語 */}
+                {writingsItems.length > 2 && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.6rem',
+                    marginTop: '3.5rem',
+                    padding: '1.1rem 1.8rem',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.9rem',
+                    letterSpacing: '1px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px dashed rgba(255,255,255,0.15)',
+                    borderRadius: '6px',
+                    textAlign: 'center',
+                  }}>
+                    <ChevronDown size={18} style={{ color: exhibit.color }} />
+                    <span>👇 下面還有更多展品文章（往下捲動瀏覽更多內容）</span>
+                    <ChevronDown size={18} style={{ color: exhibit.color }} />
+                  </div>
+                )}
+              </>
             )
           ) : exhibitId === 'creation_lab' && (activeSubCategory === '小說' || activeSubCategory === '文字') ? (
             Object.values(MOCK_NOVELS).length === 0 ? (
@@ -1235,7 +1279,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             ) : (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: '2.5rem'
               }}>
                 {Object.values(MOCK_NOVELS).map((novel) => (
@@ -1267,7 +1311,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         作者：{novel.author} | 最新更新：{novel.latestUpdate}
                       </p>
 
-                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
                         {novel.description}
                       </p>
 
@@ -1282,58 +1326,84 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               </div>
             )
           ) : filteredArticles.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-              gap: '2.5rem'
-            }}>
-              {filteredArticles.map((article, index) => (
-                <Link key={article.id} href={`/museum/${exhibit.id}/${article.id}`} style={{ textDecoration: 'none' }}>
-                  <div className="glass-panel exhibit-card" style={{
-                    padding: '0',
-                    cursor: 'pointer',
-                    color: exhibit.color,
-                    animationDelay: `${index * 0.1}s`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    transition: 'all 0.4s ease'
-                  }}>
-                    <div style={{ 
-                      width: '100%', 
-                      height: '180px', 
-                      background: 'rgba(255,255,255,0.03)', 
+            <>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '1.8rem'
+              }}>
+                {filteredArticles.map((article, index) => (
+                  <Link key={article.id} href={`/museum/${exhibit.id}/${article.id}`} style={{ textDecoration: 'none' }}>
+                    <div className="glass-panel exhibit-card" style={{
+                      padding: '0',
+                      cursor: 'pointer',
+                      color: exhibit.color,
+                      animationDelay: `${index * 0.1}s`,
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.8rem',
-                      letterSpacing: '2px',
-                      textTransform: 'uppercase',
-                      borderBottom: '1px solid rgba(255,255,255,0.05)'
+                      flexDirection: 'column',
+                      height: '100%',
+                      transition: 'all 0.4s ease',
+                      overflow: 'hidden'
                     }}>
-                      <BookOpen size={28} style={{ opacity: 0.5 }} />
-                    </div>
-                    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-sans)' }}>
-                        📅 上傳時間：{article.date}
+                      {/* 縮圖 Header */}
+                      <div style={{ 
+                        width: '100%', 
+                        height: '135px', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: exhibit.color,
+                        borderBottom: '1px solid rgba(255,255,255,0.06)'
+                      }}>
+                        <BookOpen size={30} style={{ opacity: 0.7 }} />
                       </div>
-                      <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
-                        {article.title}
-                      </h3>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
-                        {article.excerpt}
-                      </p>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: exhibit.color, fontSize: '0.85rem', fontWeight: 500 }}>
-                        <span>閱讀完整內容</span>
-                        <ChevronRight size={16} />
+                      <div style={{ padding: '1.5rem 1.6rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                        {isCurator && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '1px', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
+                            📅 上傳時間：{article.date}
+                          </div>
+                        )}
+                        <h3 style={{ color: '#fff', fontSize: '1.25rem', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', textWrap: 'balance' }}>
+                          {article.title}
+                        </h3>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
+                          {article.excerpt}
+                        </p>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: exhibit.color, fontSize: '0.85rem', fontWeight: 500, paddingTop: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <span>閱讀完整內容</span>
+                          <ChevronRight size={15} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* 下面還有更多提示標語 */}
+              {filteredArticles.length > 2 && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.6rem',
+                  marginTop: '3.5rem',
+                  padding: '1.1rem 1.8rem',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.9rem',
+                  letterSpacing: '1px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px dashed rgba(255,255,255,0.15)',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                }}>
+                  <ChevronDown size={18} style={{ color: exhibit.color }} />
+                  <span>👇 下面還有更多展品文章（往下捲動瀏覽更多內容）</span>
+                  <ChevronDown size={18} style={{ color: exhibit.color }} />
+                </div>
+              )}
+            </>
           ) : (
             <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
               <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem' }}>No exhibits found matching your criteria</p>
