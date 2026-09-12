@@ -456,7 +456,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               gap: '2rem'
             }}>
               {filteredVentureItems.map((item) => {
-                const isCenteredLogo = ['早期投資', '早期投資項目', '新創項目評估', '創投項目評估'].includes(item.category);
+                const isCenteredLogo = ['早期投資', '早期投資項目', '新創項目評估', '創投項目評估', '募資 FA 服務', '募資FA服務'].includes(item.category) || true;
 
                 const CardContent = (
                   <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color, display: 'flex', flexDirection: 'column', height: '100%', cursor: item.linkUrl ? 'pointer' : 'default' }}>
