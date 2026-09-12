@@ -1412,28 +1412,6 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
         </div>
       )}
 
-      {/* 泛用 Google 表單 / 預約與諮詢問卷 預留區 (Google Form Reservation Box) */}
-      <div
-        className="glass-panel"
-        style={{
-          padding: '3rem 2rem',
-          marginTop: '5rem',
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px dashed rgba(255, 255, 255, 0.15)',
-          borderRadius: '4px',
-          textAlign: 'center',
-        }}
-      >
-        <h3 style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.8rem', letterSpacing: '1px' }}>
-          【{exhibit.title}】專屬表單與問卷預留區
-        </h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '600px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
-          策展人後續可在此處嵌入 Google 表單 (如：預約諮詢、問題反饋、合作提案表單)，讓觀展者可以直接在此填寫提交。
-        </p>
-        <div style={{ display: 'inline-block', padding: '0.6rem 1.4rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px', fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.3)', letterSpacing: '1px' }}>
-          📋 GOOGLE FORM RESERVED AREA • 空間已預留完成
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_TC, Noto_Serif_TC } from "next/font/google";
 import { Header } from "@/components/Header";
+import { ContactCuratorWidget } from "@/components/ContactCuratorWidget";
 import "./globals.css";
 
 const notoSans = Noto_Sans_TC({
@@ -115,6 +116,7 @@ export default function RootLayout({
       </head>
       <body className={`${notoSans.variable} ${notoSerif.variable}`}>
         <Header />
+        <ContactCuratorWidget />
         <main className="app-container">
           {children}
         </main>

@@ -426,32 +426,6 @@ export default function NovelReaderPage({
         )}
       </div>
 
-      {/* Google 表單與讀者回饋預留區 (Google Form Placeholder Box) */}
-      <div
-        className="glass-panel"
-        style={{
-          padding: '2.5rem 2rem',
-          marginTop: '2.5rem',
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px dashed rgba(255, 255, 255, 0.15)',
-          borderRadius: '4px',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '50px', height: '50px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', marginBottom: '1rem', color: '#fff' }}>
-          <Sparkles size={24} style={{ color: 'var(--theme-possibility)' }} />
-        </div>
-        <h3 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.6rem', letterSpacing: '1px' }}>
-          讀者心得與意見回饋 (Google 表單預留區)
-        </h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '560px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
-          策展人後續將在此嵌入 Google 表單連結與讀後感問卷。歡迎隨時為作者留下寶貴的閱讀建議與創作回饋。
-        </p>
-        <div style={{ display: 'inline-block', padding: '0.6rem 1.4rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px', fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.3)', letterSpacing: '1px' }}>
-          📋 FORM PLACEHOLDER • 等候策展人後續設定嵌入
-        </div>
-      </div>
-
       {/* Notion 電腦版連載寫作說明提示卡 */}
       <div
         className="glass-panel"

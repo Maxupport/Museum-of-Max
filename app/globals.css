@@ -202,3 +202,20 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1.2rem !important;
   }
 }
+
+/* Floating Contact Curator Widget Hover & Mobile styling */
+.curator-contact-widget:hover {
+  transform: translateX(-4px);
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.3) !important;
+}
+
+@media (max-width: 640px) {
+  .curator-contact-widget {
+    top: 110px !important;
+    padding: 0.5rem 0.85rem 0.5rem 0.7rem !important;
+    font-size: 0.78rem !important;
+  }
+}
+
