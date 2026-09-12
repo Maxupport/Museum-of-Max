@@ -1640,7 +1640,7 @@ export default function AdminDashboardPage() {
                         <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.15rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
                           {item.category}
                         </span>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#fff', fontFamily: 'var(--font-noto-serif)', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                           {item.title}
                         </span>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px' }}>
@@ -1648,12 +1648,12 @@ export default function AdminDashboardPage() {
                         </span>
                       </div>
 
-                      <div style={{ fontSize: '0.85rem', color: '#4ade80', background: 'rgba(74, 222, 128, 0.1)', padding: '0.4rem 0.8rem', borderRadius: '4px', width: 'fit-content', marginBottom: '0.6rem' }}>
+                      <div style={{ fontSize: '0.85rem', color: '#4ade80', background: 'rgba(74, 222, 128, 0.1)', padding: '0.4rem 0.8rem', borderRadius: '4px', width: 'fit-content', marginBottom: '0.6rem', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                         現況更新: {item.status}
                       </div>
 
                       {item.description && (
-                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginTop: '0.4rem' }}>
+                        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginTop: '0.4rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'pretty' }}>
                           {item.description}
                         </p>
                       )}

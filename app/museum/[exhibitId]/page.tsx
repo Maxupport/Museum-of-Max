@@ -503,11 +503,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         )}
 
                         <div style={{ width: '100%' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
+                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0, wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                               {item.title}
                             </h3>
-                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)' }} />}
+                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
                           </div>
                           <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                             <Calendar size={13} />
@@ -530,12 +530,12 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             <Building size={24} />
                           </div>
                         )}
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                               {item.title}
                             </h3>
-                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)' }} />}
+                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
                           </div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             <Calendar size={12} />
@@ -550,13 +550,13 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       </div>
                     )}
 
-                    <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.6rem 1rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8' }} />
+                    <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.6rem 1rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8', flexShrink: 0 }} />
                       <span>現況更新: {item.status}</span>
                     </div>
 
                     {item.description && (
-                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: 'auto' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: 'auto', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'pretty' }}>
                         {item.description}
                       </p>
                     )}
@@ -701,11 +701,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.9, letterSpacing: '1px' }}>LOGO</span>
                           </div>
                         )}
-                        <div>
-                          <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                             {item.company}
                           </h2>
-                          <h3 style={{ fontSize: '1.1rem', color: 'var(--theme-career)', fontWeight: 400 }}>
+                          <h3 style={{ fontSize: '1.1rem', color: 'var(--theme-career)', fontWeight: 400, wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                             {item.role}
                           </h3>
                         </div>
@@ -778,7 +778,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     )}
 
                     {item.description && (
-                      <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: '1rem' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: '1rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'pretty' }}>
                         {item.description}
                       </p>
                     )}
