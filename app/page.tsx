@@ -224,7 +224,7 @@ export default function Home() {
                     lineHeight: 1.2
                   }}
                 >
-                  <span>Max&apos;s</span>
+                  <span>MAX&apos;S</span>
                   <span style={{ fontSize: 'clamp(1.2rem, 3.2vw, 1.6rem)', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
                 </h1>
                 
@@ -442,7 +442,7 @@ export default function Home() {
                     lineHeight: 1.2
                   }}
                 >
-                  <span>Max&apos;s</span>
+                  <span>MAX&apos;S</span>
                   <span style={{ fontSize: '1.6rem', letterSpacing: '6px', whiteSpace: 'nowrap' }}>PRIVATE MUSEUM</span>
                 </h1>
                 <p style={{
