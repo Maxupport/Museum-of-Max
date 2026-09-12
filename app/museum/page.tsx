@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, Lock } from 'lucide-react';
+import { ChevronDown, Lock, Compass } from 'lucide-react';
 import { EXHIBITS, ALL_EXHIBIT_KEYS, ExhibitConfig } from '@/lib/constants';
 
 export default function MuseumHall() {
@@ -181,6 +181,25 @@ export default function MuseumHall() {
               <p style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: 1.7, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
                 這裡記錄了 Max 超過 14 年的跨界職涯軌跡，從新創 / 風險投資、職涯履歷、商業議題分析、聲音探索、創作 Lab 到人生擺渡，每個展區都代表著對不同領域的熱情與實踐。
               </p>
+
+              {/* 返回通行碼選擇頁面提示 */}
+              <div style={{ 
+                marginTop: '1.2rem', 
+                padding: '0.65rem 1.1rem', 
+                background: 'rgba(56, 189, 248, 0.08)', 
+                border: '1px solid rgba(56, 189, 248, 0.25)', 
+                borderRadius: '4px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.55rem',
+                color: '#7dd3fc',
+                fontSize: '0.83rem',
+                letterSpacing: '0.5px'
+              }}>
+                <Compass size={15} style={{ flexShrink: 0 }} />
+                <span>💡 <strong>觀展提醒</strong>：點擊頁面左上角「<strong>MAX&apos;S PRIVATE MUSEUM</strong>」可隨時返回【通行碼選擇頁面】切換參觀身份。</span>
+              </div>
             </div>
 
             {/* 往下轉動 / 點擊滾動瀏覽展區提示按鈕 */}

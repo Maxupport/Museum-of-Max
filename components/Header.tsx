@@ -92,14 +92,14 @@ export function Header() {
         >
           <Compass size={20} style={{ color: 'var(--text-secondary)' }} />
           <span style={{
-            fontSize: '1rem',
-            letterSpacing: '3px',
+            fontSize: '0.9rem',
+            letterSpacing: '2.5px',
             color: '#fff',
             fontFamily: 'var(--font-noto-serif)',
             fontWeight: 400,
             textTransform: 'uppercase'
           }}>
-            MUSEUM OF MAX
+            MAX&apos;S PRIVATE MUSEUM
           </span>
         </Link>
 
