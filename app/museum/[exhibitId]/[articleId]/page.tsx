@@ -78,8 +78,30 @@ export default function ArticleDetailPage({
 
   // 解析來自 Google Docs 貼上或 DB 中的文字內文 (轉換為標題、段落、引言與影片區塊)
   const parseContentBlocks = (rawContent: string, youtubeUrl?: string | null) => {
-    const lines = rawContent.split('\n').map(l => l.trim()).filter(Boolean);
+    let textToParse = rawContent;
+    let coverImg: string | null = null;
+
+    if (rawContent.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(rawContent);
+        if (parsed) {
+          if (parsed.textContent) textToParse = parsed.textContent;
+          else if (parsed.overview && !parsed.isVocalCourse) textToParse = parsed.overview;
+          if (parsed.coverImage) coverImg = parsed.coverImage;
+        }
+      } catch {}
+    }
+
+    const lines = textToParse.split('\n').map(l => l.trim()).filter(Boolean);
     const blocks: Array<{ type: string; text?: string; url?: string; caption?: string }> = [];
+
+    if (coverImg) {
+      blocks.push({
+        type: 'image',
+        url: coverImg,
+        caption: '專題精選封面圖',
+      });
+    }
 
     if (youtubeUrl) {
       blocks.push({

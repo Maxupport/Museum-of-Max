@@ -448,14 +448,20 @@ export default function AdminDashboardPage() {
       const method = editingWritingId ? 'PUT' : 'POST';
 
       const isVocalCategory = wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程';
-      const finalContent = isVocalCategory
-        ? JSON.stringify({
-            isVocalCourse: true,
-            coverImage: wCoverImage || '',
-            overview: wExcerpt || wContent || '人聲優化歷程記錄 - 多版本對比演進錄音',
-            versions: wVocalVersions
-          })
-        : wContent;
+      let finalContent = wContent;
+      if (isVocalCategory) {
+        finalContent = JSON.stringify({
+          isVocalCourse: true,
+          coverImage: wCoverImage || '',
+          overview: wExcerpt || wContent || '人聲優化歷程記錄 - 多版本對比演進錄音',
+          versions: wVocalVersions
+        });
+      } else if (wCoverImage.trim()) {
+        finalContent = JSON.stringify({
+          coverImage: wCoverImage.trim(),
+          textContent: wContent
+        });
+      }
 
       const res = await fetch(url, {
         method,
@@ -507,11 +513,11 @@ export default function AdminDashboardPage() {
     setWFbUrl(item.fbUrl || '');
     setWFbDate(item.fbDate || '');
     setWExcerpt(item.excerpt || '');
-    setWContent(item.content);
     setWYoutubeUrl(item.youtubeUrl || '');
     setWOrder(item.order);
 
     if (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') {
+      setWContent(item.content);
       try {
         const parsed = JSON.parse(item.content);
         if (parsed) {
@@ -528,7 +534,26 @@ export default function AdminDashboardPage() {
       }
     } else {
       setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
-      setWCoverImage('');
+      if (item.content && item.content.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(item.content);
+          if (parsed) {
+            if (parsed.coverImage) setWCoverImage(parsed.coverImage);
+            else setWCoverImage('');
+            if (parsed.textContent) setWContent(parsed.textContent);
+            else setWContent(item.content);
+          } else {
+            setWCoverImage('');
+            setWContent(item.content);
+          }
+        } catch {
+          setWCoverImage('');
+          setWContent(item.content);
+        }
+      } else {
+        setWCoverImage('');
+        setWContent(item.content);
+      }
     }
 
     setArticleSubTab('editor');
@@ -3647,6 +3672,41 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
+                <div>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                    📷 封面顯示圖片 (選填，將顯示於前台展覽卡片上方)
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      placeholder="https://... 或點擊右側按鈕選擇電腦圖片上傳"
+                      value={wCoverImage}
+                      onChange={(e) => setWCoverImage(e.target.value)}
+                      className="museum-input"
+                      style={{ flex: 1, minWidth: '240px', padding: '0.65rem' }}
+                    />
+                    <label className="museum-btn" style={{ cursor: 'pointer', background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.4)', color: '#f472b6', padding: '0.65rem 1.2rem', borderRadius: '4px', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Upload size={14} />
+                      {uploadingCoverImage ? '上傳中...' : '選擇電腦圖片上傳'}
+                      <input type="file" accept="image/*" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
+                    </label>
+                    {wCoverImage && (
+                      <button
+                        type="button"
+                        onClick={() => setWCoverImage('')}
+                        style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '0.65rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                      >
+                        清除圖片
+                      </button>
+                    )}
+                  </div>
+                  {wCoverImage && (
+                    <div style={{ marginTop: '0.8rem', width: '220px', height: '125px', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(236, 72, 153, 0.4)', position: 'relative' }}>
+                      <img src={wCoverImage} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+                </div>
+
                 {(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') && (
                   <div style={{
                     background: 'rgba(236, 72, 153, 0.05)',
@@ -3655,40 +3715,6 @@ export default function AdminDashboardPage() {
                     padding: '1.5rem',
                     marginBottom: '1.5rem'
                   }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ fontSize: '0.82rem', color: '#f472b6', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                        📷 封面顯示圖片 (選填，將顯示於前台展覽卡片上方)
-                      </label>
-                      <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <input
-                          type="text"
-                          placeholder="https://... 或點擊右側按鈕選擇電腦圖片上傳"
-                          value={wCoverImage}
-                          onChange={(e) => setWCoverImage(e.target.value)}
-                          className="museum-input"
-                          style={{ flex: 1, minWidth: '240px', padding: '0.65rem' }}
-                        />
-                        <label className="museum-btn" style={{ cursor: 'pointer', background: 'rgba(236,72,153,0.2)', border: '1px solid rgba(236,72,153,0.5)', color: '#f472b6', padding: '0.65rem 1.2rem', borderRadius: '4px', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <Upload size={14} />
-                          {uploadingCoverImage ? '上傳中...' : '選擇電腦圖片上傳'}
-                          <input type="file" accept="image/*" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
-                        </label>
-                        {wCoverImage && (
-                          <button
-                            type="button"
-                            onClick={() => setWCoverImage('')}
-                            style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '0.65rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                          >
-                            清除圖片
-                          </button>
-                        )}
-                      </div>
-                      {wCoverImage && (
-                        <div style={{ marginTop: '0.8rem', width: '220px', height: '125px', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(236, 72, 153, 0.4)', position: 'relative' }}>
-                          <img src={wCoverImage} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      )}
-                    </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.8rem' }}>
                       <div>
