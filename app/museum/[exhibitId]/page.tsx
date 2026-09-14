@@ -520,11 +520,6 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             <Calendar size={13} />
                             {item.period}
                           </div>
-                          {item.createdAt && (
-                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
-                              {formatTimestamp(item.createdAt)}
-                            </div>
-                          )}
                         </div>
                       </div>
                     ) : (
@@ -548,11 +543,6 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             <Calendar size={12} />
                             {item.period}
                           </div>
-                          {item.createdAt && (
-                            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
-                              {formatTimestamp(item.createdAt)}
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
