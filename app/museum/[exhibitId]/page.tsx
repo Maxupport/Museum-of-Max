@@ -219,46 +219,16 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     );
   }
 
-  // 模擬 Notion 文章資料 (針對部落格型展區: 金融保險、聲音探索 (個人聲音探索心得)、創作Lab、跨世代溝通)
-  const mockArticles = (exhibitId === 'sound' || activeSubCategory === '個人聲音探索心得') ? [
-    { 
-      id: 'sound-mind-1', 
-      title: '【個人聲音探索心得】從發聲到心靈：個人共鳴與身心對話記錄', 
-      date: '2026-08-25', 
-      excerpt: '記錄聲音訓練過程中的身體感官覺察、呼吸控制與心靈沉澱心得，並嵌入精選影音與圖文記錄...' 
-    },
-    { 
-      id: 'sound-mind-2', 
-      title: '【聲音靈感筆記】聲音質地優化與日常語調重塑', 
-      date: '2026-07-18', 
-      excerpt: '探討語速、音頻與氣流表達在日常交流中的渲染力與共鳴...' 
-    },
-    { 
-      id: 'sound-mind-3', 
-      title: '【Notion 專題】聲音探索與音樂創作的雙向交會', 
-      date: '2026-06-05', 
-      excerpt: '結合文字、現場照與音檔記錄，梳理聲音實驗與藝術表現的創作脈絡...' 
-    },
-  ] : [
-    { id: 'article-1', title: `【${activeSubCategory || exhibit.title}】核心策略與評估觀點`, date: '2026-08-15', excerpt: '探索團隊在該範疇的關鍵觀察、實務案例分析與長遠策略佈局...' },
-    { id: 'article-2', title: `專題深入探討：${activeSubCategory || exhibit.title} 實戰洞察`, date: '2026-07-20', excerpt: '結合多年經驗歸納出的實務框架與精準執行指標...' },
-    { id: 'article-3', title: `未來趨勢與 ${activeSubCategory || exhibit.title} 的展望`, date: '2026-06-10', excerpt: '前瞻視野分析，預測未來 3-5 年的關鍵變革與機會...' },
-  ];
-
-  const displayArticles = writingsItems.length > 0
-    ? writingsItems.map(w => ({
-        id: w.id,
-        title: w.title,
-        date: w.createdAt ? formatTimestamp(w.createdAt) || '近期' : '近期',
-        excerpt: w.excerpt || (w.content ? w.content.slice(0, 120) + '...' : ''),
-        category: w.category
-      }))
-    : mockArticles;
-
-  const filteredArticles = displayArticles.filter(article => 
-    article.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-    article.excerpt.toLowerCase().includes(searchKeyword.toLowerCase())
-  );
+  const filteredWritingsItems = writingsItems.filter(item => {
+    if (!searchKeyword) return true;
+    const kw = searchKeyword.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(kw) ||
+      (item.excerpt && item.excerpt.toLowerCase().includes(kw)) ||
+      (item.content && item.content.toLowerCase().includes(kw)) ||
+      (item.topic && item.topic.toLowerCase().includes(kw))
+    );
+  });
 
   const filteredVentureItems = ventureItems.filter(item =>
     item.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
@@ -290,6 +260,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
     return true;
   });
+
+  const cleanExcerpt = (content: string) => {
+    if (!content) return '';
+    return content.replace(/^#+\s*|^>\s*/gm, '').slice(0, 150);
+  };
 
   return (
     <div style={{ padding: '4rem 2rem', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh' }}>
@@ -823,17 +798,22 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             </div>
           </div>
           
-          {/* 個人聲音探索心得 (Notion 文章卡片架構) 或 音樂與聲音探尋 YouTube 影片嵌入網格 */}
+          {/* 個人聲音探索心得 (文章卡片架構) 或 音樂與聲音探尋 YouTube 影片嵌入網格 */}
           {(exhibitId === 'sound' && activeSubCategory === '個人聲音探索心得') ? (
-            /* 個人聲音探索心得：與 Notion 聯繫的文章架構 (支援圖文影片與 Notion 閱讀) */
-            filteredArticles.length > 0 ? (
+            writingsLoading ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
+            ) : filteredWritingsItems.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <p style={{ letterSpacing: '1px' }}>目前【個人聲音探索心得】尚無文章。</p>
+              </div>
+            ) : (
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
                 gap: '2.5rem'
               }}>
-                {filteredArticles.map((article, index) => (
-                  <Link key={article.id} href={`/museum/${exhibit.id}/${article.id}`} style={{ textDecoration: 'none' }}>
+                {filteredWritingsItems.map((item, index) => (
+                  <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
                     <div className="glass-panel exhibit-card" style={{
                       padding: '0',
                       cursor: 'pointer',
@@ -862,31 +842,29 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                           <span style={{ fontSize: '0.75rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-                            個人聲音探索心得 • Notion 專題
+                            {item.category || '個人聲音探索心得'}
                           </span>
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
-                            📅 {article.date}
-                          </span>
+                          {item.createdAt && (
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
+                              📅 {formatTimestamp(item.createdAt)}
+                            </span>
+                          )}
                         </div>
                         <h3 style={{ color: '#fff', fontSize: '1.35rem', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
-                          {article.title}
+                          {item.title}
                         </h3>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
-                          {article.excerpt}
+                          {item.excerpt || cleanExcerpt(item.content)}
                         </p>
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f472b6', fontSize: '0.85rem', fontWeight: 500 }}>
-                          <span>閱讀 Notion 文章與圖文影音內容</span>
+                          <span>閱讀文章完整內容</span>
                           <ChevronRight size={16} />
                         </div>
                       </div>
                     </div>
                   </Link>
                 ))}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem' }}>目前【個人聲音探索心得】尚無 Notion 文章</p>
               </div>
             )
           ) : (exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) ? (
@@ -1027,17 +1005,71 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 </div>
               )}
             </>
-          ) : exhibitId === 'creation_lab' && (activeSubCategory === '社群隨筆' || activeSubCategory === 'FB文章備份') ? (
+          ) : exhibitId === 'creation_lab' && (activeSubCategory === '小說' || activeSubCategory === '文字') ? (
+            Object.values(MOCK_NOVELS).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <p style={{ letterSpacing: '1px' }}>目前【小說專區】尚無上架作品。</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '2.5rem'
+              }}>
+                {Object.values(MOCK_NOVELS).map((novel) => (
+                  <Link key={novel.id} href={`/museum/creation_lab/novel/${novel.id}`} style={{ textDecoration: 'none' }}>
+                    <div className="glass-panel exhibit-card" style={{
+                      padding: '2.2rem',
+                      cursor: 'pointer',
+                      color: exhibit.color,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      height: '100%',
+                      transition: 'all 0.4s ease',
+                      position: 'relative'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                          小說連載專區
+                        </span>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
+                          {novel.status} ({novel.totalChapters} 章)
+                        </span>
+                      </div>
+
+                      <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.4rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3 }}>
+                        {novel.title}
+                      </h3>
+                      
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-sans)' }}>
+                        作者：{novel.author} | 最新更新：{novel.latestUpdate}
+                      </p>
+
+                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
+                        {novel.description}
+                      </p>
+
+                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontSize: '0.9rem', fontWeight: 500 }}>
+                        <Sparkles size={16} color="var(--theme-possibility)" />
+                        <span>進入沉浸式小說閱讀器</span>
+                        <ChevronRight size={16} />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )
+          ) : ['creation_lab', 'communication', 'finance_insurance', 'sound'].includes(exhibitId) ? (
             writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
-            ) : writingsItems.length === 0 ? (
+            ) : filteredWritingsItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory === 'FB文章備份' ? '社群隨筆' : activeSubCategory}】尚無文章。</p>
+                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory === 'FB文章備份' ? '社群隨筆' : (activeSubCategory || exhibit.title)}】尚無文章。</p>
               </div>
             ) : (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.8rem' }}>
-                  {writingsItems.map((item) => (
+                  {filteredWritingsItems.map((item) => (
                     <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
                       <div 
                         className="glass-panel exhibit-card" 
@@ -1186,7 +1218,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             marginTop: 'auto',
                             marginBottom: '1.2rem' 
                           }}>
-                            {item.excerpt || item.content.replace(/^[#>]\s*/gm, '')}
+                            {item.excerpt || cleanExcerpt(item.content)}
                           </p>
 
                           {/* 卡片底欄行動提示 */}
@@ -1211,7 +1243,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                                   color: 'rgba(255,255,255,0.4)', 
                                   textDecoration: 'none', 
                                   background: 'rgba(255,255,255,0.05)', 
-                                  padding: '0.15rem 0.5rem', 
+                                  padding: '0.15rem 0.55rem', 
                                   borderRadius: '2px' 
                                 }}
                               >
@@ -1226,7 +1258,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 </div>
 
                 {/* 下面還有更多提示標語 */}
-                {writingsItems.length > 2 && (
+                {filteredWritingsItems.length > 2 && (
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -1249,139 +1281,6 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 )}
               </>
             )
-          ) : exhibitId === 'creation_lab' && (activeSubCategory === '小說' || activeSubCategory === '文字') ? (
-            Object.values(MOCK_NOVELS).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【小說專區】尚無上架作品。</p>
-              </div>
-            ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '2.5rem'
-              }}>
-                {Object.values(MOCK_NOVELS).map((novel) => (
-                  <Link key={novel.id} href={`/museum/creation_lab/novel/${novel.id}`} style={{ textDecoration: 'none' }}>
-                    <div className="glass-panel exhibit-card" style={{
-                      padding: '2.2rem',
-                      cursor: 'pointer',
-                      color: exhibit.color,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: '100%',
-                      transition: 'all 0.4s ease',
-                      position: 'relative'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          小說連載專區
-                        </span>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px' }}>
-                          {novel.status} ({novel.totalChapters} 章)
-                        </span>
-                      </div>
-
-                      <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.4rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3 }}>
-                        {novel.title}
-                      </h3>
-                      
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-sans)' }}>
-                        作者：{novel.author} | 最新更新：{novel.latestUpdate}
-                      </p>
-
-                      <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem' }}>
-                        {novel.description}
-                      </p>
-
-                      <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontSize: '0.9rem', fontWeight: 500 }}>
-                        <Sparkles size={16} color="var(--theme-possibility)" />
-                        <span>進入沉浸式小說閱讀器</span>
-                        <ChevronRight size={16} />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )
-          ) : filteredArticles.length > 0 ? (
-            <>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '1.8rem'
-              }}>
-                {filteredArticles.map((article, index) => (
-                  <Link key={article.id} href={`/museum/${exhibit.id}/${article.id}`} style={{ textDecoration: 'none' }}>
-                    <div className="glass-panel exhibit-card" style={{
-                      padding: '0',
-                      cursor: 'pointer',
-                      color: exhibit.color,
-                      animationDelay: `${index * 0.1}s`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: '100%',
-                      transition: 'all 0.4s ease',
-                      overflow: 'hidden'
-                    }}>
-                      {/* 縮圖 Header */}
-                      <div style={{ 
-                        width: '100%', 
-                        height: '135px', 
-                        background: 'rgba(255,255,255,0.03)', 
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: exhibit.color,
-                        borderBottom: '1px solid rgba(255,255,255,0.06)'
-                      }}>
-                        <BookOpen size={30} style={{ opacity: 0.7 }} />
-                      </div>
-                      <div style={{ padding: '1.5rem 1.6rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                        {isCurator && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', letterSpacing: '1px', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
-                            📅 上傳時間：{article.date}
-                          </div>
-                        )}
-                        <h3 style={{ color: '#fff', fontSize: '1.25rem', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', textWrap: 'balance' }}>
-                          {article.title}
-                        </h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
-                          {article.excerpt}
-                        </p>
-                        
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: exhibit.color, fontSize: '0.85rem', fontWeight: 500, paddingTop: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                          <span>閱讀完整內容</span>
-                          <ChevronRight size={15} />
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {/* 下面還有更多提示標語 */}
-              {filteredArticles.length > 2 && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.6rem',
-                  marginTop: '3.5rem',
-                  padding: '1.1rem 1.8rem',
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.9rem',
-                  letterSpacing: '1px',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px dashed rgba(255,255,255,0.15)',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                }}>
-                  <ChevronDown size={18} style={{ color: exhibit.color }} />
-                  <span>👇 下面還有更多展品文章（往下捲動瀏覽更多內容）</span>
-                  <ChevronDown size={18} style={{ color: exhibit.color }} />
-                </div>
-              )}
-            </>
           ) : (
             <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
               <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem' }}>No exhibits found matching your criteria</p>
