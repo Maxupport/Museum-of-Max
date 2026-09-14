@@ -400,8 +400,7 @@ export default function AdminDashboardPage() {
     } catch (e) {
       console.error(e);
     }
-    fetchMusicItems();
-  }, [fetchMusicItems]);
+  }, []);
 
   const handleToggleWritingPin = async (item: WritingsItemData) => {
     try {
@@ -653,8 +652,7 @@ export default function AdminDashboardPage() {
       if (activeTab === 'career') fetchCareerItems();
       if (activeTab === 'stats') fetchStats();
       if (activeTab === 'subscribers') fetchSubscribers();
-      if (activeTab === 'sound') fetchMusicItems();
-      if (activeTab === 'creation_lab') {
+      if (activeTab === 'sound' || activeTab === 'creation_lab' || activeTab === 'articles') {
         fetchMusicItems();
         fetchWritingsItems();
       }

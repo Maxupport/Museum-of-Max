@@ -9,14 +9,6 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const includeHidden = searchParams.get('includeHidden') === 'true';
 
-    // 自動將舊標籤 FB文章備份 搬移為 社群隨筆
-    try {
-      await prisma.writingsItem.updateMany({
-        where: { category: 'FB文章備份' },
-        data: { category: '社群隨筆' },
-      });
-    } catch {}
-
     const whereClause: Record<string, unknown> = {};
     if (exhibitId && exhibitId !== 'all') {
       whereClause.exhibitId = exhibitId;
