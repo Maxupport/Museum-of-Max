@@ -3578,7 +3578,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                {wExhibitId === 'creation_lab' && (wCategory === '社群隨筆' || wCategory === 'FB文章備份') && (
+                {(wExhibitId === 'creation_lab' || wExhibitId === 'communication' || wExhibitId === 'finance_insurance' || wExhibitId === 'sound') && (
                   <>
                     <div>
                       <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
