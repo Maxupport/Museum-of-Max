@@ -217,7 +217,27 @@ export default function ArticleDetailPage({
   const [hasInteracted, setHasInteracted] = useState(false);
   const [currentPlayingIdx, setCurrentPlayingIdx] = useState<number | null>(null);
   const iframeRefs = useRef<Map<number, HTMLIFrameElement>>(new Map());
-  const lastPlaybackTimeRef = useRef<number>(0);
+
+  // 全域監聽使用者互動 (包含滾動、點擊、觸控、鍵盤輸入)，確保瀏覽器允許 Autoplay 指令執行
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      setHasInteracted(true);
+    };
+
+    window.addEventListener('pointerdown', handleUserInteraction, { capture: true });
+    window.addEventListener('touchstart', handleUserInteraction, { capture: true });
+    window.addEventListener('scroll', handleUserInteraction, { capture: true });
+    window.addEventListener('keydown', handleUserInteraction, { capture: true });
+    window.addEventListener('click', handleUserInteraction, { capture: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', handleUserInteraction, { capture: true });
+      window.removeEventListener('touchstart', handleUserInteraction, { capture: true });
+      window.removeEventListener('scroll', handleUserInteraction, { capture: true });
+      window.removeEventListener('keydown', handleUserInteraction, { capture: true });
+      window.removeEventListener('click', handleUserInteraction, { capture: true });
+    };
+  }, []);
 
   // 向 YouTube iframe 傳送指令
   const postIframeCommand = (idx: number, command: string, args: unknown = '') => {
@@ -230,24 +250,7 @@ export default function ArticleDetailPage({
     }
   };
 
-  // 監聽 YouTube iframe 傳回的播放秒數資訊 (infoDelivery)
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      try {
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (data && data.event === 'infoDelivery' && data.info && typeof data.info.currentTime === 'number') {
-          if (data.info.currentTime > 0) {
-            lastPlaybackTimeRef.current = data.info.currentTime;
-          }
-        }
-      } catch {}
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  // 滾動觸發：暫停上方影片、將新影片 seek 至「前一個影片暫停秒數 - 3 秒」並順暢播放
+  // 滾動觸發：當影片卡片滑至畫面中央時，自動暫停先前影片並開始自動播放當前影片
   useEffect(() => {
     if (!vocalCourseData || !vocalCourseData.versions || vocalCourseData.versions.length === 0) return;
 
@@ -260,19 +263,16 @@ export default function ArticleDetailPage({
               if (prevIdx !== null && prevIdx !== idx) {
                 postIframeCommand(prevIdx, 'pauseVideo');
               }
-              if (hasInteracted) {
-                const targetTime = Math.max(0, lastPlaybackTimeRef.current - 3);
-                if (targetTime > 0) {
-                  postIframeCommand(idx, 'seekTo', [targetTime, true]);
-                }
-                postIframeCommand(idx, 'playVideo');
-              }
+              postIframeCommand(idx, 'playVideo');
               return idx;
             });
           }
         });
       },
-      { threshold: 0.55 }
+      {
+        threshold: 0.5,
+        rootMargin: '-10% 0px -10% 0px'
+      }
     );
 
     vocalCourseData.versions.forEach((_, i) => {
@@ -281,7 +281,7 @@ export default function ArticleDetailPage({
     });
 
     return () => observer.disconnect();
-  }, [vocalCourseData, hasInteracted]);
+  }, [vocalCourseData]);
 
   if (articleLoading) {
     return (
@@ -457,7 +457,7 @@ export default function ArticleDetailPage({
                 🎙️ 人聲優化演進時間軸（共 {vocalCourseData.versions.length} 個演進版本錄音，最多支援 10 個）
               </div>
               <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.84rem' }}>
-                💡 操作提示：點按播放第一個影片後，往下滑動頁面時，系統會自動無縫暫停上方影片，並自動將下一個影片調整至「前一影片暫停時間的前 3 秒」進行無縫銜接播放！
+                💡 操作提示：往下滑動頁面時，當影片卡片滑至畫面中央，系統會自動無縫暫停上方影片，並自動播放當前版本的錄音影片！
               </div>
             </div>
           </div>
