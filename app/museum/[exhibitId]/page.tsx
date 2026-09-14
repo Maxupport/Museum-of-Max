@@ -590,49 +590,37 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             </div>
           )}
 
-          {/* 風險投資 - 專屬 Email 聯絡與諮詢卡片 */}
+          {/* 美觀優雅的展區結束分隔線 */}
           <div
-            className="glass-panel"
             style={{
-              padding: '2.5rem 2rem',
-              marginTop: '4rem',
-              background: 'rgba(56, 189, 248, 0.03)',
-              border: '1px dashed rgba(56, 189, 248, 0.25)',
-              borderRadius: '4px',
-              textAlign: 'center',
+              marginTop: '4.5rem',
+              marginBottom: '2rem',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: '1rem',
+              justifyContent: 'center',
+              position: 'relative',
+              width: '100%',
             }}
           >
-            <h3 style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', letterSpacing: '1px' }}>
-              【{activeSubCategory}】項目諮詢與投資合作提案
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '650px', lineHeight: 1.6, margin: 0 }}>
-              如果您有早期創業項目尋求投資、新創項目評估需求，或欲進一步洽詢募資 FA 顧問服務，歡迎隨時透過 Email 與我聯繫。
-            </p>
-            <a
-              href="mailto:maxupport@gmail.com?subject=【風險投資/FA諮詢】來自網站的合作與項目提案"
-              className="museum-btn"
+            <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                padding: '0.8rem 2rem',
-                fontSize: '0.95rem',
-                background: 'rgba(56, 189, 248, 0.2)',
-                borderColor: '#38bdf8',
-                color: '#fff',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                boxShadow: '0 0 20px rgba(56, 189, 248, 0.25)',
-                marginTop: '0.5rem'
+                height: '1px',
+                width: '100%',
+                maxWidth: '550px',
+                background: 'linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.35), rgba(255, 255, 255, 0.7), rgba(56, 189, 248, 0.35), transparent)',
+                boxShadow: '0 0 12px rgba(56, 189, 248, 0.3)',
               }}
-            >
-              <Mail size={18} color="#38bdf8" />
-              <span>📧 點擊此處立即寄信聯絡我</span>
-            </a>
+            />
+            <div
+              style={{
+                position: 'absolute',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: '#38bdf8',
+                boxShadow: '0 0 10px #38bdf8, 0 0 18px rgba(56, 189, 248, 0.6)',
+              }}
+            />
           </div>
         </div>
       ) : exhibit.isTimeline ? (
