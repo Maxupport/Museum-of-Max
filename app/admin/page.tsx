@@ -412,7 +412,7 @@ export default function AdminDashboardPage() {
       setWritingFormError('請輸入文章/作品標題');
       return;
     }
-    if (wCategory !== '人聲優化課程' && !wContent.trim()) {
+    if (wCategory !== '人聲優化歷程記錄' && wCategory !== '人聲優化課程' && !wContent.trim()) {
       setWritingFormError('請輸入文章內文');
       return;
     }
@@ -421,10 +421,11 @@ export default function AdminDashboardPage() {
       const url = editingWritingId ? `/api/writings/${editingWritingId}` : '/api/writings';
       const method = editingWritingId ? 'PUT' : 'POST';
 
-      const finalContent = wCategory === '人聲優化課程'
+      const isVocalCategory = wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程';
+      const finalContent = isVocalCategory
         ? JSON.stringify({
             isVocalCourse: true,
-            overview: wExcerpt || wContent || '人聲優化課程 - 多版本對比演進錄音',
+            overview: wExcerpt || wContent || '人聲優化歷程記錄 - 多版本對比演進錄音',
             versions: wVocalVersions
           })
         : wContent;
@@ -441,7 +442,7 @@ export default function AdminDashboardPage() {
           fbDate: wFbDate,
           excerpt: wExcerpt,
           content: finalContent,
-          youtubeUrl: wCategory === '人聲優化課程' ? (wVocalVersions[0]?.youtubeUrl || wYoutubeUrl) : wYoutubeUrl,
+          youtubeUrl: isVocalCategory ? (wVocalVersions[0]?.youtubeUrl || wYoutubeUrl) : wYoutubeUrl,
           order: wOrder,
         }),
       });
@@ -482,7 +483,7 @@ export default function AdminDashboardPage() {
     setWYoutubeUrl(item.youtubeUrl || '');
     setWOrder(item.order);
 
-    if (item.category === '人聲優化課程') {
+    if (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') {
       try {
         const parsed = JSON.parse(item.content);
         if (parsed && Array.isArray(parsed.versions)) {
@@ -2398,7 +2399,7 @@ export default function AdminDashboardPage() {
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
               聲音探索子頁籤篩選：
             </span>
-            {['全部分類', '個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].map((subCat) => {
+            {['全部分類', '個人聲音探索心得', '青春之歌計畫', '人聲優化歷程記錄'].map((subCat) => {
               const isActive = soundSubCategoryFilter === subCat;
               return (
                 <button
@@ -2432,8 +2433,8 @@ export default function AdminDashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
                 聲音探索作品與文章列表 ({
-                  musicItems.filter(item => soundSubCategoryFilter === '全部分類' ? ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '') : item.category === soundSubCategoryFilter).length +
-                  writingsItems.filter(item => item.exhibitId === 'sound' && (soundSubCategoryFilter === '全部分類' ? true : item.category === soundSubCategoryFilter)).length
+                  musicItems.filter(item => soundSubCategoryFilter === '全部分類' ? ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '') : (soundSubCategoryFilter === '人聲優化歷程記錄' ? (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') : item.category === soundSubCategoryFilter)).length +
+                  writingsItems.filter(item => item.exhibitId === 'sound' && (soundSubCategoryFilter === '全部分類' ? true : (soundSubCategoryFilter === '人聲優化歷程記錄' ? (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') : item.category === soundSubCategoryFilter))).length
                 })
               </h2>
               <button onClick={fetchMusicItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
@@ -2443,8 +2444,8 @@ export default function AdminDashboardPage() {
 
             {/* 合併渲染 Sound 音樂影音卡片與文章卡片 */}
             {(() => {
-              const matchedMusic = musicItems.filter(item => soundSubCategoryFilter === '全部分類' ? ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '') : item.category === soundSubCategoryFilter);
-              const matchedWritings = writingsItems.filter(item => item.exhibitId === 'sound' && (soundSubCategoryFilter === '全部分類' ? true : item.category === soundSubCategoryFilter));
+              const matchedMusic = musicItems.filter(item => soundSubCategoryFilter === '全部分類' ? ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '') : (soundSubCategoryFilter === '人聲優化歷程記錄' ? (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') : item.category === soundSubCategoryFilter));
+              const matchedWritings = writingsItems.filter(item => item.exhibitId === 'sound' && (soundSubCategoryFilter === '全部分類' ? true : (soundSubCategoryFilter === '人聲優化歷程記錄' ? (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') : item.category === soundSubCategoryFilter)));
 
               if (matchedMusic.length === 0 && matchedWritings.length === 0) {
                 return (
@@ -2792,14 +2793,14 @@ export default function AdminDashboardPage() {
               <div className="glass-panel" style={{ padding: '2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                   <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
-                    創作 Lab - 音樂列表 ({musicItems.filter(item => !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '')).length})
+                    創作 Lab - 音樂列表 ({musicItems.filter(item => !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '')).length})
                   </h2>
                   <button onClick={fetchMusicItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
                     <RefreshCw size={14} /> 重整
                   </button>
                 </div>
 
-                {musicItems.filter(item => !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '')).length === 0 ? (
+                {musicItems.filter(item => !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '')).length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
                     <Music size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
                     <p style={{ letterSpacing: '1px' }}>目前創作 Lab 尚無音樂作品，請於上方表單發布。</p>
@@ -2807,7 +2808,7 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {musicItems
-                      .filter(item => !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || ''))
+                      .filter(item => !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || ''))
                       .map((item) => (
                       <div
                         key={item.id}
@@ -3209,7 +3210,7 @@ export default function AdminDashboardPage() {
                     rawWritingItem: item,
                   })),
                   ...musicItems.map((item) => {
-                    const isSound = ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '');
+                    const isSound = ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '');
                     return {
                       id: item.id,
                       exhibitId: isSound ? 'sound' : 'creation_lab',
@@ -3579,7 +3580,7 @@ export default function AdminDashboardPage() {
                       {wExhibitId === 'sound' && (
                         <>
                           <option value="個人聲音探索心得">個人聲音探索心得</option>
-                          <option value="人聲優化課程">人聲優化課程</option>
+                          <option value="人聲優化歷程記錄">人聲優化歷程記錄</option>
                           <option value="青春之歌計畫">青春之歌計畫</option>
                         </>
                       )}
@@ -3605,7 +3606,7 @@ export default function AdminDashboardPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder={wCategory === '人聲優化課程' ? '例如: 《聽海》人聲優化與歌唱進步紀錄' : '例如: 【聲音靈感筆記】聲音質地優化與日常語調重塑'}
+                    placeholder={(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') ? '例如: 《聽海》人聲優化與歌唱進步紀錄' : '例如: 【聲音靈感筆記】聲音質地優化與日常語調重塑'}
                     value={wTitle}
                     onChange={(e) => setWTitle(e.target.value)}
                     className="museum-input"
@@ -3614,7 +3615,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                {wCategory === '人聲優化課程' && (
+                {(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') && (
                   <div style={{
                     background: 'rgba(236, 72, 153, 0.05)',
                     border: '1px solid rgba(236, 72, 153, 0.3)',

@@ -48,8 +48,8 @@ export const EXHIBITS: Record<string, ExhibitConfig> = {
     title: '聲音探索',
     subtitle: 'Sound Exploration',
     color: 'var(--theme-music, #ec4899)',
-    desc: '個人聲音探索心得 / 青春之歌計畫 / 人聲優化課程',
-    subcategories: ['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'],
+    desc: '個人聲音探索心得 / 青春之歌計畫 / 人聲優化歷程記錄',
+    subcategories: ['個人聲音探索心得', '青春之歌計畫', '人聲優化歷程記錄'],
     hasBlog: true,
   },
   creation_lab: {

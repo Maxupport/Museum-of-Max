@@ -188,10 +188,10 @@ export default function ArticleDetailPage({
     }
   }, []);
 
-  // 解析「人聲優化課程」的多版本演進 JSON
+  // 解析「人聲優化歷程記錄」的多版本演進 JSON
   const vocalCourseData = (() => {
     if (!dbArticle?.content) return null;
-    if (dbArticle.category === '人聲優化課程' || dbArticle.content.includes('"isVocalCourse"')) {
+    if (dbArticle.category === '人聲優化歷程記錄' || dbArticle.category === '人聲優化課程' || dbArticle.content.includes('"isVocalCourse"')) {
       try {
         const parsed = JSON.parse(dbArticle.content);
         if (parsed && (parsed.isVocalCourse || Array.isArray(parsed.versions))) {

@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
     if (category && category !== '全部分類') {
       if (category === '社群隨筆' || category === 'FB文章備份') {
         whereClause.category = { in: ['社群隨筆', 'FB文章備份'] };
+      } else if (category === '人聲優化歷程記錄' || category === '人聲優化課程') {
+        whereClause.category = { in: ['人聲優化歷程記錄', '人聲優化課程'] };
       } else {
         whereClause.category = category;
       }

@@ -255,7 +255,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       if (activeSubCategory === '音樂') {
         return true;
       }
-      return item.category === '音樂' || item.category === '創作 Lab - 音樂' || !item.category || !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程'].includes(item.category || '');
+      return item.category === '音樂' || item.category === '創作 Lab - 音樂' || !item.category || !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '');
     }
 
     return true;
@@ -798,10 +798,10 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             </div>
           </div>
           
-          {/* 個人聲音探索心得 / 人聲優化課程 (文章卡片與時間軸架構) 或 音樂與聲音探尋 YouTube 影片嵌入網格 */}
-          {(exhibitId === 'sound' && (activeSubCategory === '個人聲音探索心得' || activeSubCategory === '人聲優化課程')) ? (
+          {/* 個人聲音探索心得 / 人聲優化歷程記錄 (文章卡片與時間軸架構) 或 音樂與聲音探尋 YouTube 影片嵌入網格 */}
+          {(exhibitId === 'sound' && (activeSubCategory === '個人聲音探索心得' || activeSubCategory === '人聲優化歷程記錄' || activeSubCategory === '人聲優化課程')) ? (
             writingsLoading ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章與課程創作中...</div>
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章與歷程記錄中...</div>
             ) : filteredWritingsItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
                 <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無作品。</p>
@@ -813,7 +813,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 gap: '2.5rem'
               }}>
                 {filteredWritingsItems.map((item, index) => {
-                  let isVocal = item.category === '人聲優化課程';
+                  let isVocal = item.category === '人聲優化課程' || item.category === '人聲優化歷程記錄';
                   let versionCount = 0;
                   if (isVocal && item.content) {
                     try {
