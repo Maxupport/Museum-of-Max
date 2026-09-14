@@ -365,7 +365,9 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch('/api/writings?includeHidden=true');
       const data = await res.json();
-      if (data.ok) setWritingsItems(data.data);
+      if (data.ok) {
+        setWritingsItems(data.data.map((item: WritingsItemData) => item.category === 'FB文章備份' ? { ...item, category: '社群隨筆' } : item));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -3260,7 +3262,7 @@ export default function AdminDashboardPage() {
                             {EXHIBIT_MAP[item.exhibitId || 'creation_lab']?.split(' ')[0] || item.exhibitId}
                           </span>
                           <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)', padding: '0.18rem 0.55rem', borderRadius: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            {item.category}
+                            {item.category === 'FB文章備份' ? '社群隨筆' : item.category}
                           </span>
 
                           <h3 

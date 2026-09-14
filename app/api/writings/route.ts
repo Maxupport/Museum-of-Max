@@ -9,12 +9,24 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const includeHidden = searchParams.get('includeHidden') === 'true';
 
+    // 自動將舊標籤 FB文章備份 搬移為 社群隨筆
+    try {
+      await prisma.writingsItem.updateMany({
+        where: { category: 'FB文章備份' },
+        data: { category: '社群隨筆' },
+      });
+    } catch {}
+
     const whereClause: Record<string, unknown> = {};
     if (exhibitId && exhibitId !== 'all') {
       whereClause.exhibitId = exhibitId;
     }
     if (category && category !== '全部分類') {
-      whereClause.category = category;
+      if (category === '社群隨筆' || category === 'FB文章備份') {
+        whereClause.category = { in: ['社群隨筆', 'FB文章備份'] };
+      } else {
+        whereClause.category = category;
+      }
     }
 
     const isAdmin = validateAdminRequest(request);
@@ -54,7 +66,7 @@ export async function POST(request: NextRequest) {
       data: {
         exhibitId: exhibitId || 'creation_lab',
         title: title.trim(),
-        category: category || '社群隨筆',
+        category: category === 'FB文章備份' ? '社群隨筆' : (category || '社群隨筆'),
         topic: topic ? topic.trim() : null,
         fbUrl: fbUrl ? fbUrl.trim() : null,
         fbDate: fbDate ? fbDate.trim() : null,

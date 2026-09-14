@@ -40,7 +40,7 @@ export async function PUT(
       data: {
         exhibitId: exhibitId || undefined,
         title: title ? title.trim() : undefined,
-        category: category || undefined,
+        category: category === 'FB文章備份' ? '社群隨筆' : (category || undefined),
         topic: topic !== undefined ? (topic ? topic.trim() : null) : undefined,
         fbUrl: fbUrl !== undefined ? (fbUrl ? fbUrl.trim() : null) : undefined,
         fbDate: fbDate !== undefined ? (fbDate ? fbDate.trim() : null) : undefined,
