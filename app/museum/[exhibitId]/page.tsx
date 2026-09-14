@@ -263,7 +263,17 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
   const cleanExcerpt = (content: string) => {
     if (!content) return '';
-    return content.replace(/^#+\s*|^>\s*/gm, '').slice(0, 150);
+    let text = content;
+    if (content.trim().startsWith('{')) {
+      try {
+        const p = JSON.parse(content);
+        if (p) {
+          if (p.textContent) text = p.textContent;
+          else if (p.overview) text = p.overview;
+        }
+      } catch {}
+    }
+    return text.replace(/^#+\s*|^>\s*/gm, '').slice(0, 150);
   };
 
   return (
@@ -1106,35 +1116,63 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             ) : (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.8rem' }}>
-                  {filteredWritingsItems.map((item) => (
-                    <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
-                      <div 
-                        className="glass-panel exhibit-card" 
-                        style={{ 
-                          padding: '0', 
-                          color: exhibit.color, 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          height: '100%',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                          boxSizing: 'border-box',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {/* 縮圖 Header */}
-                        <div style={{ 
-                          width: '100%', 
-                          height: '135px', 
-                          background: 'rgba(255,255,255,0.03)', 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: exhibit.color,
-                          borderBottom: '1px solid rgba(255,255,255,0.06)'
-                        }}>
-                          <BookOpen size={30} style={{ opacity: 0.7 }} />
-                        </div>
+                  {filteredWritingsItems.map((item) => {
+                    let coverImage: string | null = null;
+                    if (item.content) {
+                      try {
+                        const p = JSON.parse(item.content);
+                        if (p && p.coverImage) {
+                          coverImage = p.coverImage;
+                        }
+                      } catch {}
+                    }
+
+                    return (
+                      <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
+                        <div 
+                          className="glass-panel exhibit-card" 
+                          style={{ 
+                            padding: '0', 
+                            color: exhibit.color, 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            height: '100%',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                            boxSizing: 'border-box',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {/* 縮圖 Header */}
+                          {coverImage ? (
+                            <div style={{ 
+                              width: '100%', 
+                              height: '180px', 
+                              overflow: 'hidden', 
+                              borderBottom: '1px solid rgba(255,255,255,0.06)',
+                              background: '#000',
+                              position: 'relative'
+                            }}>
+                              <img
+                                src={coverImage}
+                                alt={item.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ 
+                              width: '100%', 
+                              height: '135px', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: exhibit.color,
+                              borderBottom: '1px solid rgba(255,255,255,0.06)'
+                            }}>
+                              <BookOpen size={30} style={{ opacity: 0.7 }} />
+                            </div>
+                          )}
 
                         <div style={{ padding: '1.5rem 1.6rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                           {/* 頂部：標籤與時間 */}
@@ -1291,8 +1329,9 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         </div>
                       </div>
                     </Link>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
 
                 {/* 下面還有更多提示標語 */}
                 {filteredWritingsItems.length > 2 && (
