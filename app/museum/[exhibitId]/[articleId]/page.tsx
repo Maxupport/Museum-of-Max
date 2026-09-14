@@ -47,6 +47,7 @@ export default function ArticleDetailPage({
     );
   }
 
+  const [articleLoading, setArticleLoading] = useState(true);
   const [dbArticle, setDbArticle] = useState<{
     id: string;
     title: string;
@@ -62,6 +63,7 @@ export default function ArticleDetailPage({
 
   useEffect(() => {
     if (articleId) {
+      setArticleLoading(true);
       fetch(`/api/writings/${articleId}`)
         .then((res) => res.json())
         .then((data) => {
@@ -69,7 +71,8 @@ export default function ArticleDetailPage({
             setDbArticle(data.data);
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setArticleLoading(false));
     }
   }, [articleId]);
 
@@ -175,43 +178,7 @@ export default function ArticleDetailPage({
         text: '本專區未來將持續與 Notion 資料庫即時連動，隨時補充全新的聲音探索日記、圖文紀錄與影音音軌。',
       },
     ],
-  } : {
-    id: articleId,
-    title: `【${exhibit.title}】實務策略洞察與跨界架構`,
-    date: '2026-08-20',
-    readTime: '5 min read',
-    author: 'Maxupport Curator',
-    content: [
-      {
-        type: 'heading',
-        text: '前言：重塑產業範式的創新思考',
-      },
-      {
-        type: 'paragraph',
-        text: '在快速變動的世界中，跨領域思維早已不再是選配，而是企業與個人持續創造非凡價值的核心引擎。本專題深入探討在當前架構下，如何結合商業洞察與實踐經驗，梳理出最具效益的推動策略。',
-      },
-      {
-        type: 'quote',
-        text: '「創新並非憑空想像，而是將現有元素進行跨界且精準的重新組合。」',
-      },
-      {
-        type: 'heading',
-        text: '一、核心策略三大柱石',
-      },
-      {
-        type: 'paragraph',
-        text: '1. 觀念定位與藍圖繪製：明確定義核心目標與價值主張，避開過度繁雜無效步驟。\n2. 跨界資源對接與串聯：有效整合資金、人脈與技術，形成強大綜效。\n3. 數據指標與動態優化：即時監測執行成效，依市場反饋靈活調整架構。',
-      },
-      {
-        type: 'heading',
-        text: '二、未來展望與落地執行',
-      },
-      {
-        type: 'paragraph',
-        text: '未來我們將持續透過 Notion 頁面更新最新內容與深度個案分析，歡迎隨時關注本展區的更新動態。',
-      },
-    ],
-  };
+  } : null;
 
   const [isCurator, setIsCurator] = useState(false);
 
@@ -292,6 +259,25 @@ export default function ArticleDetailPage({
     return () => observer.disconnect();
   }, [vocalCourseData, hasInteracted]);
 
+  if (articleLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '12rem 2rem', color: 'var(--text-secondary)' }}>
+        <p style={{ letterSpacing: '1px' }}>專題創作內容載入中...</p>
+      </div>
+    );
+  }
+
+  if (!articleData && !vocalCourseData) {
+    return (
+      <div style={{ textAlign: 'center', padding: '10rem 2rem', color: 'var(--text-secondary)' }}>
+        <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-serif)' }}>找不到該作品或專題頁面</h3>
+        <button className="museum-btn" onClick={() => router.push(`/museum/${exhibitId}`)}>
+          ← 返回【{exhibit.title}】展區
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '3.5rem 1.5rem 6rem', maxWidth: '820px', margin: '0 auto', minHeight: '100vh', boxSizing: 'border-box' }}>
       {/* 頂部導覽 */}
@@ -369,7 +355,7 @@ export default function ArticleDetailPage({
             marginBottom: '1.2rem',
           }}
         >
-          {articleData.title}
+          {articleData?.title || '作品專題'}
         </h1>
 
         {/* 標題下方 3 個標籤: 文章主題, FB 上線時間, FB 連結 */}
@@ -412,14 +398,14 @@ export default function ArticleDetailPage({
           {isCurator && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Calendar size={14} />
-              {articleData.date}
+              {articleData?.date || ''}
             </span>
           )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <BookOpen size={14} />
-            {vocalCourseData ? `${vocalCourseData.versions.length} 個演進版本` : articleData.readTime}
+            {vocalCourseData ? `${vocalCourseData.versions.length} 個演進版本` : articleData?.readTime}
           </span>
-          <span>By {articleData.author}</span>
+          <span>By {articleData?.author || 'Maxupport Curator'}</span>
         </div>
       </header>
 
@@ -598,7 +584,7 @@ export default function ArticleDetailPage({
         </div>
       ) : (
         <article className="animate-fade-in" style={{ fontSize: '1.05rem', lineHeight: 1.9, color: 'rgba(255,255,255,0.85)' }}>
-          {articleData.content.map((block, i) => {
+          {articleData?.content?.map((block, i) => {
             if (block.type === 'heading') {
               return (
                 <h2
