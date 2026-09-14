@@ -815,10 +815,14 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 {filteredWritingsItems.map((item, index) => {
                   let isVocal = item.category === '人聲優化課程' || item.category === '人聲優化歷程記錄';
                   let versionCount = 0;
-                  if (isVocal && item.content) {
+                  let coverImage: string | null = null;
+                  if (item.content) {
                     try {
                       const p = JSON.parse(item.content);
-                      if (p && Array.isArray(p.versions)) versionCount = p.versions.length;
+                      if (p) {
+                        if (Array.isArray(p.versions)) versionCount = p.versions.length;
+                        if (p.coverImage) coverImage = p.coverImage;
+                      }
                     } catch {}
                   }
 
@@ -834,21 +838,38 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         height: '100%',
                         transition: 'all 0.4s ease'
                       }}>
-                        <div style={{ 
-                          width: '100%', 
-                          height: '180px', 
-                          background: 'rgba(236, 72, 153, 0.08)', 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--theme-music, #ec4899)',
-                          fontSize: '0.8rem',
-                          letterSpacing: '2px',
-                          textTransform: 'uppercase',
-                          borderBottom: '1px solid rgba(255,255,255,0.05)'
-                        }}>
-                          <BookOpen size={32} style={{ opacity: 0.8 }} />
-                        </div>
+                        {coverImage ? (
+                          <div style={{
+                            width: '100%',
+                            height: '200px',
+                            overflow: 'hidden',
+                            borderBottom: '1px solid rgba(255,255,255,0.08)',
+                            background: '#000',
+                            position: 'relative'
+                          }}>
+                            <img
+                              src={coverImage}
+                              alt={item.title}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ 
+                            width: '100%', 
+                            height: '180px', 
+                            background: 'rgba(236, 72, 153, 0.08)', 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--theme-music, #ec4899)',
+                            fontSize: '0.8rem',
+                            letterSpacing: '2px',
+                            textTransform: 'uppercase',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)'
+                          }}>
+                            <BookOpen size={32} style={{ opacity: 0.8 }} />
+                          </div>
+                        )}
                         <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.4rem' }}>
                             <span style={{ fontSize: '0.75rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(236, 72, 153, 0.3)' }}>

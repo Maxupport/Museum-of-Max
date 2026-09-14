@@ -347,6 +347,8 @@ export default function AdminDashboardPage() {
   const [wExhibitId, setWExhibitId] = useState('finance_insurance');
   const [wCategory, setWCategory] = useState('投資');
   const [wTitle, setWTitle] = useState('');
+  const [wCoverImage, setWCoverImage] = useState('');
+  const [uploadingCoverImage, setUploadingCoverImage] = useState(false);
   const [wVocalVersions, setWVocalVersions] = useState<Array<{ id: string; versionTitle: string; date: string; youtubeUrl: string; notes: string }>>([
     { id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }
   ]);
@@ -363,6 +365,30 @@ export default function AdminDashboardPage() {
   const [showArticlePreview, setShowArticlePreview] = useState(false);
   const [articleSubTab, setArticleSubTab] = useState<'list' | 'editor' | 'preview'>('list');
   const [filterArticleExhibit, setFilterArticleExhibit] = useState<string>('all');
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCoverImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        setWCoverImage(data.url);
+      } else {
+        alert(data.error || '上傳圖片失敗');
+      }
+    } catch {
+      alert('連線上傳失敗');
+    } finally {
+      setUploadingCoverImage(false);
+    }
+  };
 
   const fetchWritingsItems = useCallback(async () => {
     try {
@@ -425,6 +451,7 @@ export default function AdminDashboardPage() {
       const finalContent = isVocalCategory
         ? JSON.stringify({
             isVocalCourse: true,
+            coverImage: wCoverImage || '',
             overview: wExcerpt || wContent || '人聲優化歷程記錄 - 多版本對比演進錄音',
             versions: wVocalVersions
           })
@@ -437,9 +464,9 @@ export default function AdminDashboardPage() {
           exhibitId: wExhibitId,
           title: wTitle,
           category: wCategory,
-          topic: wTopic,
-          fbUrl: wFbUrl,
-          fbDate: wFbDate,
+          topic: isVocalCategory ? '' : wTopic,
+          fbUrl: isVocalCategory ? '' : wFbUrl,
+          fbDate: isVocalCategory ? '' : wFbDate,
           excerpt: wExcerpt,
           content: finalContent,
           youtubeUrl: isVocalCategory ? (wVocalVersions[0]?.youtubeUrl || wYoutubeUrl) : wYoutubeUrl,
@@ -455,6 +482,7 @@ export default function AdminDashboardPage() {
         setWExcerpt('');
         setWContent('');
         setWYoutubeUrl('');
+        setWCoverImage('');
         setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
         setWOrder(0);
         setEditingWritingId(null);
@@ -486,17 +514,21 @@ export default function AdminDashboardPage() {
     if (item.category === '人聲優化歷程記錄' || item.category === '人聲優化課程') {
       try {
         const parsed = JSON.parse(item.content);
-        if (parsed && Array.isArray(parsed.versions)) {
-          setWVocalVersions(parsed.versions);
+        if (parsed) {
+          if (Array.isArray(parsed.versions)) setWVocalVersions(parsed.versions);
           setWExcerpt(parsed.overview || item.excerpt || '');
+          setWCoverImage(parsed.coverImage || '');
         } else {
           setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: item.fbDate || '', youtubeUrl: item.youtubeUrl || '', notes: item.content }]);
+          setWCoverImage('');
         }
       } catch {
         setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: item.fbDate || '', youtubeUrl: item.youtubeUrl || '', notes: item.content }]);
+        setWCoverImage('');
       }
     } else {
       setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
+      setWCoverImage('');
     }
 
     setArticleSubTab('editor');
@@ -3623,6 +3655,41 @@ export default function AdminDashboardPage() {
                     padding: '1.5rem',
                     marginBottom: '1.5rem'
                   }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <label style={{ fontSize: '0.82rem', color: '#f472b6', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 600 }}>
+                        📷 封面顯示圖片 (選填，將顯示於前台展覽卡片上方)
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          placeholder="https://... 或點擊右側按鈕選擇電腦圖片上傳"
+                          value={wCoverImage}
+                          onChange={(e) => setWCoverImage(e.target.value)}
+                          className="museum-input"
+                          style={{ flex: 1, minWidth: '240px', padding: '0.65rem' }}
+                        />
+                        <label className="museum-btn" style={{ cursor: 'pointer', background: 'rgba(236,72,153,0.2)', border: '1px solid rgba(236,72,153,0.5)', color: '#f472b6', padding: '0.65rem 1.2rem', borderRadius: '4px', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Upload size={14} />
+                          {uploadingCoverImage ? '上傳中...' : '選擇電腦圖片上傳'}
+                          <input type="file" accept="image/*" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
+                        </label>
+                        {wCoverImage && (
+                          <button
+                            type="button"
+                            onClick={() => setWCoverImage('')}
+                            style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '0.65rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            清除圖片
+                          </button>
+                        )}
+                      </div>
+                      {wCoverImage && (
+                        <div style={{ marginTop: '0.8rem', width: '220px', height: '125px', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(236, 72, 153, 0.4)', position: 'relative' }}>
+                          <img src={wCoverImage} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      )}
+                    </div>
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.8rem' }}>
                       <div>
                         <h4 style={{ color: '#f472b6', margin: 0, fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -3757,7 +3824,7 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
 
-                {(wExhibitId === 'creation_lab' || wExhibitId === 'communication' || wExhibitId === 'finance_insurance' || wExhibitId === 'sound') && (
+                {(wCategory !== '人聲優化歷程記錄' && wCategory !== '人聲優化課程') && (
                   <>
                     <div>
                       <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
