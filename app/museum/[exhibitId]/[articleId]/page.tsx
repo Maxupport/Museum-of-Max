@@ -247,7 +247,7 @@ export default function ArticleDetailPage({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // 滾動觸發：暫停上方影片、將新影片 seek 至「前一個影片暫停秒數 - 5 秒」並順暢播放
+  // 滾動觸發：暫停上方影片、將新影片 seek 至「前一個影片暫停秒數 - 3 秒」並順暢播放
   useEffect(() => {
     if (!vocalCourseData || !vocalCourseData.versions || vocalCourseData.versions.length === 0) return;
 
@@ -261,7 +261,7 @@ export default function ArticleDetailPage({
                 postIframeCommand(prevIdx, 'pauseVideo');
               }
               if (hasInteracted) {
-                const targetTime = Math.max(0, lastPlaybackTimeRef.current - 5);
+                const targetTime = Math.max(0, lastPlaybackTimeRef.current - 3);
                 if (targetTime > 0) {
                   postIframeCommand(idx, 'seekTo', [targetTime, true]);
                 }
@@ -457,7 +457,7 @@ export default function ArticleDetailPage({
                 🎙️ 人聲優化演進時間軸（共 {vocalCourseData.versions.length} 個演進版本錄音，最多支援 10 個）
               </div>
               <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.84rem' }}>
-                💡 操作提示：點按播放第一個影片後，往下滑動頁面時，系統會自動無縫暫停上方影片，並自動將下一個影片調整至「前一影片暫停時間的前 5 秒」進行無縫銜接播放！
+                💡 操作提示：點按播放第一個影片後，往下滑動頁面時，系統會自動無縫暫停上方影片，並自動將下一個影片調整至「前一影片暫停時間的前 3 秒」進行無縫銜接播放！
               </div>
             </div>
           </div>
