@@ -1,8 +1,8 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, BookOpen, Share2, Check, Video, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Share2, Check, Video, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { EXHIBITS } from '@/lib/constants';
 import { getYouTubeEmbedUrl } from '@/utils/youtube';
 
@@ -221,6 +221,77 @@ export default function ArticleDetailPage({
     }
   }, []);
 
+  // 解析「人聲優化課程」的多版本演進 JSON
+  const vocalCourseData = (() => {
+    if (!dbArticle?.content) return null;
+    if (dbArticle.category === '人聲優化課程' || dbArticle.content.includes('"isVocalCourse"')) {
+      try {
+        const parsed = JSON.parse(dbArticle.content);
+        if (parsed && (parsed.isVocalCourse || Array.isArray(parsed.versions))) {
+          return parsed as {
+            isVocalCourse: boolean;
+            overview?: string;
+            versions: Array<{
+              id: string;
+              versionTitle: string;
+              date: string;
+              youtubeUrl: string;
+              notes?: string;
+            }>;
+          };
+        }
+      } catch {
+        // Not JSON
+      }
+    }
+    return null;
+  })();
+
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [currentPlayingIdx, setCurrentPlayingIdx] = useState<number | null>(null);
+  const iframeRefs = useRef<Map<number, HTMLIFrameElement>>(new Map());
+
+  const postIframeCommand = (idx: number, command: 'playVideo' | 'pauseVideo') => {
+    const iframe = iframeRefs.current.get(idx);
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: command, args: '' }),
+        '*'
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (!vocalCourseData || !vocalCourseData.versions || vocalCourseData.versions.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const idx = Number(entry.target.getAttribute('data-version-idx'));
+          if (entry.isIntersecting) {
+            setCurrentPlayingIdx((prevIdx) => {
+              if (prevIdx !== null && prevIdx !== idx) {
+                postIframeCommand(prevIdx, 'pauseVideo');
+              }
+              if (hasInteracted) {
+                postIframeCommand(idx, 'playVideo');
+              }
+              return idx;
+            });
+          }
+        });
+      },
+      { threshold: 0.55 }
+    );
+
+    vocalCourseData.versions.forEach((_, i) => {
+      const el = document.getElementById(`vocal-version-card-${i}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [vocalCourseData, hasInteracted]);
+
   return (
     <div style={{ padding: '3.5rem 1.5rem 6rem', maxWidth: '820px', margin: '0 auto', minHeight: '100vh', boxSizing: 'border-box' }}>
       {/* 頂部導覽 */}
@@ -285,7 +356,7 @@ export default function ArticleDetailPage({
             border: '1px solid rgba(255,255,255,0.1)',
           }}
         >
-          {exhibit.title}
+          {dbArticle?.category || exhibit.title}
         </div>
 
         <h1
@@ -346,114 +417,288 @@ export default function ArticleDetailPage({
           )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <BookOpen size={14} />
-            {articleData.readTime}
+            {vocalCourseData ? `${vocalCourseData.versions.length} 個演進版本` : articleData.readTime}
           </span>
           <span>By {articleData.author}</span>
         </div>
       </header>
 
-      {/* 文章內容主體 */}
-      <article className="animate-fade-in" style={{ fontSize: '1.05rem', lineHeight: 1.9, color: 'rgba(255,255,255,0.85)' }}>
-        {articleData.content.map((block, i) => {
-          if (block.type === 'heading') {
-            return (
-              <h2
-                key={i}
-                style={{
-                  fontSize: '1.6rem',
-                  color: '#fff',
-                  fontFamily: 'var(--font-noto-serif)',
-                  marginTop: '2.5rem',
-                  marginBottom: '1.2rem',
-                  borderLeft: `3px solid ${exhibit.color}`,
-                  paddingLeft: '1rem',
-                }}
-              >
-                {block.text}
-              </h2>
-            );
-          }
+      {/* 文章內容主體 或 人聲優化多版本時間軸 */}
+      {vocalCourseData ? (
+        <div className="animate-fade-in">
+          {/* 提示 Banner */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
+            border: '1px solid rgba(236, 72, 153, 0.4)',
+            borderRadius: '8px',
+            padding: '1.2rem 1.6rem',
+            marginBottom: '3rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            color: '#f472b6',
+            fontSize: '0.9rem',
+            lineHeight: 1.5,
+            boxShadow: '0 8px 25px rgba(236, 72, 153, 0.12)'
+          }}>
+            <Sparkles size={24} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 600, color: '#fff', marginBottom: '0.2rem' }}>
+                🎙️ 人聲優化演進時間軸（共 {vocalCourseData.versions.length} 個演進版本錄音，最多支援 10 個）
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.84rem' }}>
+                💡 操作提示：點按播放第一個影片後，往下滑動頁面時，系統會自動無縫暫停上方影片並順暢切換播放！
+              </div>
+            </div>
+          </div>
 
-          if (block.type === 'quote') {
-            return (
-              <blockquote
-                key={i}
-                style={{
-                  margin: '2rem 0',
-                  padding: '1.5rem 2rem',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderLeft: `4px solid ${exhibit.color}`,
-                  borderRadius: '0 4px 4px 0',
-                  fontSize: '1.1rem',
-                  fontStyle: 'italic',
-                  color: '#fff',
-                  fontFamily: 'var(--font-noto-serif)',
-                }}
-              >
-                {block.text}
-              </blockquote>
-            );
-          }
-
-          if (block.type === 'image' && block.url) {
-            return (
-              <figure key={i} style={{ margin: '2.5rem 0' }}>
-                <img
-                  src={block.url}
-                  alt={block.caption || 'Notion 文章圖片紀錄'}
-                  style={{
-                    width: '100%',
-                    maxHeight: '480px',
-                    objectFit: 'cover',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
-                  }}
-                />
-                {block.caption && (
-                  <figcaption style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
-                    📷 {block.caption}
-                  </figcaption>
-                )}
-              </figure>
-            );
-          }
-
-          if (block.type === 'video' && block.url) {
-            const embedUrl = getYouTubeEmbedUrl(block.url);
-            return (
-              <figure key={i} style={{ margin: '2.5rem 0' }}>
-                <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  {embedUrl ? (
-                    <iframe
-                      src={embedUrl}
-                      title={block.caption || 'Notion 嵌入影片範例'}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                    />
-                  ) : (
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                      無效的影片網址
-                    </div>
-                  )}
-                </div>
-                {block.caption && (
-                  <figcaption style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
-                    🎬 {block.caption}
-                  </figcaption>
-                )}
-              </figure>
-            );
-          }
-
-          return (
-            <p key={i} style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
-              {block.text}
+          {/* 總覽說明 */}
+          {vocalCourseData.overview && (
+            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '1.05rem', lineHeight: 1.8, marginBottom: '2.5rem', whiteSpace: 'pre-line' }}>
+              {vocalCourseData.overview}
             </p>
-          );
-        })}
-      </article>
+          )}
+
+          {/* 垂直時間軸主體 */}
+          <div style={{ position: 'relative', paddingLeft: '2.5rem' }}>
+            {/* 垂直極光走廊軸線 */}
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              bottom: '40px',
+              left: '12px',
+              width: '2px',
+              background: 'linear-gradient(180deg, #ec4899 0%, rgba(236, 72, 153, 0.2) 100%)',
+              boxShadow: '0 0 10px rgba(236, 72, 153, 0.5)'
+            }} />
+
+            {vocalCourseData.versions.map((ver, idx) => {
+              const embedUrl = getYouTubeEmbedUrl(ver.youtubeUrl);
+              const fullEmbedUrl = embedUrl ? `${embedUrl}?enablejsapi=1&origin=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}` : null;
+
+              return (
+                <div
+                  key={ver.id || idx}
+                  id={`vocal-version-card-${idx}`}
+                  data-version-idx={idx}
+                  style={{
+                    position: 'relative',
+                    marginBottom: '3.5rem',
+                    scrollMarginTop: '100px'
+                  }}
+                >
+                  {/* 時間軸節點圖示 */}
+                  <div style={{
+                    position: 'absolute',
+                    left: '-2.5rem',
+                    top: '0.4rem',
+                    transform: 'translateX(-50%)',
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    background: currentPlayingIdx === idx ? '#ec4899' : 'rgba(15, 23, 42, 0.9)',
+                    border: `2px solid ${currentPlayingIdx === idx ? '#fff' : '#ec4899'}`,
+                    boxShadow: currentPlayingIdx === idx ? '0 0 15px #ec4899' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s ease',
+                    zIndex: 2
+                  }}>
+                    {idx + 1}
+                  </div>
+
+                  {/* 卡片本體 */}
+                  <div
+                    className="glass-panel"
+                    style={{
+                      padding: '1.8rem',
+                      borderRadius: '8px',
+                      border: currentPlayingIdx === idx ? '1px solid rgba(236, 72, 153, 0.5)' : '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: currentPlayingIdx === idx ? '0 8px 30px rgba(236, 72, 153, 0.15)' : 'none',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onClick={() => setHasInteracted(true)}
+                  >
+                    {/* 版本 Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                      <span style={{
+                        fontSize: '0.85rem',
+                        background: 'rgba(236, 72, 153, 0.2)',
+                        color: '#f472b6',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(236, 72, 153, 0.4)',
+                        fontWeight: 600
+                      }}>
+                        {ver.versionTitle || `Ver ${idx + 1}.0`}
+                      </span>
+                      {ver.date && (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          📅 錄音時間：{ver.date}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* YouTube Player */}
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      paddingTop: '56.25%',
+                      background: '#000',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      marginBottom: '1.2rem',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      {fullEmbedUrl ? (
+                        <iframe
+                          ref={(el) => {
+                            if (el) iframeRefs.current.set(idx, el);
+                            else iframeRefs.current.delete(idx);
+                          }}
+                          src={fullEmbedUrl}
+                          title={ver.versionTitle}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                        />
+                      ) : (
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                          未設定 YouTube 網址
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 註記說明 */}
+                    {ver.notes && (
+                      <div style={{
+                        background: 'rgba(255,255,255,0.03)',
+                        borderLeft: '3px solid #ec4899',
+                        padding: '0.9rem 1.2rem',
+                        borderRadius: '0 4px 4px 0',
+                        fontSize: '0.92rem',
+                        lineHeight: 1.6,
+                        color: 'rgba(255,255,255,0.85)'
+                      }}>
+                        <div style={{ fontSize: '0.75rem', color: '#f472b6', marginBottom: '0.3rem', fontWeight: 500 }}>
+                          💡 該階段發聲技巧與紀錄摘要：
+                        </div>
+                        {ver.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <article className="animate-fade-in" style={{ fontSize: '1.05rem', lineHeight: 1.9, color: 'rgba(255,255,255,0.85)' }}>
+          {articleData.content.map((block, i) => {
+            if (block.type === 'heading') {
+              return (
+                <h2
+                  key={i}
+                  style={{
+                    fontSize: '1.6rem',
+                    color: '#fff',
+                    fontFamily: 'var(--font-noto-serif)',
+                    marginTop: '2.5rem',
+                    marginBottom: '1.2rem',
+                    borderLeft: `3px solid ${exhibit.color}`,
+                    paddingLeft: '1rem',
+                  }}
+                >
+                  {block.text}
+                </h2>
+              );
+            }
+
+            if (block.type === 'quote') {
+              return (
+                <blockquote
+                  key={i}
+                  style={{
+                    margin: '2rem 0',
+                    padding: '1.5rem 2rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    borderLeft: `4px solid ${exhibit.color}`,
+                    borderRadius: '0 4px 4px 0',
+                    fontSize: '1.1rem',
+                    fontStyle: 'italic',
+                    color: '#fff',
+                    fontFamily: 'var(--font-noto-serif)',
+                  }}
+                >
+                  {block.text}
+                </blockquote>
+              );
+            }
+
+            if (block.type === 'image' && block.url) {
+              return (
+                <figure key={i} style={{ margin: '2.5rem 0' }}>
+                  <img
+                    src={block.url}
+                    alt={block.caption || 'Notion 文章圖片紀錄'}
+                    style={{
+                      width: '100%',
+                      maxHeight: '480px',
+                      objectFit: 'cover',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+                    }}
+                  />
+                  {block.caption && (
+                    <figcaption style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
+                      📷 {block.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+            }
+
+            if (block.type === 'video' && block.url) {
+              const embedUrl = getYouTubeEmbedUrl(block.url);
+              return (
+                <figure key={i} style={{ margin: '2.5rem 0' }}>
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {embedUrl ? (
+                      <iframe
+                        src={embedUrl}
+                        title={block.caption || 'Notion 嵌入影片範例'}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                      />
+                    ) : (
+                      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                        無效的影片網址
+                      </div>
+                    )}
+                  </div>
+                  {block.caption && (
+                    <figcaption style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.6rem', fontFamily: 'var(--font-noto-sans)' }}>
+                      🎬 {block.caption}
+                    </figcaption>
+                  )}
+                </figure>
+              );
+            }
+
+            return (
+              <p key={i} style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
+                {block.text}
+              </p>
+            );
+          })}
+        </article>
+      )}
 
       {/* 底部導覽卡 */}
       <footer

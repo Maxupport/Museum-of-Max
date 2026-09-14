@@ -347,6 +347,9 @@ export default function AdminDashboardPage() {
   const [wExhibitId, setWExhibitId] = useState('finance_insurance');
   const [wCategory, setWCategory] = useState('投資');
   const [wTitle, setWTitle] = useState('');
+  const [wVocalVersions, setWVocalVersions] = useState<Array<{ id: string; versionTitle: string; date: string; youtubeUrl: string; notes: string }>>([
+    { id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }
+  ]);
   const [wTopic, setWTopic] = useState('');
   const [wFbUrl, setWFbUrl] = useState('');
   const [wFbDate, setWFbDate] = useState('');
@@ -405,14 +408,26 @@ export default function AdminDashboardPage() {
   const handleCreateOrUpdateWriting = async (e: React.FormEvent) => {
     e.preventDefault();
     setWritingFormError('');
-    if (!wTitle.trim() || !wContent.trim()) {
-      setWritingFormError('請輸入文章標題與內文');
+    if (!wTitle.trim()) {
+      setWritingFormError('請輸入文章/作品標題');
+      return;
+    }
+    if (wCategory !== '人聲優化課程' && !wContent.trim()) {
+      setWritingFormError('請輸入文章內文');
       return;
     }
     setCreatingWriting(true);
     try {
       const url = editingWritingId ? `/api/writings/${editingWritingId}` : '/api/writings';
       const method = editingWritingId ? 'PUT' : 'POST';
+
+      const finalContent = wCategory === '人聲優化課程'
+        ? JSON.stringify({
+            isVocalCourse: true,
+            overview: wExcerpt || wContent || '人聲優化課程 - 多版本對比演進錄音',
+            versions: wVocalVersions
+          })
+        : wContent;
 
       const res = await fetch(url, {
         method,
@@ -425,8 +440,8 @@ export default function AdminDashboardPage() {
           fbUrl: wFbUrl,
           fbDate: wFbDate,
           excerpt: wExcerpt,
-          content: wContent,
-          youtubeUrl: wYoutubeUrl,
+          content: finalContent,
+          youtubeUrl: wCategory === '人聲優化課程' ? (wVocalVersions[0]?.youtubeUrl || wYoutubeUrl) : wYoutubeUrl,
           order: wOrder,
         }),
       });
@@ -439,6 +454,7 @@ export default function AdminDashboardPage() {
         setWExcerpt('');
         setWContent('');
         setWYoutubeUrl('');
+        setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
         setWOrder(0);
         setEditingWritingId(null);
         fetchWritingsItems();
@@ -465,6 +481,23 @@ export default function AdminDashboardPage() {
     setWContent(item.content);
     setWYoutubeUrl(item.youtubeUrl || '');
     setWOrder(item.order);
+
+    if (item.category === '人聲優化課程') {
+      try {
+        const parsed = JSON.parse(item.content);
+        if (parsed && Array.isArray(parsed.versions)) {
+          setWVocalVersions(parsed.versions);
+          setWExcerpt(parsed.overview || item.excerpt || '');
+        } else {
+          setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: item.fbDate || '', youtubeUrl: item.youtubeUrl || '', notes: item.content }]);
+        }
+      } catch {
+        setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: item.fbDate || '', youtubeUrl: item.youtubeUrl || '', notes: item.content }]);
+      }
+    } else {
+      setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
+    }
+
     setArticleSubTab('editor');
   };
 
@@ -477,6 +510,7 @@ export default function AdminDashboardPage() {
     setWExcerpt('');
     setWContent('');
     setWYoutubeUrl('');
+    setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
     setWOrder(0);
     setArticleSubTab('list');
   };
@@ -3545,6 +3579,8 @@ export default function AdminDashboardPage() {
                       {wExhibitId === 'sound' && (
                         <>
                           <option value="個人聲音探索心得">個人聲音探索心得</option>
+                          <option value="人聲優化課程">人聲優化課程</option>
+                          <option value="青春之歌計畫">青春之歌計畫</option>
                         </>
                       )}
                       {wExhibitId === 'creation_lab' && (
@@ -3565,11 +3601,11 @@ export default function AdminDashboardPage() {
 
                 <div>
                   <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                    文章標題 *
+                    文章/作品標題 *
                   </label>
                   <input
                     type="text"
-                    placeholder="例如: 【聲音靈感筆記】聲音質地優化與日常語調重塑"
+                    placeholder={wCategory === '人聲優化課程' ? '例如: 《聽海》人聲優化與歌唱進步紀錄' : '例如: 【聲音靈感筆記】聲音質地優化與日常語調重塑'}
                     value={wTitle}
                     onChange={(e) => setWTitle(e.target.value)}
                     className="museum-input"
@@ -3577,6 +3613,148 @@ export default function AdminDashboardPage() {
                     required
                   />
                 </div>
+
+                {wCategory === '人聲優化課程' && (
+                  <div style={{
+                    background: 'rgba(236, 72, 153, 0.05)',
+                    border: '1px solid rgba(236, 72, 153, 0.3)',
+                    borderRadius: '8px',
+                    padding: '1.5rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+                      <div>
+                        <h4 style={{ color: '#f472b6', margin: 0, fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          🎙️ 多版本時間軸錄音管理 ({wVocalVersions.length} / 10 個版本)
+                        </h4>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0.3rem 0 0 0' }}>
+                          為這首歌添加不同演進階段的錄音/影片（最高可保留 10 個版本）。
+                        </p>
+                      </div>
+                      {wVocalVersions.length < 10 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWVocalVersions([
+                              ...wVocalVersions,
+                              {
+                                id: 'v_' + Date.now(),
+                                versionTitle: `Ver ${wVocalVersions.length + 1}.0 階段錄音`,
+                                date: new Date().toISOString().split('T')[0],
+                                youtubeUrl: '',
+                                notes: ''
+                              }
+                            ]);
+                          }}
+                          className="museum-btn"
+                          style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', borderColor: '#f472b6', color: '#f472b6' }}
+                        >
+                          + 新增演進版本 (最高 10 個)
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                      {wVocalVersions.map((ver, idx) => (
+                        <div key={ver.id || idx} style={{
+                          background: 'rgba(0,0,0,0.35)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '6px',
+                          padding: '1.1rem'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              📌 版本 {idx + 1} of {wVocalVersions.length}
+                            </span>
+                            {wVocalVersions.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setWVocalVersions(wVocalVersions.filter((_, i) => i !== idx));
+                                }}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer' }}
+                              >
+                                🗑️ 刪除此版本
+                              </button>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.8rem' }}>
+                            <div>
+                              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                                版本名稱 (例如: Ver 1.0 課程前初測錄音)
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="例如: Ver 1.0 課程前初測"
+                                value={ver.versionTitle}
+                                onChange={(e) => {
+                                  const updated = [...wVocalVersions];
+                                  updated[idx].versionTitle = e.target.value;
+                                  setWVocalVersions(updated);
+                                }}
+                                className="museum-input"
+                                style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                                錄音日期 / 階段說明 (例如: 2024-03-01 或 第 1 週)
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="例如: 2024-03-01"
+                                value={ver.date}
+                                onChange={(e) => {
+                                  const updated = [...wVocalVersions];
+                                  updated[idx].date = e.target.value;
+                                  setWVocalVersions(updated);
+                                }}
+                                className="museum-input"
+                                style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ marginBottom: '0.8rem' }}>
+                            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                              YouTube 影片網址 (此版本)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              value={ver.youtubeUrl}
+                              onChange={(e) => {
+                                const updated = [...wVocalVersions];
+                                updated[idx].youtubeUrl = e.target.value;
+                                setWVocalVersions(updated);
+                              }}
+                              className="museum-input"
+                              style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                              階段發聲技巧與進步註記 (選填)
+                            </label>
+                            <textarea
+                              placeholder="例如: 調整共鳴位置，高音發聲更加放鬆..."
+                              value={ver.notes}
+                              onChange={(e) => {
+                                const updated = [...wVocalVersions];
+                                updated[idx].notes = e.target.value;
+                                setWVocalVersions(updated);
+                              }}
+                              className="museum-input"
+                              style={{ maxWidth: '100%', minHeight: '60px', padding: '0.55rem', fontSize: '0.88rem', resize: 'vertical' }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {(wExhibitId === 'creation_lab' || wExhibitId === 'communication' || wExhibitId === 'finance_insurance' || wExhibitId === 'sound') && (
                   <>
