@@ -15,8 +15,17 @@ interface PasscodeItem {
   pageviewCount: number;
 }
 
+interface PasscodeEntryStat {
+  code: string;
+  note: string;
+  count: number;
+  isPreset: boolean;
+}
+
 interface StatData {
   totalPageviews: number;
+  totalPasscodeEntries: number;
+  passcodeEntryStats: PasscodeEntryStat[];
   exhibitStats: { exhibitId: string; count: number }[];
   recentViews: {
     id: string;
@@ -2003,17 +2012,83 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <div style={{ width: '50px', height: '50px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
                 <Key size={24} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  通行密碼發放數 (Active Passcodes)
+                  通行碼進入總次數 (Passcode Entries)
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-                  {passcodes.length}
+                  {stats ? stats.totalPasscodeEntries : 0}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* 各通行碼進入次數統計 (首頁選擇通行碼登入) */}
+          <div className="glass-panel" style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, fontFamily: 'var(--font-noto-serif)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Key size={20} style={{ color: '#38bdf8' }} />
+                <span>各通行碼進入次數統計 (Passcode Entry Distribution)</span>
+              </h2>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                統計訪客從第一頁使用不同通行碼進入展館之累計次數
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              {stats?.passcodeEntryStats && stats.passcodeEntryStats.length > 0 ? (
+                stats.passcodeEntryStats.map((item) => {
+                  const maxCount = Math.max(...stats.passcodeEntryStats.map((s) => s.count), 1);
+                  const percentage = Math.round((item.count / maxCount) * 100);
+
+                  return (
+                    <div key={item.code} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem 1.2rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                          <span style={{ 
+                            fontSize: '0.85rem', 
+                            fontWeight: 700, 
+                            color: '#38bdf8', 
+                            background: 'rgba(56, 189, 248, 0.12)', 
+                            border: '1px solid rgba(56, 189, 248, 0.3)', 
+                            padding: '0.2rem 0.6rem', 
+                            borderRadius: '4px',
+                            fontFamily: 'monospace',
+                            letterSpacing: '1px'
+                          }}>
+                            {item.code}
+                          </span>
+                          <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-noto-sans)' }}>
+                            {item.note}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fff' }}>
+                          {item.count} 次進入
+                        </div>
+                      </div>
+
+                      <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden', marginTop: '0.2rem' }}>
+                        <div
+                          style={{
+                            width: `${percentage}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #0284c7, #38bdf8)',
+                            borderRadius: '4px',
+                            transition: 'width 0.6s ease'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  尚無通行碼進入數據
+                </div>
+              )}
             </div>
           </div>
 

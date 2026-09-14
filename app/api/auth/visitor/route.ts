@@ -101,6 +101,19 @@ export async function POST(request: NextRequest) {
     // All passcodes except novel-only passcodes start at Main Hall (/museum)
     const redirectUrl = isNovelOnlyDirect ? '/museum/creation_lab' : '/museum';
 
+    // Record entry pageview for analytics stats
+    try {
+      await prisma.pageView.create({
+        data: {
+          exhibitId: 'entry',
+          notionId: found.code,
+          passcodeId: found.id.startsWith('preset-') ? null : found.id,
+        },
+      });
+    } catch (pvErr) {
+      console.error('Failed to log visitor entry pageview:', pvErr);
+    }
+
     const response = NextResponse.json({
       ok: true,
       permissions: activePermissions,
