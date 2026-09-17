@@ -221,7 +221,8 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 640px) {
   .curator-contact-widget {
-    top: 100px !important;
+    top: auto !important;
+    bottom: 1.5rem !important;
     padding: 0.45rem 0.7rem 0.45rem 0.6rem !important;
     font-size: 0.75rem !important;
     gap: 0.4rem !important;
@@ -247,17 +248,31 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Exhibit page responsive container */
+.exhibit-page-container {
+  padding: 1.8rem 2rem 4rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .exhibit-page-container {
+    padding: 1rem 1rem 3rem 1rem;
+  }
+}
+
 /* Novel 2-col grid: responsive to 1-col on mobile */
 .novel-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2.5rem;
+  gap: 1.8rem;
 }
 
 @media (max-width: 768px) {
   .novel-grid {
     grid-template-columns: 1fr;
-    gap: 1.8rem;
+    gap: 1.5rem;
   }
 }
 

@@ -61,7 +61,7 @@ export function ContactCuratorWidget() {
       style={{
         position: 'fixed',
         right: 0,
-        top: '130px',
+        bottom: '2.5rem',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',

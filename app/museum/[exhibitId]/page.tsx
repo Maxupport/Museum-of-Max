@@ -287,6 +287,16 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     return true;
   });
 
+  const filteredNovelItems = novelItems.filter((novel) => {
+    if (!searchKeyword) return true;
+    const kw = searchKeyword.toLowerCase();
+    return (
+      novel.title?.toLowerCase().includes(kw) ||
+      novel.author?.toLowerCase().includes(kw) ||
+      novel.description?.toLowerCase().includes(kw)
+    );
+  });
+
   const cleanExcerpt = (content: string) => {
     if (!content) return '';
     let text = content;
@@ -303,7 +313,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   };
 
   return (
-    <div style={{ padding: '4rem 2rem', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh' }}>
+    <div className="exhibit-page-container">
       {/* 返回展覽大廳按鈕 (若為小說直通讀者則不顯示) */}
       {!isNovelDirect && (
         <button 
@@ -315,108 +325,120 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '1rem',
-            marginBottom: '4rem',
-            fontSize: '0.9rem',
-            letterSpacing: '2px',
+            gap: '0.6rem',
+            marginBottom: '1rem',
+            fontSize: '0.82rem',
+            letterSpacing: '1.5px',
             textTransform: 'uppercase',
             transition: 'color 0.3s ease'
           }}
           onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
           onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={14} />
           Return to Exhibition Hall
         </button>
       )}
 
       {/* 展區標題 */}
-      <header className="animate-fade-in" style={{ marginBottom: '3.5rem', display: 'flex', alignItems: 'flex-start', gap: '2rem' }}>
+      <header className="animate-fade-in" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
         <div style={{ 
           width: '3px', 
-          height: '90px', 
+          height: '38px', 
           background: exhibit.color, 
-          boxShadow: `0 0 15px ${exhibit.color}` 
+          boxShadow: `0 0 12px ${exhibit.color}` 
         }} />
         <div>
-          <h1 style={{ fontSize: '3.5rem', fontWeight: 300, color: '#fff', marginBottom: '0.5rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.1 }}>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 400, color: '#fff', marginBottom: '0.2rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.15 }}>
             {exhibit.title}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', letterSpacing: '4px', textTransform: 'uppercase' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', letterSpacing: '3px', textTransform: 'uppercase' }}>
             {exhibit.subtitle}
           </p>
         </div>
       </header>
 
-      {/* 子區塊頁籤選單 (Subcategory Filter Tabs) */}
-      {exhibit.subcategories.length > 0 && (
-        <div 
-          className="animate-fade-in" 
-          style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: '1rem', 
-            marginBottom: '3.5rem' 
-          }}
-        >
-          {exhibit.subcategories.map((subCat) => {
-            const isActive = activeSubCategory === subCat;
-            return (
-              <button
-                key={subCat}
-                onClick={() => {
-                  setActiveSubCategory(subCat);
-                  setSearchKeyword(''); 
-                }}
-                style={{
-                  padding: '0.8rem 2rem',
-                  border: '1px solid',
-                  borderColor: isActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.1)',
-                  background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
-                  fontSize: '0.95rem',
-                  letterSpacing: '1px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  fontFamily: 'var(--font-noto-sans)',
-                  borderRadius: '2px',
-                  boxShadow: isActive ? `inset 0 -2px 0 ${exhibit.color}, 0 5px 15px rgba(0,0,0,0.5)` : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
-                    e.currentTarget.style.color = '#fff';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }
-                }}
-              >
-                {subCat}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* 展區控制工具列：整合子分類頁籤與搜尋 (Unified Filter & Search Toolbar) */}
+      <div 
+        className="animate-fade-in" 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          flexWrap: 'wrap', 
+          gap: '1rem', 
+          marginBottom: '2rem',
+          paddingBottom: '1rem',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          position: 'relative'
+        }}
+      >
+        {/* LED 亮線裝飾 */}
+        <div style={{
+          position: 'absolute',
+          bottom: '-1px',
+          left: 0,
+          width: '120px',
+          height: '1px',
+          background: exhibit.color,
+          boxShadow: `0 0 10px ${exhibit.color}`
+        }} />
 
-      {/* 展區內容區域 */}
-      {exhibitId === 'vc' ? (
-        /* 風險投資 (VC Projects) 後台即時卡片展示 (不連結 Notion) */
-        <div className="animate-fade-in" style={{ padding: '2rem 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '2rem' }}>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                PORTFOLIO PROJECTS ({activeSubCategory})
-              </div>
-              <h2 style={{ fontSize: '2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-                {activeSubCategory}
-              </h2>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', flexWrap: 'wrap' }}>
+        {/* 子區塊頁籤 */}
+        {exhibit.subcategories.length > 0 ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
+            {exhibit.subcategories.map((subCat) => {
+              const isActive = activeSubCategory === subCat;
+              return (
+                <button
+                  key={subCat}
+                  onClick={() => {
+                    setActiveSubCategory(subCat);
+                    setSearchKeyword(''); 
+                  }}
+                  style={{
+                    padding: '0.45rem 1.2rem',
+                    border: '1px solid',
+                    borderColor: isActive ? exhibit.color : 'rgba(255,255,255,0.12)',
+                    background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                    fontSize: '0.9rem',
+                    letterSpacing: '0.5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    fontFamily: 'var(--font-noto-sans)',
+                    borderRadius: '4px',
+                    boxShadow: isActive ? `0 0 12px ${exhibit.color}33` : 'none',
+                    fontWeight: isActive ? 500 : 400
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)';
+                      e.currentTarget.style.color = '#fff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }
+                  }}
+                >
+                  {subCat}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase' }}>
+            {exhibit.isTimeline ? 'Career Timeline & Milestones' : 'Exhibition Content'}
+          </div>
+        )}
+
+        {/* 右側：搜尋列 (或 VC 專案洽詢按鈕 + 搜尋) */}
+        {!exhibit.isTimeline && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginLeft: 'auto' }}>
+            {exhibitId === 'vc' && (
               <a
                 href="mailto:maxupport@gmail.com?subject=【風險投資/FA諮詢】來自網站的合作與項目提案"
                 className="museum-btn"
@@ -424,8 +446,8 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  padding: '0.6rem 1.2rem',
-                  fontSize: '0.88rem',
+                  padding: '0.45rem 1rem',
+                  fontSize: '0.82rem',
                   background: 'rgba(56, 189, 248, 0.12)',
                   borderColor: 'rgba(56, 189, 248, 0.35)',
                   color: '#38bdf8',
@@ -434,29 +456,37 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   transition: 'all 0.3s ease'
                 }}
               >
-                <Mail size={16} />
+                <Mail size={15} />
                 <span>Email 聯絡策展人</span>
               </a>
+            )}
 
-              <div style={{ position: 'relative', width: '100%', maxWidth: '260px' }}>
-                <Search size={18} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                <input 
-                  type="text" 
-                  placeholder="Search venture projects..." 
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  className="museum-input"
-                  style={{
-                    paddingLeft: '3rem',
-                    border: 'none',
-                    borderBottom: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '0',
-                    background: 'rgba(255,255,255,0.02)'
-                  }}
-                />
-              </div>
+            <div style={{ position: 'relative', width: '100%', minWidth: '200px', maxWidth: '280px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+              <input 
+                type="text" 
+                placeholder={exhibitId === 'vc' ? "Search venture projects..." : "Search in this section..."}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="museum-input"
+                style={{
+                  padding: '0.45rem 1rem 0.45rem 2.5rem',
+                  fontSize: '0.85rem',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '0',
+                  background: 'rgba(255,255,255,0.02)'
+                }}
+              />
             </div>
           </div>
+        )}
+      </div>
+
+      {/* 展區內容區域 */}
+      {exhibitId === 'vc' ? (
+        /* 風險投資 (VC Projects) 後台即時卡片展示 (不連結 Notion) */
+        <div className="animate-fade-in">
 
           {ventureLoading ? (
             <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -786,53 +816,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
         </div>
       ) : (
         /* 部落格型展區 (卡片清單與 Notion Blog 文章入口) */
-        <div 
-          className="animate-fade-in" 
-          style={{ 
-            padding: '2rem 0',
-            borderTop: `1px solid rgba(255,255,255,0.1)`,
-            position: 'relative'
-          }}
-        >
-          {/* LED 亮線裝飾 */}
-          <div style={{
-            position: 'absolute',
-            top: '-1px',
-            left: 0,
-            width: '200px',
-            height: '1px',
-            background: exhibit.color,
-            boxShadow: `0 0 10px ${exhibit.color}, 0 0 20px ${exhibit.color}`
-          }} />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '2rem' }}>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                SECTION CONTENT
-              </div>
-              <h2 style={{ fontSize: '2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-                {activeSubCategory || exhibit.title}
-              </h2>
-            </div>
-            
-            <div style={{ position: 'relative', width: '100%', maxWidth: '350px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-              <input 
-                type="text" 
-                placeholder="Search in this section..." 
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="museum-input"
-                style={{
-                  paddingLeft: '3rem',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '0',
-                  background: 'rgba(255,255,255,0.02)'
-                }}
-              />
-            </div>
-          </div>
+        <div className="animate-fade-in">
           
           {/* 個人聲音探索心得 / 人聲優化歷程記錄 (文章卡片與時間軸架構) 或 音樂與聲音探尋 YouTube 影片嵌入網格 */}
           {(exhibitId === 'sound' && (activeSubCategory === '個人聲音探索心得' || activeSubCategory === '人聲優化歷程記錄' || activeSubCategory === '人聲優化課程')) ? (
@@ -1087,13 +1071,18 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   <p>小說作品載入中...</p>
                 </div>
               ) : novelItems.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
                   <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
                   <p style={{ letterSpacing: '1px' }}>目前尚無小說作品。</p>
                 </div>
+              ) : filteredNovelItems.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                  <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p style={{ letterSpacing: '1px' }}>沒有符合「{searchKeyword}」的小說作品。</p>
+                </div>
               ) : (
                 <div className="novel-grid">
-                  {novelItems.map((novel) => (
+                  {filteredNovelItems.map((novel) => (
                     <Link
                       key={novel.id}
                       href={`/museum/creation_lab/novel/${encodeURIComponent(novel.title)}`}
@@ -1113,48 +1102,48 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         }}
                       >
                         {/* 封面大圖 */}
-                        <div style={{ width: '100%', height: '300px', overflow: 'hidden', position: 'relative', background: 'rgba(168,85,247,0.06)', borderBottom: '1px solid rgba(168,85,247,0.12)' }}>
+                        <div style={{ width: '100%', height: '220px', overflow: 'hidden', position: 'relative', background: 'rgba(168,85,247,0.06)', borderBottom: '1px solid rgba(168,85,247,0.12)' }}>
                           {novel.coverUrl ? (
                             <img src={novel.coverUrl} alt={novel.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} />
                           ) : (
                             <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(168,85,247,0.4)', background: 'linear-gradient(145deg, rgba(168,85,247,0.05) 0%, rgba(0,0,0,0.3) 100%)' }}>
-                              <BookOpen size={56} style={{ marginBottom: '0.8rem', opacity: 0.6 }} />
+                              <BookOpen size={48} style={{ marginBottom: '0.6rem', opacity: 0.6 }} />
                               <span style={{ fontSize: '0.8rem', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.6 }}>Novel</span>
                             </div>
                           )}
-                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }} />
-                          <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: novel.status === '已完結' ? 'rgba(74,222,128,0.2)' : 'rgba(168,85,247,0.3)', backdropFilter: 'blur(8px)', border: `1px solid ${novel.status === '已完結' ? 'rgba(74,222,128,0.5)' : 'rgba(168,85,247,0.6)'}`, color: novel.status === '已完結' ? '#4ade80' : '#c084fc', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }} />
+                          <div style={{ position: 'absolute', top: '0.8rem', left: '0.8rem', background: novel.status === '已完結' ? 'rgba(74,222,128,0.2)' : 'rgba(168,85,247,0.3)', backdropFilter: 'blur(8px)', border: `1px solid ${novel.status === '已完結' ? 'rgba(74,222,128,0.5)' : 'rgba(168,85,247,0.6)'}`, color: novel.status === '已完結' ? '#4ade80' : '#c084fc', padding: '0.25rem 0.7rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>
                             {novel.status === '連載中' ? '🟢' : novel.status === '已完結' ? '✅' : '⏸️'} {novel.status}
                           </div>
-                          <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(56,189,248,0.2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                          <div style={{ position: 'absolute', top: '0.8rem', right: '0.8rem', background: 'rgba(56,189,248,0.2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8', padding: '0.25rem 0.7rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>
                             📚 共 {novel.totalChapters} 章
                           </div>
                         </div>
 
                         {/* 卡片內容 */}
-                        <div style={{ padding: '2rem 2.2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                          <h3 style={{ color: '#fff', fontSize: '1.7rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3, marginBottom: '0.6rem', letterSpacing: '1px' }}>
+                        <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                          <h3 style={{ color: '#fff', fontSize: '1.45rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3, marginBottom: '0.4rem', letterSpacing: '0.5px' }}>
                             《{novel.title}》
                           </h3>
-                          <p style={{ color: 'rgba(192,132,252,0.85)', fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <Sparkles size={14} style={{ flexShrink: 0 }} />
+                          <p style={{ color: 'rgba(192,132,252,0.85)', fontSize: '0.85rem', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Sparkles size={13} style={{ flexShrink: 0 }} />
                             創作者：{novel.author}
                           </p>
                           {novel.description && (
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.7, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)' }}>
                               {novel.description}
                             </p>
                           )}
                           {novel.latestChapterTitle && (
-                            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', padding: '0.45rem 0.8rem', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                               <BookOpen size={13} style={{ flexShrink: 0 }} />
                               最新：{novel.latestChapterTitle}
                             </div>
                           )}
-                          <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#c084fc', fontSize: '0.92rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '1.2rem', borderTop: '1px solid rgba(168,85,247,0.15)' }}>
-                            <BookOpen size={16} />
+                          <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#c084fc', fontSize: '0.88rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '0.8rem', borderTop: '1px solid rgba(168,85,247,0.15)' }}>
+                            <BookOpen size={15} />
                             <span>📖 進入沉浸式閱讀器</span>
-                            <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
+                            <ChevronRight size={15} style={{ marginLeft: 'auto' }} />
                           </div>
                         </div>
                       </div>
@@ -1203,7 +1192,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           {coverImage ? (
                             <div style={{ 
                               width: '100%', 
-                              height: '180px', 
+                              height: '160px', 
                               overflow: 'hidden', 
                               borderBottom: '1px solid rgba(255,255,255,0.06)',
                               background: '#000',
@@ -1218,7 +1207,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           ) : (
                             <div style={{ 
                               width: '100%', 
-                              height: '135px', 
+                              height: '120px', 
                               background: 'rgba(255,255,255,0.03)', 
                               display: 'flex', 
                               alignItems: 'center', 
@@ -1226,11 +1215,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                               color: exhibit.color, 
                               borderBottom: '1px solid rgba(255,255,255,0.06)' 
                             }}>
-                              <BookOpen size={30} style={{ opacity: 0.7 }} />
+                              <BookOpen size={26} style={{ opacity: 0.7 }} />
                             </div>
                           )}
 
-                        <div style={{ padding: '1.5rem 1.6rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                        <div style={{ padding: '1.2rem 1.35rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                           {/* 頂部：標籤與時間 */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', gap: '0.8rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1361,7 +1350,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             WebkitBoxOrient: 'vertical', 
                             overflow: 'hidden', 
                             marginTop: 'auto',
-                            marginBottom: '1.2rem' 
+                            marginBottom: '0.75rem' 
                           }}>
                             {item.excerpt || cleanExcerpt(item.content)}
                           </p>
@@ -1369,7 +1358,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           {/* 卡片底欄行動提示 */}
                           <div style={{ 
                             marginTop: 'auto', 
-                            paddingTop: '0.8rem', 
+                            paddingTop: '0.65rem', 
                             borderTop: '1px solid rgba(255,255,255,0.08)',
                             display: 'flex',
                             alignItems: 'center',
