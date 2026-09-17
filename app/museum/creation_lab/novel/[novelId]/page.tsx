@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Calendar, User, Sparkles, Mail } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Calendar, User, Sparkles, Mail, X } from 'lucide-react';
 
 interface ChapterItem {
   id: string;
@@ -39,7 +39,8 @@ export default function NovelReaderPage({
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [currentChapterIdx, setCurrentChapterIdx] = useState(0);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const [subEmail, setSubEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
@@ -205,10 +206,167 @@ export default function NovelReaderPage({
     }
   };
 
+  // Google 文件風格章節目錄大綱內容
+  const renderOutlineContent = (isMobile = false) => (
+    <div
+      className="glass-panel"
+      style={{
+        padding: '1.25rem',
+        background: 'rgba(13, 16, 23, 0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        maxHeight: isMobile ? '100%' : 'calc(100vh - 110px)',
+        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4)',
+      }}
+    >
+      {/* 大綱標頭 (Google Docs 風格) */}
+      <div style={{ paddingBottom: '0.9rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '0.9rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', color: '#fff', fontSize: '0.92rem', fontWeight: 600, letterSpacing: '0.5px' }}>
+            <List size={16} style={{ color: 'var(--theme-possibility, #a855f7)' }} />
+            <span>文件大綱 · 章節目錄</span>
+          </div>
+          {isMobile ? (
+            <button
+              onClick={() => setMobileDrawerOpen(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
+            >
+              <X size={18} />
+            </button>
+          ) : (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+              共 {chapters.length} 章
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: '0.78rem', color: 'rgba(192, 132, 252, 0.85)', marginTop: '0.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          《{novel.title}》
+        </div>
+      </div>
+
+      {/* 章節列表清單 (可獨立滾動) */}
+      <div
+        className="outline-scrollbar"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.35rem',
+          overflowY: 'auto',
+          flex: 1,
+          paddingRight: '0.2rem',
+        }}
+      >
+        {chapters.map((ch, idx) => {
+          const isActive = idx === currentChapterIdx;
+          return (
+            <button
+              key={ch.id}
+              onClick={() => {
+                setCurrentChapterIdx(idx);
+                if (isMobile) setMobileDrawerOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              title={ch.title}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '0.6rem 0.75rem',
+                borderRadius: '6px',
+                background: isActive ? 'rgba(168, 85, 247, 0.14)' : 'transparent',
+                border: isActive ? '1px solid rgba(168, 85, 247, 0.35)' : '1px solid transparent',
+                color: isActive ? '#fff' : 'rgba(255, 255, 255, 0.65)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#fff';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.65)';
+                }
+              }}
+            >
+              {/* Active Indicator Bar (Google Docs style) */}
+              <div
+                style={{
+                  width: '3px',
+                  height: '18px',
+                  borderRadius: '2px',
+                  background: isActive ? '#c084fc' : 'transparent',
+                  boxShadow: isActive ? '0 0 8px rgba(192, 132, 252, 0.8)' : 'none',
+                  flexShrink: 0,
+                  transition: 'background 0.2s ease',
+                }}
+              />
+
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <span
+                  style={{
+                    fontSize: '0.86rem',
+                    fontWeight: isActive ? 600 : 400,
+                    fontFamily: 'var(--font-noto-serif)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: isActive ? '#fff' : 'inherit',
+                  }}
+                >
+                  {ch.title}
+                </span>
+                {ch.fbDate && (
+                  <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)', marginTop: '0.1rem' }}>
+                    {ch.fbDate}
+                  </span>
+                )}
+              </div>
+
+              {isActive && (
+                <Sparkles size={13} style={{ color: '#c084fc', flexShrink: 0 }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 側邊欄底欄：閱讀進度條 */}
+      <div style={{ paddingTop: '0.8rem', marginTop: '0.8rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+          <span>閱讀進度</span>
+          <span>第 {currentChapterIdx + 1} / {chapters.length} 章 ({Math.round(((currentChapterIdx + 1) / chapters.length) * 100)}%)</span>
+        </div>
+        <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div
+            style={{
+              width: `${((currentChapterIdx + 1) / chapters.length) * 100}%`,
+              height: '100%',
+              background: 'linear-gradient(90deg, #a855f7, #c084fc)',
+              borderRadius: '2px',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ padding: '3rem 2rem 6rem', maxWidth: '900px', margin: '0 auto', minHeight: '100vh' }}>
-      {/* 頂部導覽按鈕 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+    <div className="novel-reader-wrapper">
+      {/* 頂部導覽列 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <button
           onClick={() => router.push('/museum/creation_lab')}
           style={{
@@ -218,8 +376,8 @@ export default function NovelReaderPage({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.8rem',
-            fontSize: '0.9rem',
+            gap: '0.6rem',
+            fontSize: '0.88rem',
             letterSpacing: '1px',
             transition: 'color 0.3s ease',
           }}
@@ -230,85 +388,90 @@ export default function NovelReaderPage({
           返回創作 Lab 展區
         </button>
 
-        <button
-          onClick={() => setDrawerOpen(!drawerOpen)}
-          style={{
-            background: drawerOpen ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
-            padding: '0.5rem 1.2rem',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            fontSize: '0.85rem',
-            letterSpacing: '1px',
-            transition: 'all 0.3s ease',
-          }}
-        >
-          <List size={16} />
-          {drawerOpen ? '關閉章節目錄' : `章節目錄 (${currentChapterIdx + 1}/${chapters.length})`}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          {/* 章節目錄大綱開關按鈕 (Google Docs 風格) */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                setMobileDrawerOpen(true);
+              } else {
+                setSidebarOpen(!sidebarOpen);
+              }
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#fff',
+              padding: '0.45rem 1rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              fontSize: '0.85rem',
+              letterSpacing: '0.5px',
+              transition: 'all 0.25s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)')}
+          >
+            <List size={15} style={{ color: 'var(--theme-possibility, #a855f7)' }} />
+            <span>
+              {sidebarOpen ? '收合章節目錄' : '展開章節目錄'} ({currentChapterIdx + 1}/{chapters.length})
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* 章節目錄抽屜 */}
-      {drawerOpen && (
+      {/* 雙欄主版面：左側 Google 文件式章節目錄大綱 + 右側小說主要內文 */}
+      <div className="novel-reader-layout">
+        {/* 桌面版左側固定大綱側邊欄 */}
+        {sidebarOpen && (
+          <aside className="novel-reader-sidebar-desktop animate-fade-in">
+            {renderOutlineContent(false)}
+          </aside>
+        )}
+
+        {/* 手機版滑出式大綱抽屜 */}
+        {mobileDrawerOpen && (
+          <>
+            <div
+              onClick={() => setMobileDrawerOpen(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.75)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 10001,
+              }}
+            />
+            <div
+              className="animate-fade-in"
+              style={{
+                position: 'fixed',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: '320px',
+                maxWidth: '85vw',
+                zIndex: 10002,
+                padding: '1.2rem',
+                background: 'rgba(10, 12, 18, 0.98)',
+                boxShadow: '4px 0 24px rgba(0, 0, 0, 0.6)',
+              }}
+            >
+              {renderOutlineContent(true)}
+            </div>
+          </>
+        )}
+
+        {/* 右側小說主要閱讀區塊 */}
         <div
-          className="animate-fade-in glass-panel"
+          className="novel-reader-main-content"
           style={{
-            padding: '1.8rem',
-            marginBottom: '3rem',
-            border: '1px solid rgba(255,255,255,0.15)',
-            background: 'rgba(15, 15, 15, 0.95)',
+            maxWidth: sidebarOpen ? '840px' : '900px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.8rem' }}>
-            <h3 style={{ fontSize: '1.1rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
-              {novel.title} — 章節目錄
-            </h3>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              {novel.status}（共 {chapters.length} 章）
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            {chapters.map((ch, idx) => {
-              const isActive = idx === currentChapterIdx;
-              return (
-                <div
-                  key={ch.id}
-                  onClick={() => {
-                    setCurrentChapterIdx(idx);
-                    setDrawerOpen(false);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  style={{
-                    padding: '0.8rem 1.2rem',
-                    borderRadius: '4px',
-                    background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.02)',
-                    border: isActive ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.04)',
-                    color: isActive ? '#fff' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    {isActive ? <Sparkles size={16} color="var(--theme-possibility)" /> : <BookOpen size={16} style={{ opacity: 0.5 }} />}
-                    <span style={{ fontSize: '0.95rem', fontWeight: isActive ? 500 : 400, fontFamily: 'var(--font-noto-serif)' }}>
-                      {ch.title}
-                    </span>
-                  </div>
-                  {ch.fbDate && <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{ch.fbDate}</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* 小說封面資訊頁標 */}
       <header className="animate-fade-in" style={{ marginBottom: '3rem', position: 'relative' }}>
@@ -453,7 +616,14 @@ export default function NovelReaderPage({
         </button>
 
         <button
-          onClick={() => setDrawerOpen(true)}
+          onClick={() => {
+            if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+              setMobileDrawerOpen(true);
+            } else {
+              setSidebarOpen(true);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
           style={{
             background: 'none',
             border: 'none',
@@ -461,7 +631,10 @@ export default function NovelReaderPage({
             cursor: 'pointer',
             fontSize: '0.85rem',
             letterSpacing: '1px',
+            transition: 'color 0.2s ease',
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
           ≡ 章節目錄 ({currentChapterIdx + 1} / {chapters.length})
         </button>
@@ -551,6 +724,8 @@ export default function NovelReaderPage({
         <p>
           本頁面支援後台即時連載同步。在管理後台的【創作 Lab → 小說作品管理】中設定小說基本資訊，並在【全站文章發布中心】以類別「小說」發布各章節，即可自動在此呈現為沉浸式小說閱讀格式。
         </p>
+      </div>
+        </div>
       </div>
     </div>
   );

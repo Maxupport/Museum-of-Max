@@ -276,3 +276,60 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Novel Reader Outline Sidebar (Google Docs style) */
+.novel-reader-wrapper {
+  padding: 2rem clamp(1rem, 3vw, 2.5rem) 6rem;
+  max-width: 1320px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.novel-reader-layout {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  position: relative;
+}
+
+.novel-reader-sidebar-desktop {
+  width: 290px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 85px;
+  max-height: calc(100vh - 110px);
+  display: flex;
+  flex-direction: column;
+}
+
+.novel-reader-main-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 860px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+/* Custom scrollbar for chapter outline */
+.outline-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.outline-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+.outline-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+}
+.outline-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6);
+}
+
+@media (max-width: 1024px) {
+  .novel-reader-sidebar-desktop {
+    display: none !important;
+  }
+  .novel-reader-main-content {
+    max-width: 100%;
+  }
+}
+
