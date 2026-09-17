@@ -13,8 +13,7 @@ export default function NovelReaderPage({
   const router = useRouter();
   const unwrappedParams = use(params);
   const { novelId } = unwrappedParams;
-
-  const novel = MOCK_NOVELS[novelId] || MOCK_NOVELS['ai-novel'];
+  const novel = MOCK_NOVELS[novelId];
 
   const [currentChapterIdx, setCurrentChapterIdx] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -92,6 +91,18 @@ export default function NovelReaderPage({
       }
     }
   }, [router]);
+
+  if (!novel) {
+    return (
+      <div style={{ textAlign: 'center', padding: '10rem 2rem', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <h2 style={{ fontFamily: 'var(--font-noto-serif)', fontSize: '2rem', marginBottom: '1rem' }}>查無此小說作品</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>此小說作品目前尚無章節或已被移除。</p>
+        <button className="museum-btn" onClick={() => router.push('/museum/creation_lab')}>
+          返回創作 LAB
+        </button>
+      </div>
+    );
+  }
 
   const currentChapter = novel.chapters[currentChapterIdx] || novel.chapters[0];
 

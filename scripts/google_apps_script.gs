@@ -145,7 +145,7 @@ function sendDailyNovelDigest() {
     <div style="max-width: 600px; margin: 0 auto; background: #0a0a0c; color: #e2e8f0; font-family: sans-serif; padding: 2rem; border-radius: 8px; border: 1px solid #334155;">
       <span style="font-size: 0.8rem; color: #a855f7; text-transform: uppercase; letterSpacing: 1px;">DAILY NOVEL DIGEST</span>
       <h2 style="color: #ffffff; font-family: serif; margin-top: 0.5rem; border-bottom: 1px solid #334155; padding-bottom: 0.8rem;">
-        《AI 小說共創實錄》最新章節已上線
+        最新小說連載章節已上線
       </h2>
       <p style="line-height: 1.6; font-size: 0.95rem; color: #cbd5e1;">
         在昨夜的思緒流轉中，最新章節內容已同步至沉浸式閱讀器。邀請您登入展場，享受專屬視覺與聲響圍繞的閱讀體驗。

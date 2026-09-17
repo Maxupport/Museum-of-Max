@@ -14,5 +14,4 @@
 
 ## Featured Works & Serials
 
-- [AI 小說共創實錄](https://maxupport.com/museum/creation_lab/novel/ai-novel): 人類創作者與 AI 協同思維的小說連載專案。
-- [跨界者筆記](https://maxupport.com/museum/creation_lab/novel/world-builder): 記錄審計師到風險投資者的世界構建小說。
+- [小說連載專區](https://maxupport.com/museum/creation_lab): 策展人原創小說與世界構建作品連載。

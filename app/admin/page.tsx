@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
   const [loadingSubscribers, setLoadingSubscribers] = useState(false);
 
   // Dispatch Newsletter state
-  const [dispatchNovelTitle, setDispatchNovelTitle] = useState('AI 小說共創實錄');
+  const [dispatchNovelTitle, setDispatchNovelTitle] = useState('');
   const [dispatchChapterTitle, setDispatchChapterTitle] = useState('');
   const [dispatchSummary, setDispatchSummary] = useState('');
   const [dispatching, setDispatching] = useState(false);
@@ -368,13 +368,11 @@ export default function AdminDashboardPage() {
   const [isCustomNovelTitle, setIsCustomNovelTitle] = useState(false);
 
   const existingNovelTitles = Array.from(
-    new Set([
-      'AI 小說共創實錄',
-      '世界建構者',
-      ...writingsItems
+    new Set(
+      writingsItems
         .filter((item) => item.category === '小說' && item.topic && item.topic.trim() !== '')
         .map((item) => item.topic!.trim())
-    ])
+    )
   );
 
   const handleNovelSelectChange = (val: string) => {
@@ -604,6 +602,7 @@ export default function AdminDashboardPage() {
     setEditingWritingId(null);
     setWTitle('');
     setWTopic('');
+    setIsCustomNovelTitle(false);
     setWFbUrl('');
     setWFbDate('');
     setWExcerpt('');
@@ -2337,7 +2336,7 @@ export default function AdminDashboardPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="例如: AI 小說共創實錄"
+                  placeholder="例如: 小說名稱"
                   value={dispatchNovelTitle}
                   onChange={(e) => setDispatchNovelTitle(e.target.value)}
                   className="museum-input"
@@ -2729,8 +2728,19 @@ export default function AdminDashboardPage() {
                   handleCancelWritingEdit();
                   setWExhibitId('creation_lab');
                   setWCategory('小說');
-                  setWTopic('AI 小說共創實錄');
-                  setWOrder(1);
+                  if (existingNovelTitles.length > 0) {
+                    setWTopic(existingNovelTitles[0]);
+                    setIsCustomNovelTitle(false);
+                    const chaptersForNovel = writingsItems.filter(
+                      (item) => item.category === '小說' && item.topic?.trim() === existingNovelTitles[0].trim()
+                    );
+                    const maxOrder = chaptersForNovel.reduce((max, item) => Math.max(max, item.order || 0), 0);
+                    setWOrder(maxOrder > 0 ? maxOrder + 1 : 1);
+                  } else {
+                    setWTopic('');
+                    setIsCustomNovelTitle(true);
+                    setWOrder(1);
+                  }
                   setActiveTab('articles');
                   setArticleSubTab('editor');
                 }}
@@ -3300,8 +3310,19 @@ export default function AdminDashboardPage() {
                       handleCancelWritingEdit();
                       setWExhibitId('creation_lab');
                       setWCategory('小說');
-                      setWTopic('AI 小說共創實錄');
-                      setWOrder(1);
+                      if (existingNovelTitles.length > 0) {
+                        setWTopic(existingNovelTitles[0]);
+                        setIsCustomNovelTitle(false);
+                        const chaptersForNovel = writingsItems.filter(
+                          (item) => item.category === '小說' && item.topic?.trim() === existingNovelTitles[0].trim()
+                        );
+                        const maxOrder = chaptersForNovel.reduce((max, item) => Math.max(max, item.order || 0), 0);
+                        setWOrder(maxOrder > 0 ? maxOrder + 1 : 1);
+                      } else {
+                        setWTopic('');
+                        setIsCustomNovelTitle(true);
+                        setWOrder(1);
+                      }
                       setArticleSubTab('editor');
                     }}
                     style={{
@@ -3769,21 +3790,27 @@ export default function AdminDashboardPage() {
                           📖 小說名稱 *
                         </label>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                          <select
-                            value={isCustomNovelTitle ? '__NEW__' : (existingNovelTitles.includes(wTopic.trim()) ? wTopic.trim() : (wTopic.trim() ? '__NEW__' : existingNovelTitles[0]))}
-                            onChange={(e) => handleNovelSelectChange(e.target.value)}
-                            className="museum-input"
-                            style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1rem' }}
-                          >
-                            {existingNovelTitles.map((title) => (
-                              <option key={title} value={title}>
-                                📖 {title}
-                              </option>
-                            ))}
-                            <option value="__NEW__">➕ 新增新小說名稱...</option>
-                          </select>
+                          {existingNovelTitles.length > 0 ? (
+                            <select
+                              value={isCustomNovelTitle ? '__NEW__' : (existingNovelTitles.includes(wTopic.trim()) ? wTopic.trim() : (wTopic.trim() ? '__NEW__' : existingNovelTitles[0]))}
+                              onChange={(e) => handleNovelSelectChange(e.target.value)}
+                              className="museum-input"
+                              style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1rem' }}
+                            >
+                              {existingNovelTitles.map((title) => (
+                                <option key={title} value={title}>
+                                  📖 {title}
+                                </option>
+                              ))}
+                              <option value="__NEW__">➕ 新增新小說名稱...</option>
+                            </select>
+                          ) : (
+                            <div style={{ fontSize: '0.85rem', color: '#c084fc', marginBottom: '0.2rem' }}>
+                              💡 目前尚未建立任何小說，請直接在下方輸入第一本小說名稱：
+                            </div>
+                          )}
 
-                          {(isCustomNovelTitle || (!existingNovelTitles.includes(wTopic.trim()) && wTopic.trim() !== '')) && (
+                          {(isCustomNovelTitle || existingNovelTitles.length === 0 || (!existingNovelTitles.includes(wTopic.trim()) && wTopic.trim() !== '')) && (
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                               <input
                                 type="text"
@@ -3795,25 +3822,27 @@ export default function AdminDashboardPage() {
                                 autoFocus
                                 required
                               />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsCustomNovelTitle(false);
-                                  setWTopic(existingNovelTitles[0]);
-                                }}
-                                style={{
-                                  background: 'rgba(255,255,255,0.05)',
-                                  border: '1px solid rgba(255,255,255,0.15)',
-                                  color: 'var(--text-secondary)',
-                                  padding: '0.75rem 1rem',
-                                  borderRadius: '4px',
-                                  fontSize: '0.85rem',
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                取消
-                              </button>
+                              {existingNovelTitles.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsCustomNovelTitle(false);
+                                    setWTopic(existingNovelTitles[0]);
+                                  }}
+                                  style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.15)',
+                                    color: 'var(--text-secondary)',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '4px',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  取消
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>

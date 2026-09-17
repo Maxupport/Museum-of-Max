@@ -26,17 +26,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     ...exhibitUrls,
-    {
-      url: `${baseUrl}/museum/creation_lab/novel/ai-novel`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/museum/creation_lab/novel/world-builder`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
   ];
 }
+
