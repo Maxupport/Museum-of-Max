@@ -433,13 +433,29 @@ export default function AdminDashboardPage() {
   const handleCreateOrUpdateWriting = async (e: React.FormEvent) => {
     e.preventDefault();
     setWritingFormError('');
-    if (!wTitle.trim()) {
-      setWritingFormError('請輸入文章/作品標題');
-      return;
-    }
-    if (wCategory !== '人聲優化歷程記錄' && wCategory !== '人聲優化課程' && !wContent.trim()) {
-      setWritingFormError('請輸入文章內文');
-      return;
+
+    if (wCategory === '小說') {
+      if (!wTopic.trim()) {
+        setWritingFormError('請輸入小說名稱');
+        return;
+      }
+      if (!wTitle.trim()) {
+        setWritingFormError('請輸入章節名稱');
+        return;
+      }
+      if (!wContent.trim()) {
+        setWritingFormError('請輸入章節內文');
+        return;
+      }
+    } else {
+      if (!wTitle.trim()) {
+        setWritingFormError('請輸入文章/作品標題');
+        return;
+      }
+      if (wCategory !== '人聲優化歷程記錄' && wCategory !== '人聲優化課程' && !wContent.trim()) {
+        setWritingFormError('請輸入文章內文');
+        return;
+      }
     }
     setCreatingWriting(true);
     try {
@@ -2681,28 +2697,59 @@ export default function AdminDashboardPage() {
                 管理創作 Lab 的音樂作品與專題文章/FB隨筆備份！文章撰寫與發布已統一於全站文章發布中心處理。
               </p>
             </div>
-            <button
-              onClick={() => {
-                setActiveTab('articles');
-                setFilterArticleExhibit('creation_lab');
-                setArticleSubTab('editor');
-              }}
-              style={{
-                background: 'rgba(168, 85, 247, 0.15)',
-                border: '1px solid #a855f7',
-                color: '#fff',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '4px',
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: 500
-              }}
-            >
-              <Plus size={16} /> 撰寫創作 Lab 文章
-            </button>
+            <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  handleCancelWritingEdit();
+                  setWExhibitId('creation_lab');
+                  setWCategory('小說');
+                  setWTopic('AI 小說共創實錄');
+                  setWOrder(1);
+                  setActiveTab('articles');
+                  setArticleSubTab('editor');
+                }}
+                style={{
+                  background: 'rgba(168, 85, 247, 0.25)',
+                  border: '1px solid #c084fc',
+                  color: '#fff',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '4px',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontWeight: 600
+                }}
+              >
+                <Plus size={16} /> 📖 撰寫小說新章節
+              </button>
+              <button
+                onClick={() => {
+                  handleCancelWritingEdit();
+                  setWExhibitId('creation_lab');
+                  setWCategory('社群隨筆');
+                  setActiveTab('articles');
+                  setFilterArticleExhibit('creation_lab');
+                  setArticleSubTab('editor');
+                }}
+                style={{
+                  background: 'rgba(168, 85, 247, 0.15)',
+                  border: '1px solid #a855f7',
+                  color: '#fff',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '4px',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontWeight: 500
+                }}
+              >
+                <Plus size={16} /> 撰寫隨筆文章
+              </button>
+            </div>
           </div>
 
           {/* 創作 Lab 子分類切換 */}
@@ -3221,7 +3268,33 @@ export default function AdminDashboardPage() {
                   })}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => {
+                      handleCancelWritingEdit();
+                      setWExhibitId('creation_lab');
+                      setWCategory('小說');
+                      setWTopic('AI 小說共創實錄');
+                      setWOrder(1);
+                      setArticleSubTab('editor');
+                    }}
+                    style={{
+                      background: 'rgba(168, 85, 247, 0.2)',
+                      border: '1px solid #c084fc',
+                      color: '#c084fc',
+                      padding: '0.45rem 1rem',
+                      borderRadius: '4px',
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    <Plus size={15} /> 📖 撰寫小說新章節
+                  </button>
+
                   <button
                     onClick={() => {
                       handleCancelWritingEdit();
@@ -3241,7 +3314,7 @@ export default function AdminDashboardPage() {
                       fontWeight: 500
                     }}
                   >
-                    <Plus size={15} /> 撰寫新文章
+                    <Plus size={15} /> 撰寫一般文章
                   </button>
 
                   <button onClick={fetchWritingsItems} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}>
@@ -3368,9 +3441,9 @@ export default function AdminDashboardPage() {
                               flex: 1,
                               minWidth: 0
                             }}
-                            title={item.title}
+                            title={item.type === 'writing' && item.category === '小說' ? `《${item.rawWritingItem.topic || '小說'}》第 ${item.rawWritingItem.order || 1} 章：${item.title}` : item.title}
                           >
-                            {item.title}
+                            {item.type === 'writing' && item.category === '小說' ? `《${item.rawWritingItem.topic || '小說'}》第 ${item.rawWritingItem.order || 1} 章：${item.title}` : item.title}
                           </h3>
                         </div>
 
@@ -3539,7 +3612,7 @@ export default function AdminDashboardPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <h2 style={{ fontSize: '1.3rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
                   {editingWritingId ? <Edit3 size={22} style={{ color: '#38bdf8' }} /> : <Plus size={22} style={{ color: '#38bdf8' }} />}
-                  {editingWritingId ? '編輯專題文章內文與屬性' : '撰寫與發布全新專題文章'}
+                  {editingWritingId ? (wCategory === '小說' ? '編輯小說章節內容與屬性' : '編輯專題文章內文與屬性') : (wCategory === '小說' ? '撰寫與新增小說章節' : '撰寫與發布全新專題文章')}
                 </h2>
 
                 <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
@@ -3655,225 +3728,401 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                    文章/作品標題 *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') ? '例如: 《聽海》人聲優化與歌唱進步紀錄' : '例如: 【聲音靈感筆記】聲音質地優化與日常語調重塑'}
-                    value={wTitle}
-                    onChange={(e) => setWTitle(e.target.value)}
-                    className="museum-input"
-                    style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1.05rem' }}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                    📷 封面顯示圖片 (選填，將顯示於前台展覽卡片上方)
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <input
-                      type="text"
-                      placeholder="https://... 或點擊右側按鈕選擇電腦圖片上傳"
-                      value={wCoverImage}
-                      onChange={(e) => setWCoverImage(e.target.value)}
-                      className="museum-input"
-                      style={{ flex: 1, minWidth: '240px', padding: '0.65rem' }}
-                    />
-                    <label className="museum-btn" style={{ cursor: 'pointer', background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.4)', color: '#f472b6', padding: '0.65rem 1.2rem', borderRadius: '4px', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Upload size={14} />
-                      {uploadingCoverImage ? '上傳中...' : '選擇電腦圖片上傳'}
-                      <input type="file" accept="image/*" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
-                    </label>
-                    {wCoverImage && (
-                      <button
-                        type="button"
-                        onClick={() => setWCoverImage('')}
-                        style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '0.65rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
-                      >
-                        清除圖片
-                      </button>
-                    )}
+                {wCategory === '小說' && (
+                  <div style={{ background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.4)', color: '#c084fc', padding: '0.8rem 1.2rem', borderRadius: '6px', fontSize: '0.88rem', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <BookOpen size={20} style={{ flexShrink: 0 }} />
+                    <span>已切換至 <strong>【小說連載專用模式】</strong>：已自動隱藏 FB 連結、FB 上線時間與封面圖片，為您提供「小說名稱 / 章節序號 / 章節名稱 / 章節導讀 / 章節內文」專屬欄位。</span>
                   </div>
-                  {wCoverImage && (
-                    <div style={{ marginTop: '0.8rem', width: '220px', height: '125px', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(236, 72, 153, 0.4)', position: 'relative' }}>
-                      <img src={wCoverImage} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  )}
-                </div>
+                )}
 
-                {(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') && (
-                  <div style={{
-                    background: 'rgba(236, 72, 153, 0.05)',
-                    border: '1px solid rgba(236, 72, 153, 0.3)',
-                    borderRadius: '8px',
-                    padding: '1.5rem',
-                    marginBottom: '1.5rem'
-                  }}>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+                {wCategory === '小說' ? (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
                       <div>
-                        <h4 style={{ color: '#f472b6', margin: 0, fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          🎙️ 多版本時間軸錄音管理 ({wVocalVersions.length} / 10 個版本)
-                        </h4>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0.3rem 0 0 0' }}>
-                          為這首歌添加不同演進階段的錄音/影片（最高可保留 10 個版本）。
-                        </p>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                          📖 小說名稱 *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="例如: AI 小說共創實錄 / 世界建構者"
+                          value={wTopic}
+                          onChange={(e) => setWTopic(e.target.value)}
+                          className="museum-input"
+                          style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1rem' }}
+                          required
+                        />
                       </div>
-                      {wVocalVersions.length < 10 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setWVocalVersions([
-                              ...wVocalVersions,
-                              {
-                                id: 'v_' + Date.now(),
-                                versionTitle: `Ver ${wVocalVersions.length + 1}.0 階段錄音`,
-                                date: new Date().toISOString().split('T')[0],
-                                youtubeUrl: '',
-                                notes: ''
-                              }
-                            ]);
-                          }}
-                          className="museum-btn"
-                          style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', borderColor: '#f472b6', color: '#f472b6' }}
-                        >
-                          + 新增演進版本 (最高 10 個)
-                        </button>
+
+                      <div>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                          🔢 章節序號 (如: 1, 2, 3...) *
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="例如: 1"
+                          value={wOrder}
+                          onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
+                          className="museum-input"
+                          style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1rem' }}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                        📑 章節名稱 *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例如: 第一章 醒來的機器人 / 序章 命運的序曲"
+                        value={wTitle}
+                        onChange={(e) => setWTitle(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1.05rem' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
+                          📝 章節摘要 / 導讀 (選填，顯示於章節目錄)
+                        </label>
+                        {wContent.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const clean = wContent.replace(/^[#>]\s*/gm, '').trim();
+                              setWExcerpt(clean.slice(0, 100) + (clean.length > 100 ? '...' : ''));
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
+                          >
+                            ⚡ 自內文自動擷取 100 字摘要
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        placeholder="2~3 句精闢導讀，勾勒本章核心情節重點..."
+                        value={wExcerpt}
+                        onChange={(e) => setWExcerpt(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical', padding: '0.75rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                        📜 章節內文 *
+                      </label>
+                      <textarea
+                        placeholder="請在此貼上或輸入小說章節的完整內文..."
+                        value={wContent}
+                        onChange={(e) => setWContent(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%', minHeight: '380px', resize: 'vertical', lineHeight: '1.75', fontFamily: 'var(--font-noto-sans)', padding: '1rem', fontSize: '0.95rem' }}
+                        required
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                        文章/作品標題 *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') ? '例如: 《聽海》人聲優化與歌唱進步紀錄' : '例如: 【聲音靈感筆記】聲音質地優化與日常語調重塑'}
+                        value={wTitle}
+                        onChange={(e) => setWTitle(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%', padding: '0.75rem', fontSize: '1.05rem' }}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                        📷 封面顯示圖片 (選填，將顯示於前台展覽卡片上方)
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          placeholder="https://... 或點擊右側按鈕選擇電腦圖片上傳"
+                          value={wCoverImage}
+                          onChange={(e) => setWCoverImage(e.target.value)}
+                          className="museum-input"
+                          style={{ flex: 1, minWidth: '240px', padding: '0.65rem' }}
+                        />
+                        <label className="museum-btn" style={{ cursor: 'pointer', background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.4)', color: '#f472b6', padding: '0.65rem 1.2rem', borderRadius: '4px', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Upload size={14} />
+                          {uploadingCoverImage ? '上傳中...' : '選擇電腦圖片上傳'}
+                          <input type="file" accept="image/*" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
+                        </label>
+                        {wCoverImage && (
+                          <button
+                            type="button"
+                            onClick={() => setWCoverImage('')}
+                            style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '0.65rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                          >
+                            清除圖片
+                          </button>
+                        )}
+                      </div>
+                      {wCoverImage && (
+                        <div style={{ marginTop: '0.8rem', width: '220px', height: '125px', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(236, 72, 153, 0.4)', position: 'relative' }}>
+                          <img src={wCoverImage} alt="Cover Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                      {wVocalVersions.map((ver, idx) => (
-                        <div key={ver.id || idx} style={{
-                          background: 'rgba(0,0,0,0.35)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: '6px',
-                          padding: '1.1rem'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              📌 版本 {idx + 1} of {wVocalVersions.length}
-                            </span>
-                            {wVocalVersions.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setWVocalVersions(wVocalVersions.filter((_, i) => i !== idx));
-                                }}
-                                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer' }}
-                              >
-                                🗑️ 刪除此版本
-                              </button>
-                            )}
-                          </div>
+                    {(wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程') && (
+                      <div style={{
+                        background: 'rgba(236, 72, 153, 0.05)',
+                        border: '1px solid rgba(236, 72, 153, 0.3)',
+                        borderRadius: '8px',
+                        padding: '1.5rem',
+                        marginBottom: '1.5rem'
+                      }}>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.8rem' }}>
-                            <div>
-                              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
-                                版本名稱 (例如: Ver 1.0 課程前初測錄音)
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="例如: Ver 1.0 課程前初測"
-                                value={ver.versionTitle}
-                                onChange={(e) => {
-                                  const updated = [...wVocalVersions];
-                                  updated[idx].versionTitle = e.target.value;
-                                  setWVocalVersions(updated);
-                                }}
-                                className="museum-input"
-                                style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
-                              />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
-                                錄音日期 / 階段說明 (例如: 2024-03-01 或 第 1 週)
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="例如: 2024-03-01"
-                                value={ver.date}
-                                onChange={(e) => {
-                                  const updated = [...wVocalVersions];
-                                  updated[idx].date = e.target.value;
-                                  setWVocalVersions(updated);
-                                }}
-                                className="museum-input"
-                                style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
-                              />
-                            </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+                          <div>
+                            <h4 style={{ color: '#f472b6', margin: 0, fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              🎙️ 多版本時間軸錄音管理 ({wVocalVersions.length} / 10 個版本)
+                            </h4>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0.3rem 0 0 0' }}>
+                              為這首歌添加不同演進階段的錄音/影片（最高可保留 10 個版本）。
+                            </p>
                           </div>
+                          {wVocalVersions.length < 10 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWVocalVersions([
+                                  ...wVocalVersions,
+                                  {
+                                    id: 'v_' + Date.now(),
+                                    versionTitle: `Ver ${wVocalVersions.length + 1}.0 階段錄音`,
+                                    date: new Date().toISOString().split('T')[0],
+                                    youtubeUrl: '',
+                                    notes: ''
+                                  }
+                                ]);
+                              }}
+                              className="museum-btn"
+                              style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', borderColor: '#f472b6', color: '#f472b6' }}
+                            >
+                              + 新增演進版本 (最高 10 個)
+                            </button>
+                          )}
+                        </div>
 
-                          <div style={{ marginBottom: '0.8rem' }}>
-                            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
-                              YouTube 影片網址 (此版本)
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                          {wVocalVersions.map((ver, idx) => (
+                            <div key={ver.id || idx} style={{
+                              background: 'rgba(0,0,0,0.35)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: '6px',
+                              padding: '1.1rem'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f472b6', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  📌 版本 {idx + 1} of {wVocalVersions.length}
+                                </span>
+                                {wVocalVersions.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setWVocalVersions(wVocalVersions.filter((_, i) => i !== idx));
+                                    }}
+                                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer' }}
+                                  >
+                                    🗑️ 刪除此版本
+                                  </button>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.8rem' }}>
+                                <div>
+                                  <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                                    版本名稱 (例如: Ver 1.0 課程前初測錄音)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="例如: Ver 1.0 課程前初測"
+                                    value={ver.versionTitle}
+                                    onChange={(e) => {
+                                      const updated = [...wVocalVersions];
+                                      updated[idx].versionTitle = e.target.value;
+                                      setWVocalVersions(updated);
+                                    }}
+                                    className="museum-input"
+                                    style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                                    錄音日期 / 階段說明 (例如: 2024-03-01 或 第 1 週)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder="例如: 2024-03-01"
+                                    value={ver.date}
+                                    onChange={(e) => {
+                                      const updated = [...wVocalVersions];
+                                      updated[idx].date = e.target.value;
+                                      setWVocalVersions(updated);
+                                    }}
+                                    className="museum-input"
+                                    style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div style={{ marginBottom: '0.8rem' }}>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                                  YouTube 影片網址 (此版本)
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="https://www.youtube.com/watch?v=..."
+                                  value={ver.youtubeUrl}
+                                  onChange={(e) => {
+                                    const updated = [...wVocalVersions];
+                                    updated[idx].youtubeUrl = e.target.value;
+                                    setWVocalVersions(updated);
+                                  }}
+                                  className="museum-input"
+                                  style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                                />
+                              </div>
+
+                              <div>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                                  階段發聲技巧與進步註記 (選填)
+                                </label>
+                                <textarea
+                                  placeholder="例如: 調整共鳴位置，高音發聲更加放鬆..."
+                                  value={ver.notes}
+                                  onChange={(e) => {
+                                    const updated = [...wVocalVersions];
+                                    updated[idx].notes = e.target.value;
+                                    setWVocalVersions(updated);
+                                  }}
+                                  className="museum-input"
+                                  style={{ maxWidth: '100%', minHeight: '60px', padding: '0.55rem', fontSize: '0.88rem', resize: 'vertical' }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(wCategory !== '人聲優化歷程記錄' && wCategory !== '人聲優化課程') && (
+                      <>
+                        <div>
+                          <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                            文章主題 (選填)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="例如: 職涯筆記 / 保險隨想 / 聲音探索"
+                            value={wTopic}
+                            onChange={(e) => setWTopic(e.target.value)}
+                            className="museum-input"
+                            style={{ maxWidth: '100%', padding: '0.7rem' }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                          <div>
+                            <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                              FB 上線時間 (選填)
                             </label>
                             <input
                               type="text"
-                              placeholder="https://www.youtube.com/watch?v=..."
-                              value={ver.youtubeUrl}
-                              onChange={(e) => {
-                                const updated = [...wVocalVersions];
-                                updated[idx].youtubeUrl = e.target.value;
-                                setWVocalVersions(updated);
-                              }}
+                              placeholder="例如: 2024-05-20"
+                              value={wFbDate}
+                              onChange={(e) => setWFbDate(e.target.value)}
                               className="museum-input"
-                              style={{ maxWidth: '100%', padding: '0.55rem', fontSize: '0.88rem' }}
+                              style={{ maxWidth: '100%', padding: '0.7rem' }}
                             />
                           </div>
 
                           <div>
-                            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
-                              階段發聲技巧與進步註記 (選填)
+                            <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                              FB 原文連結 (選填)
                             </label>
-                            <textarea
-                              placeholder="例如: 調整共鳴位置，高音發聲更加放鬆..."
-                              value={ver.notes}
-                              onChange={(e) => {
-                                const updated = [...wVocalVersions];
-                                updated[idx].notes = e.target.value;
-                                setWVocalVersions(updated);
-                              }}
+                            <input
+                              type="url"
+                              placeholder="https://facebook.com/..."
+                              value={wFbUrl}
+                              onChange={(e) => setWFbUrl(e.target.value)}
                               className="museum-input"
-                              style={{ maxWidth: '100%', minHeight: '60px', padding: '0.55rem', fontSize: '0.88rem', resize: 'vertical' }}
+                              style={{ maxWidth: '100%', padding: '0.7rem' }}
                             />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </>
+                    )}
 
-                {(wCategory !== '人聲優化歷程記錄' && wCategory !== '人聲優化課程') && (
-                  <>
                     <div>
-                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                        文章主題 (選填)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="例如: 職涯筆記 / 保險隨想 / 聲音探索"
-                        value={wTopic}
-                        onChange={(e) => setWTopic(e.target.value)}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
+                          摘要引言 (選填，顯示於前台卡片)
+                        </label>
+                        {wContent.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const clean = wContent.replace(/^[#>]\s*/gm, '').trim();
+                              setWExcerpt(clean.slice(0, 100) + (clean.length > 100 ? '...' : ''));
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
+                          >
+                            ⚡ 自內文自動擷取 100 字摘要
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        placeholder="2~3 句精闢摘要，勾勒文章核心重點..."
+                        value={wExcerpt}
+                        onChange={(e) => setWExcerpt(e.target.value)}
                         className="museum-input"
-                        style={{ maxWidth: '100%', padding: '0.7rem' }}
+                        style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical', padding: '0.75rem' }}
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', fontWeight: 500 }}>
+                        文章內文 (支援從 Google Docs 直接複製貼上) *
+                      </label>
+                      <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
+                        💡 提示：輸入 <code style={{ color: '#38bdf8' }}>一、</code> 或 <code style={{ color: '#38bdf8' }}>#</code> 可轉為章節標題；段落開頭輸入 <code style={{ color: '#f472b6' }}>&gt; </code> 可轉為亮點金句引言框。
+                      </div>
+                      <textarea
+                        placeholder="請在此貼上自 Google Docs 複製的文章內文..."
+                        value={wContent}
+                        onChange={(e) => setWContent(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%', minHeight: '380px', resize: 'vertical', lineHeight: '1.75', fontFamily: 'var(--font-noto-sans)', padding: '1rem', fontSize: '0.95rem' }}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
                       <div>
                         <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                          FB 上線時間 (選填)
+                          YouTube 影片連結 (選填，文章內頁自動內嵌)
                         </label>
                         <input
                           type="text"
-                          placeholder="例如: 2024-05-20"
-                          value={wFbDate}
-                          onChange={(e) => setWFbDate(e.target.value)}
+                          placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
+                          value={wYoutubeUrl}
+                          onChange={(e) => setWYoutubeUrl(e.target.value)}
                           className="museum-input"
                           style={{ maxWidth: '100%', padding: '0.7rem' }}
                         />
@@ -3881,13 +4130,12 @@ export default function AdminDashboardPage() {
 
                       <div>
                         <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                          FB 原文連結 (選填)
+                          排序權重 (Order, 越小越靠前)
                         </label>
                         <input
-                          type="url"
-                          placeholder="https://facebook.com/..."
-                          value={wFbUrl}
-                          onChange={(e) => setWFbUrl(e.target.value)}
+                          type="number"
+                          value={wOrder}
+                          onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
                           className="museum-input"
                           style={{ maxWidth: '100%', padding: '0.7rem' }}
                         />
@@ -3896,79 +4144,6 @@ export default function AdminDashboardPage() {
                   </>
                 )}
 
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
-                      摘要引言 (選填，顯示於前台卡片)
-                    </label>
-                    {wContent.trim() && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const clean = wContent.replace(/^[#>]\s*/gm, '').trim();
-                          setWExcerpt(clean.slice(0, 100) + (clean.length > 100 ? '...' : ''));
-                        }}
-                        style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
-                      >
-                        ⚡ 自內文自動擷取 100 字摘要
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    placeholder="2~3 句精闢摘要，勾勒文章核心重點..."
-                    value={wExcerpt}
-                    onChange={(e) => setWExcerpt(e.target.value)}
-                    className="museum-input"
-                    style={{ maxWidth: '100%', minHeight: '80px', resize: 'vertical', padding: '0.75rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                    文章內文 (支援從 Google Docs 直接複製貼上) *
-                  </label>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
-                    💡 提示：輸入 <code style={{ color: '#38bdf8' }}>一、</code> 或 <code style={{ color: '#38bdf8' }}>#</code> 可轉為章節標題；段落開頭輸入 <code style={{ color: '#f472b6' }}>&gt; </code> 可轉為亮點金句引言框。
-                  </div>
-                  <textarea
-                    placeholder="請在此貼上自 Google Docs 複製的文章內文..."
-                    value={wContent}
-                    onChange={(e) => setWContent(e.target.value)}
-                    className="museum-input"
-                    style={{ maxWidth: '100%', minHeight: '380px', resize: 'vertical', lineHeight: '1.75', fontFamily: 'var(--font-noto-sans)', padding: '1rem', fontSize: '0.95rem' }}
-                    required
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                      YouTube 影片連結 (選填，文章內頁自動內嵌)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="例如: https://www.youtube.com/watch?v=xxx 或 https://youtu.be/xxx"
-                      value={wYoutubeUrl}
-                      onChange={(e) => setWYoutubeUrl(e.target.value)}
-                      className="museum-input"
-                      style={{ maxWidth: '100%', padding: '0.7rem' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                      排序權重 (Order, 越小越靠前)
-                    </label>
-                    <input
-                      type="number"
-                      value={wOrder}
-                      onChange={(e) => setWOrder(parseInt(e.target.value) || 0)}
-                      className="museum-input"
-                      style={{ maxWidth: '100%', padding: '0.7rem' }}
-                    />
-                  </div>
-                </div>
-
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                   <button
                     type="submit"
@@ -3976,7 +4151,7 @@ export default function AdminDashboardPage() {
                     disabled={creatingWriting}
                     style={{ flex: 1, background: 'rgba(56, 189, 248, 0.2)', borderColor: '#38bdf8', color: '#fff', fontSize: '1rem', padding: '0.8rem', fontWeight: 600 }}
                   >
-                    {creatingWriting ? '發布儲存中...' : (editingWritingId ? '💾 儲存文章變更並返回列表' : '🚀 發布文章至全站展區')}
+                    {creatingWriting ? '發布儲存中...' : (editingWritingId ? (wCategory === '小說' ? '💾 儲存章節變更並返回列表' : '💾 儲存文章變更並返回列表') : (wCategory === '小說' ? '🚀 發布小說章節' : '🚀 發布文章至全站展區'))}
                   </button>
                   <button
                     type="button"
