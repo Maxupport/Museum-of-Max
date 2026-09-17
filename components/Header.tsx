@@ -74,7 +74,7 @@ export function Header() {
       borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 2rem',
+      padding: '0 clamp(0.8rem, 3vw, 2rem)',
     }}>
       <nav style={{
         maxWidth: '1400px',
@@ -88,32 +88,34 @@ export function Header() {
         <Link 
           href={logoHref} 
           title="輸入通行密碼 / 切換角色"
-          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.8rem' }}
+          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}
         >
-          <Compass size={20} style={{ color: 'var(--text-secondary)' }} />
+          <Compass size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
           <span style={{
-            fontSize: '0.9rem',
-            letterSpacing: '2.5px',
+            fontSize: 'clamp(0.62rem, 2.2vw, 0.9rem)',
+            letterSpacing: 'clamp(1px, 0.5vw, 2.5px)',
             color: '#fff',
             fontFamily: 'var(--font-noto-serif)',
             fontWeight: 400,
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
           }}>
             MAX&apos;S PRIVATE MUSEUM
           </span>
         </Link>
 
         {/* Navigation Links (Removed unused 'Projects' link) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(0.6rem, 2vw, 1.5rem)', flexShrink: 0 }}>
           {!isNovelDirect && (
             <Link 
               href="/museum" 
               style={{
                 textDecoration: 'none',
                 color: pathname === '/museum' ? '#fff' : 'var(--text-secondary)',
-                fontSize: '0.85rem',
-                letterSpacing: '1px',
-                transition: 'color 0.3s ease'
+                fontSize: 'clamp(0.72rem, 2vw, 0.85rem)',
+                letterSpacing: 'clamp(0.5px, 0.3vw, 1px)',
+                transition: 'color 0.3s ease',
+                whiteSpace: 'nowrap',
               }}
             >
               展覽大廳
@@ -126,16 +128,17 @@ export function Header() {
               style={{
                 textDecoration: 'none',
                 color: '#4ade80',
-                fontSize: '0.85rem',
-                letterSpacing: '1px',
+                fontSize: 'clamp(0.72rem, 2vw, 0.85rem)',
+                letterSpacing: 'clamp(0.5px, 0.3vw, 1px)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
                 background: 'rgba(74, 222, 128, 0.1)',
                 border: '1px solid rgba(74, 222, 128, 0.3)',
-                padding: '0.35rem 0.9rem',
+                padding: 'clamp(0.25rem, 0.8vw, 0.35rem) clamp(0.5rem, 1.5vw, 0.9rem)',
                 borderRadius: '4px',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap',
               }}
             >
               <Shield size={14} />

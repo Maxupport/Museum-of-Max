@@ -272,13 +272,14 @@ export default function MuseumHall() {
             ) : (
               <div>
                 <div style={{ 
-                  fontSize: '0.8rem', 
+                  fontSize: 'clamp(0.72rem, 2vw, 0.8rem)', 
                   letterSpacing: '4px', 
                   color: 'var(--text-secondary)', 
                   marginBottom: '2rem', 
                   textTransform: 'uppercase', 
                   borderBottom: '1px solid rgba(255,255,255,0.1)', 
-                  paddingBottom: '0.8rem' 
+                  paddingBottom: '0.8rem',
+                  paddingRight: 'clamp(80px, 20vw, 130px)',
                 }}>
                   6 Exhibition Galleries
                 </div>
