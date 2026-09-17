@@ -1109,11 +1109,11 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                               width: '100%', 
                               height: '135px', 
                               background: 'rgba(255,255,255,0.03)', 
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: exhibit.color,
-                              borderBottom: '1px solid rgba(255,255,255,0.06)'
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              color: exhibit.color, 
+                              borderBottom: '1px solid rgba(255,255,255,0.06)' 
                             }}>
                               <BookOpen size={30} style={{ opacity: 0.7 }} />
                             </div>
@@ -1125,15 +1125,15 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                               <span style={{ 
                                 fontSize: '0.75rem', 
-                                background: 'rgba(168,85,247,0.15)', 
+                                background: item.category === '小說' ? 'rgba(168,85,247,0.25)' : 'rgba(168,85,247,0.15)', 
                                 color: '#c084fc', 
                                 padding: '0.2rem 0.65rem', 
                                 borderRadius: '4px', 
-                                border: '1px solid rgba(168,85,247,0.3)',
-                                whiteSpace: 'nowrap',
-                                fontWeight: 500
+                                border: '1px solid rgba(168,85,247,0.3)', 
+                                whiteSpace: 'nowrap', 
+                                fontWeight: 500 
                               }}>
-                                {item.category === 'FB文章備份' ? '社群隨筆' : (item.category || '社群隨筆')}
+                                {item.category === '小說' ? '📖 小說連載' : (item.category === 'FB文章備份' ? '社群隨筆' : (item.category || '社群隨筆'))}
                               </span>
                               {item.isPinned && (
                                 <span style={{ 
@@ -1142,9 +1142,9 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                                   color: '#38bdf8', 
                                   padding: '0.15rem 0.5rem', 
                                   borderRadius: '4px', 
-                                  border: '1px solid rgba(56, 189, 248, 0.4)',
-                                  whiteSpace: 'nowrap',
-                                  fontWeight: 600
+                                  border: '1px solid rgba(56, 189, 248, 0.4)', 
+                                  whiteSpace: 'nowrap', 
+                                  fontWeight: 600 
                                 }}>
                                   📌 置頂
                                 </span>
@@ -1163,19 +1163,19 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                             fontSize: '1.25rem', 
                             marginBottom: '0.6rem', 
                             fontFamily: 'var(--font-noto-serif)', 
-                            lineHeight: 1.4,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            wordBreak: 'break-word',
-                            textWrap: 'balance'
+                            lineHeight: 1.4, 
+                            display: '-webkit-box', 
+                            WebkitLineClamp: 2, 
+                            WebkitBoxOrient: 'vertical', 
+                            overflow: 'hidden', 
+                            wordBreak: 'break-word', 
+                            textWrap: 'balance' 
                           }}>
                             {item.title}
                           </h3>
 
                           {/* 標題下方標籤: 文章主題, FB 發布時間, FB 連結 */}
-                          {(item.topic || item.fbDate || item.fbUrl) && (
+                          {(item.topic || item.fbDate || item.fbUrl || (item.category === '小說' && typeof item.order === 'number')) && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', marginBottom: '0.8rem' }}>
                               {item.topic && (
                                 <span style={{ 
@@ -1185,9 +1185,23 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                                   border: '1px solid rgba(168,85,247,0.3)', 
                                   padding: '0.15rem 0.55rem', 
                                   borderRadius: '4px', 
-                                  whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap', 
+                                  fontWeight: 500 
                                 }}>
-                                  📌 {item.topic}
+                                  {item.category === '小說' ? `《${item.topic}》` : `📌 ${item.topic}`}
+                                </span>
+                              )}
+                              {item.category === '小說' && typeof item.order === 'number' && item.order > 0 && (
+                                <span style={{ 
+                                  fontSize: '0.73rem', 
+                                  background: 'rgba(56, 189, 248, 0.15)', 
+                                  color: '#38bdf8', 
+                                  border: '1px solid rgba(56, 189, 248, 0.3)', 
+                                  padding: '0.15rem 0.55rem', 
+                                  borderRadius: '4px', 
+                                  whiteSpace: 'nowrap' 
+                                }}>
+                                  第 {item.order} 章
                                 </span>
                               )}
                               {item.fbDate && (
@@ -1198,7 +1212,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                                   border: '1px solid rgba(255,255,255,0.12)', 
                                   padding: '0.15rem 0.55rem', 
                                   borderRadius: '4px', 
-                                  whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap' 
                                 }}>
                                   📅 FB：{item.fbDate}
                                 </span>
@@ -1217,7 +1231,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                                     padding: '0.15rem 0.55rem', 
                                     borderRadius: '4px', 
                                     textDecoration: 'none', 
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap' 
                                   }}
                                 >
                                   🔗 FB 連結

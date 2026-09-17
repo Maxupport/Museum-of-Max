@@ -58,6 +58,7 @@ export default function ArticleDetailPage({
     excerpt?: string | null;
     content: string;
     youtubeUrl?: string | null;
+    order?: number;
     createdAt?: string;
   } | null>(null);
 
@@ -388,7 +389,7 @@ export default function ArticleDetailPage({
             border: '1px solid rgba(255,255,255,0.1)',
           }}
         >
-          {dbArticle?.category || exhibit.title}
+          {dbArticle?.category === '小說' ? '小說連載' : (dbArticle?.category || exhibit.title)}
         </div>
 
         <h1
@@ -404,20 +405,30 @@ export default function ArticleDetailPage({
           {articleData?.title || '作品專題'}
         </h1>
 
-        {/* 標題下方 3 個標籤: 文章主題, FB 上線時間, FB 連結 */}
-        {(dbArticle?.topic || dbArticle?.fbDate || dbArticle?.fbUrl) && (
+        {/* 標題下方標籤: 文章主題/小說名稱, FB 上線時間, FB 連結 */}
+        {(dbArticle?.topic || dbArticle?.fbDate || dbArticle?.fbUrl || (dbArticle?.category === '小說' && typeof dbArticle?.order === 'number')) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-            {dbArticle.topic && (
-              <span style={{ fontSize: '0.82rem', background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                📌 主題：{dbArticle.topic}
+            {dbArticle?.category === '小說' && (
+              <span style={{ fontSize: '0.82rem', background: 'rgba(168,85,247,0.25)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.4)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 500 }}>
+                📖 小說連載
               </span>
             )}
-            {dbArticle.fbDate && (
+            {dbArticle?.topic && (
+              <span style={{ fontSize: '0.82rem', background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                {dbArticle.category === '小說' ? `《${dbArticle.topic}》` : `📌 主題：${dbArticle.topic}`}
+              </span>
+            )}
+            {dbArticle?.category === '小說' && typeof dbArticle?.order === 'number' && dbArticle.order > 0 && (
+              <span style={{ fontSize: '0.82rem', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                🔢 第 {dbArticle.order} 章
+              </span>
+            )}
+            {dbArticle?.fbDate && (
               <span style={{ fontSize: '0.82rem', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.15)', padding: '0.25rem 0.75rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                 📅 FB 上線時間：{dbArticle.fbDate}
               </span>
             )}
-            {dbArticle.fbUrl && (
+            {dbArticle?.fbUrl && (
               <a
                 href={dbArticle.fbUrl}
                 target="_blank"
