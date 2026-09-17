@@ -3,7 +3,28 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Calendar, User, Sparkles, Mail } from 'lucide-react';
-import { MOCK_NOVELS } from '@/utils/notionNovels';
+
+interface ChapterItem {
+  id: string;
+  title: string;
+  content: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  fbDate?: string | null;
+  excerpt?: string | null;
+}
+
+interface NovelWithChapters {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  description: string | null;
+  status: string;
+  totalChapters: number;
+  chapters: ChapterItem[];
+}
 
 export default function NovelReaderPage({
   params
@@ -13,8 +34,10 @@ export default function NovelReaderPage({
   const router = useRouter();
   const unwrappedParams = use(params);
   const { novelId } = unwrappedParams;
-  const novel = MOCK_NOVELS[novelId];
 
+  const [novel, setNovel] = useState<NovelWithChapters | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [currentChapterIdx, setCurrentChapterIdx] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -22,6 +45,48 @@ export default function NovelReaderPage({
   const [subscribing, setSubscribing] = useState(false);
   const [subMessage, setSubMessage] = useState('');
 
+  // 權限驗證
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const isCuratorCookie = document.cookie.includes('is_curator=true');
+      if (!isCuratorCookie) {
+        const match = document.cookie.match(/(?:^|; )visitor_permissions=([^;]*)/);
+        if (match && match[1]) {
+          try {
+            const perms = JSON.parse(decodeURIComponent(match[1]));
+            const hasAccess = Array.isArray(perms) && (perms.includes('creation_lab') || perms.includes('creation_lab_novel'));
+            if (!hasAccess) {
+              router.replace('/');
+            }
+          } catch {
+            router.replace('/');
+          }
+        } else {
+          router.replace('/');
+        }
+      }
+    }
+  }, [router]);
+
+  // 從 API 載入小說最上層資訊與章節
+  useEffect(() => {
+    if (!novelId) return;
+    setLoading(true);
+    fetch(`/api/novels/${encodeURIComponent(novelId)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok && data.data) {
+          setNovel(data.data);
+          setNotFound(false);
+        } else {
+          setNotFound(true);
+        }
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [novelId]);
+
+  // 頁面瀏覽紀錄
   useEffect(() => {
     if (novelId) {
       fetch('/api/pageview', {
@@ -48,7 +113,7 @@ export default function NovelReaderPage({
 
       // 若有配置 Google Apps Script 網址，同步寫入 Google 試算表
       const googleScriptUrl = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
-      if (googleScriptUrl) {
+      if (googleScriptUrl && novel) {
         fetch(googleScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
@@ -70,29 +135,16 @@ export default function NovelReaderPage({
     }
   };
 
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const isCuratorCookie = document.cookie.includes('is_curator=true');
-      if (!isCuratorCookie) {
-        const match = document.cookie.match(/(?:^|; )visitor_permissions=([^;]*)/);
-        if (match && match[1]) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(match[1]));
-            const hasAccess = Array.isArray(perms) && (perms.includes('creation_lab') || perms.includes('creation_lab_novel'));
-            if (!hasAccess) {
-              router.replace('/');
-            }
-          } catch {
-            router.replace('/');
-          }
-        } else {
-          router.replace('/');
-        }
-      }
-    }
-  }, [router]);
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '10rem 2rem', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <BookOpen size={40} style={{ marginBottom: '1.5rem', opacity: 0.6 }} />
+        <p style={{ color: 'var(--text-secondary)', letterSpacing: '2px' }}>載入小說中...</p>
+      </div>
+    );
+  }
 
-  if (!novel) {
+  if (notFound || !novel) {
     return (
       <div style={{ textAlign: 'center', padding: '10rem 2rem', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <h2 style={{ fontFamily: 'var(--font-noto-serif)', fontSize: '2rem', marginBottom: '1rem' }}>查無此小說作品</h2>
@@ -104,7 +156,40 @@ export default function NovelReaderPage({
     );
   }
 
-  const currentChapter = novel.chapters[currentChapterIdx] || novel.chapters[0];
+  const chapters = novel.chapters || [];
+
+  if (chapters.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '10rem 2rem', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <h2 style={{ fontFamily: 'var(--font-noto-serif)', fontSize: '2rem', marginBottom: '1rem' }}>《{novel.title}》</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>此小說目前尚無章節內容，請期待作者更新。</p>
+        <button className="museum-btn" onClick={() => router.push('/museum/creation_lab')}>
+          返回創作 LAB
+        </button>
+      </div>
+    );
+  }
+
+  const currentChapter = chapters[currentChapterIdx] || chapters[0];
+
+  // 解析章節內文（支援 JSON 格式或純文字）
+  const parseChapterContent = (content: string): string[] => {
+    if (!content) return [];
+    if (content.trim().startsWith('{')) {
+      try {
+        const p = JSON.parse(content);
+        if (p.textContent) {
+          return p.textContent.split('\n').filter((line: string) => line.trim());
+        }
+        if (p.overview) {
+          return p.overview.split('\n').filter((line: string) => line.trim());
+        }
+      } catch {}
+    }
+    return content.split('\n').filter((line) => line.trim());
+  };
+
+  const contentParagraphs = parseChapterContent(currentChapter.content);
 
   const handlePrevChapter = () => {
     if (currentChapterIdx > 0) {
@@ -114,7 +199,7 @@ export default function NovelReaderPage({
   };
 
   const handleNextChapter = () => {
-    if (currentChapterIdx < novel.chapters.length - 1) {
+    if (currentChapterIdx < chapters.length - 1) {
       setCurrentChapterIdx(currentChapterIdx + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -163,11 +248,11 @@ export default function NovelReaderPage({
           }}
         >
           <List size={16} />
-          {drawerOpen ? '關閉章節目錄' : `章節目錄 (${currentChapterIdx + 1}/${novel.chapters.length})`}
+          {drawerOpen ? '關閉章節目錄' : `章節目錄 (${currentChapterIdx + 1}/${chapters.length})`}
         </button>
       </div>
 
-      {/* 章節目錄抽屜 (Collapsible Chapter Index Drawer) */}
+      {/* 章節目錄抽屜 */}
       {drawerOpen && (
         <div
           className="animate-fade-in glass-panel"
@@ -183,12 +268,12 @@ export default function NovelReaderPage({
               {novel.title} — 章節目錄
             </h3>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              連載中（共 {novel.chapters.length} 章）
+              {novel.status}（共 {chapters.length} 章）
             </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            {novel.chapters.map((ch, idx) => {
+            {chapters.map((ch, idx) => {
               const isActive = idx === currentChapterIdx;
               return (
                 <div
@@ -217,7 +302,7 @@ export default function NovelReaderPage({
                       {ch.title}
                     </span>
                   </div>
-                  <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{ch.publishedDate}</span>
+                  {ch.fbDate && <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{ch.fbDate}</span>}
                 </div>
               );
             })}
@@ -249,9 +334,11 @@ export default function NovelReaderPage({
           {novel.title}
         </h1>
 
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '1.5rem', fontFamily: 'var(--font-noto-sans)' }}>
-          {novel.subtitle}
-        </p>
+        {novel.description && (
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '1.5rem', fontFamily: 'var(--font-noto-sans)' }}>
+            {novel.description}
+          </p>
+        )}
 
         <div
           style={{
@@ -269,18 +356,20 @@ export default function NovelReaderPage({
             <User size={14} />
             作者：{novel.author}
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Calendar size={14} />
-            更新日期：{currentChapter.publishedDate}
-          </span>
+          {currentChapter.fbDate && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Calendar size={14} />
+              更新日期：{currentChapter.fbDate}
+            </span>
+          )}
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <BookOpen size={14} />
-            {currentChapter.readTime}
+            共 {chapters.length} 章
           </span>
         </div>
       </header>
 
-      {/* 小說章節內文區域 (沉浸式小說閱讀器) */}
+      {/* 小說章節內文區域 */}
       <main
         className="animate-fade-in glass-panel"
         style={{
@@ -317,15 +406,19 @@ export default function NovelReaderPage({
             letterSpacing: '0.6px',
           }}
         >
-          {currentChapter.content.map((paragraph, index) => (
+          {contentParagraphs.length > 0 ? contentParagraphs.map((paragraph, index) => (
             <p key={index} style={{ marginBottom: '2rem', textIndent: '2em' }}>
               {paragraph}
             </p>
-          ))}
+          )) : (
+            <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '3rem 0' }}>
+              本章節尚無內容。
+            </p>
+          )}
         </article>
       </main>
 
-      {/* 底部翻頁導覽列 (Seamless Chapter Navigation Bar) */}
+      {/* 底部翻頁導覽列 */}
       <footer
         style={{
           display: 'flex',
@@ -370,20 +463,20 @@ export default function NovelReaderPage({
             letterSpacing: '1px',
           }}
         >
-          ≡ 章節目錄 ({currentChapterIdx + 1} / {novel.chapters.length})
+          ≡ 章節目錄 ({currentChapterIdx + 1} / {chapters.length})
         </button>
 
         <button
           onClick={handleNextChapter}
-          disabled={currentChapterIdx === novel.chapters.length - 1}
+          disabled={currentChapterIdx === chapters.length - 1}
           style={{
-            background: currentChapterIdx === novel.chapters.length - 1 ? 'transparent' : 'rgba(255,255,255,0.05)',
+            background: currentChapterIdx === chapters.length - 1 ? 'transparent' : 'rgba(255,255,255,0.05)',
             border: '1px solid',
-            borderColor: currentChapterIdx === novel.chapters.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
-            color: currentChapterIdx === novel.chapters.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff',
+            borderColor: currentChapterIdx === chapters.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+            color: currentChapterIdx === chapters.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff',
             padding: '0.8rem 1.5rem',
             borderRadius: '4px',
-            cursor: currentChapterIdx === novel.chapters.length - 1 ? 'not-allowed' : 'pointer',
+            cursor: currentChapterIdx === chapters.length - 1 ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
@@ -396,13 +489,13 @@ export default function NovelReaderPage({
         </button>
       </footer>
 
-      {/* 小說連載訂閱電子報 (Email Subscription Box) */}
-      <div 
-        className="glass-panel" 
-        style={{ 
-          padding: '2.5rem 2rem', 
-          marginTop: '3.5rem', 
-          background: 'rgba(15, 18, 25, 0.85)', 
+      {/* 小說連載訂閱電子報 */}
+      <div
+        className="glass-panel"
+        style={{
+          padding: '2.5rem 2rem',
+          marginTop: '3.5rem',
+          background: 'rgba(15, 18, 25, 0.85)',
           border: '1px solid rgba(255,255,255,0.12)',
           borderRadius: '4px'
         }}
@@ -453,10 +546,10 @@ export default function NovelReaderPage({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 500 }}>
           <Sparkles size={16} color="var(--theme-possibility)" />
-          <span>Notion 小說連載策展說明</span>
+          <span>小說連載策展說明</span>
         </div>
         <p>
-          本頁面支援 Notion API 即時連載同步。在您的 Notion 資料庫中設定屬性 `NovelTitle` (小說名稱) 與 `ChapterNum` (章節號)，於 Notion 撰寫的內文段落將自動渲染為此處的沉浸式小說閱讀格式。
+          本頁面支援後台即時連載同步。在管理後台的【創作 Lab → 小說作品管理】中設定小說基本資訊，並在【全站文章發布中心】以類別「小說」發布各章節，即可自動在此呈現為沉浸式小說閱讀格式。
         </p>
       </div>
     </div>

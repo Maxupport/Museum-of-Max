@@ -66,6 +66,18 @@ interface WritingsItem {
   createdAt?: string;
 }
 
+interface NovelData {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  description: string | null;
+  status: string;
+  order: number;
+  totalChapters: number;
+  latestChapterTitle: string | null;
+}
+
 function formatTimestamp(dateStr?: string | Date | null) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
@@ -112,9 +124,24 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   const [writingsItems, setWritingsItems] = useState<WritingsItem[]>([]);
   const [writingsLoading, setWritingsLoading] = useState(false);
 
+  // Novel Items state (for creation_lab 小說 subcategory)
+  const [novelItems, setNovelItems] = useState<NovelData[]>([]);
+  const [novelLoading, setNovelLoading] = useState(false);
+
   useEffect(() => {
     const isBlogExhibit = ['finance_insurance', 'sound', 'creation_lab', 'communication'].includes(exhibitId);
     if (isBlogExhibit) {
+      // 小說子分類：從 /api/novels 取得最上層資訊（含章節數）
+      if (activeSubCategory === '小說') {
+        setNovelLoading(true);
+        fetch('/api/novels')
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.ok) setNovelItems(data.data);
+          })
+          .finally(() => setNovelLoading(false));
+        return;
+      }
       setWritingsLoading(true);
       fetch(`/api/writings?exhibitId=${exhibitId}${activeSubCategory ? `&category=${encodeURIComponent(activeSubCategory)}` : ''}`)
         .then((res) => res.json())
@@ -1052,7 +1079,90 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               )}
             </>
           ) : ['creation_lab', 'communication', 'finance_insurance', 'sound'].includes(exhibitId) ? (
-            writingsLoading ? (
+            /* 小說子分類：專屬 2 欄大卡片展示版面 */
+            activeSubCategory === '小說' ? (
+              novelLoading ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                  <BookOpen size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p>小說作品載入中...</p>
+                </div>
+              ) : novelItems.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                  <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p style={{ letterSpacing: '1px' }}>目前尚無小說作品。</p>
+                </div>
+              ) : (
+                <div className="novel-grid">
+                  {novelItems.map((novel) => (
+                    <Link
+                      key={novel.id}
+                      href={`/museum/creation_lab/novel/${encodeURIComponent(novel.title)}`}
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <div
+                        className="glass-panel exhibit-card"
+                        style={{
+                          padding: '0',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          height: '100%',
+                          transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                          border: '1px solid rgba(168,85,247,0.15)',
+                        }}
+                      >
+                        {/* 封面大圖 */}
+                        <div style={{ width: '100%', height: '300px', overflow: 'hidden', position: 'relative', background: 'rgba(168,85,247,0.06)', borderBottom: '1px solid rgba(168,85,247,0.12)' }}>
+                          {novel.coverUrl ? (
+                            <img src={novel.coverUrl} alt={novel.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(168,85,247,0.4)', background: 'linear-gradient(145deg, rgba(168,85,247,0.05) 0%, rgba(0,0,0,0.3) 100%)' }}>
+                              <BookOpen size={56} style={{ marginBottom: '0.8rem', opacity: 0.6 }} />
+                              <span style={{ fontSize: '0.8rem', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.6 }}>Novel</span>
+                            </div>
+                          )}
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))' }} />
+                          <div style={{ position: 'absolute', top: '1rem', left: '1rem', background: novel.status === '已完結' ? 'rgba(74,222,128,0.2)' : 'rgba(168,85,247,0.3)', backdropFilter: 'blur(8px)', border: `1px solid ${novel.status === '已完結' ? 'rgba(74,222,128,0.5)' : 'rgba(168,85,247,0.6)'}`, color: novel.status === '已完結' ? '#4ade80' : '#c084fc', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                            {novel.status === '連載中' ? '🟢' : novel.status === '已完結' ? '✅' : '⏸️'} {novel.status}
+                          </div>
+                          <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(56,189,248,0.2)', backdropFilter: 'blur(8px)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8', padding: '0.3rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                            📚 共 {novel.totalChapters} 章
+                          </div>
+                        </div>
+
+                        {/* 卡片內容 */}
+                        <div style={{ padding: '2rem 2.2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                          <h3 style={{ color: '#fff', fontSize: '1.7rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3, marginBottom: '0.6rem', letterSpacing: '1px' }}>
+                            《{novel.title}》
+                          </h3>
+                          <p style={{ color: 'rgba(192,132,252,0.85)', fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Sparkles size={14} style={{ flexShrink: 0 }} />
+                            創作者：{novel.author}
+                          </p>
+                          {novel.description && (
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.7, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                              {novel.description}
+                            </p>
+                          )}
+                          {novel.latestChapterTitle && (
+                            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <BookOpen size={13} style={{ flexShrink: 0 }} />
+                              最新：{novel.latestChapterTitle}
+                            </div>
+                          )}
+                          <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#c084fc', fontSize: '0.92rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '1.2rem', borderTop: '1px solid rgba(168,85,247,0.15)' }}>
+                            <BookOpen size={16} />
+                            <span>📖 進入沉浸式閱讀器</span>
+                            <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )
+            ) : writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : filteredWritingsItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
@@ -1066,6 +1176,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     if (item.content) {
                       try {
                         const p = JSON.parse(item.content);
+
                         if (p && p.coverImage) {
                           coverImage = p.coverImage;
                         }

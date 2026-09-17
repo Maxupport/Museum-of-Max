@@ -88,6 +88,21 @@ interface WritingsItemData {
   createdAt?: string;
 }
 
+interface NovelItemData {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  description: string | null;
+  status: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  totalChapters?: number;
+  latestChapterTitle?: string | null;
+  latestUpdatedAt?: string | null;
+}
+
 const VENTURE_CATEGORIES = ['早期投資', '天使引路計畫', '募資 FA 服務', '創投項目評估'];
 
 export default function AdminDashboardPage() {
@@ -95,7 +110,7 @@ export default function AdminDashboardPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState<'passcodes' | 'venture' | 'career' | 'stats' | 'subscribers' | 'sound' | 'creation_lab' | 'articles'>('articles');
   const [soundSubCategoryFilter, setSoundSubCategoryFilter] = useState<string>('全部分類');
-  const [creationLabSubTab, setCreationLabSubTab] = useState<'music' | 'writings'>('music');
+  const [creationLabSubTab, setCreationLabSubTab] = useState<'music' | 'writings' | 'novels'>('music');
 
   // Passcodes state
   const [passcodes, setPasscodes] = useState<PasscodeItem[]>([]);
@@ -337,6 +352,123 @@ export default function AdminDashboardPage() {
       const res = await fetch(`/api/music/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.ok) fetchMusicItems();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Novel metadata management state
+  const [novelItems, setNovelItems] = useState<NovelItemData[]>([]);
+  const [novelFormOpen, setNovelFormOpen] = useState(false);
+  const [editingNovelId, setEditingNovelId] = useState<string | null>(null);
+  const [nTitle, setNTitle] = useState('');
+  const [nAuthor, setNAuthor] = useState('Maxupport');
+  const [nCoverUrl, setNCoverUrl] = useState('');
+  const [nDescription, setNDescription] = useState('');
+  const [nStatus, setNStatus] = useState('連載中');
+  const [nOrder, setNOrder] = useState(0);
+  const [uploadingNoverCover, setUploadingNovelCover] = useState(false);
+  const [novelFormError, setNovelFormError] = useState('');
+  const [savingNovel, setSavingNovel] = useState(false);
+
+  const fetchNovelItems = useCallback(async () => {
+    try {
+      const res = await fetch('/api/novels');
+      const data = await res.json();
+      if (data.ok) setNovelItems(data.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const handleEditNovel = (item: NovelItemData) => {
+    setEditingNovelId(item.id);
+    setNTitle(item.title);
+    setNAuthor(item.author || 'Maxupport');
+    setNCoverUrl(item.coverUrl || '');
+    setNDescription(item.description || '');
+    setNStatus(item.status || '連載中');
+    setNOrder(item.order || 0);
+    setNovelFormError('');
+    setNovelFormOpen(true);
+  };
+
+  const handleCancelNovelEdit = () => {
+    setEditingNovelId(null);
+    setNTitle('');
+    setNAuthor('Maxupport');
+    setNCoverUrl('');
+    setNDescription('');
+    setNStatus('連載中');
+    setNOrder(0);
+    setNovelFormError('');
+    setNovelFormOpen(false);
+  };
+
+  const handleNovelCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingNovelCover(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        setNCoverUrl(data.url);
+      } else {
+        alert(data.error || '封面圖片上傳失敗');
+      }
+    } catch {
+      alert('上傳時發生連線錯誤');
+    } finally {
+      setUploadingNovelCover(false);
+    }
+  };
+
+  const handleSaveNovel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNovelFormError('');
+    if (!nTitle.trim()) {
+      setNovelFormError('小說書名為必填欄位');
+      return;
+    }
+    setSavingNovel(true);
+    try {
+      let res;
+      if (editingNovelId) {
+        res = await fetch(`/api/novels/${editingNovelId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: nTitle, author: nAuthor, coverUrl: nCoverUrl, description: nDescription, status: nStatus, order: nOrder }),
+        });
+      } else {
+        res = await fetch('/api/novels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: nTitle, author: nAuthor, coverUrl: nCoverUrl, description: nDescription, status: nStatus, order: nOrder }),
+        });
+      }
+      const data = await res.json();
+      if (data.ok) {
+        handleCancelNovelEdit();
+        fetchNovelItems();
+      } else {
+        setNovelFormError(data.error || '儲存失敗');
+      }
+    } catch {
+      setNovelFormError('連線錯誤，請稍後再試');
+    } finally {
+      setSavingNovel(false);
+    }
+  };
+
+  const handleDeleteNovel = async (id: string, title: string) => {
+    if (!confirm(`確定要刪除「${title}」的最上層資訊？\n（不會刪除相關章節內容）`)) return;
+    try {
+      const res = await fetch(`/api/novels/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.ok) fetchNovelItems();
     } catch (e) {
       console.error(e);
     }
@@ -697,8 +829,11 @@ export default function AdminDashboardPage() {
         fetchMusicItems();
         fetchWritingsItems();
       }
+      if (activeTab === 'creation_lab') {
+        fetchNovelItems();
+      }
     }
-  }, [authenticated, activeTab, fetchPasscodes, fetchVentureItems, fetchCareerItems, fetchStats, fetchSubscribers, fetchMusicItems, fetchWritingsItems]);
+  }, [authenticated, activeTab, fetchPasscodes, fetchVentureItems, fetchCareerItems, fetchStats, fetchSubscribers, fetchMusicItems, fetchWritingsItems, fetchNovelItems]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/admin', { method: 'DELETE' });
@@ -2836,10 +2971,460 @@ export default function AdminDashboardPage() {
                 writingsItems.filter(item => item.exhibitId === 'creation_lab' || !item.exhibitId).length
               })
             </button>
+            <button
+              onClick={() => {
+                setCreationLabSubTab('novels');
+                fetchNovelItems();
+              }}
+              style={{
+                padding: '0.5rem 1.5rem',
+                borderRadius: '4px',
+                border: '1px solid',
+                borderColor: creationLabSubTab === 'novels' ? '#a855f7' : 'rgba(255,255,255,0.1)',
+                background: creationLabSubTab === 'novels' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                color: creationLabSubTab === 'novels' ? '#fff' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <BookOpen size={16} /> 小說作品管理 ({novelItems.length})
+            </button>
           </div>
+
+          {/* 創作 Lab - 小說最上層資訊管理 */}
+          {creationLabSubTab === 'novels' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* 操作頭部 */}
+              <div className="glass-panel" style={{ padding: '1.8rem 2rem', borderLeft: '4px solid #a855f7' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.3rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <BookOpen size={22} style={{ color: '#a855f7' }} />
+                      小說作品最上層資訊管理
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.4rem', margin: '0.4rem 0 0 0' }}>
+                      在此管理每本小說的封面、創作者、簡介與連載狀態。章節內容請至「全站文章發布中心」新增（類別選「小說」）。
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.8rem' }}>
+                    <button
+                      onClick={fetchNovelItems}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+                    >
+                      <RefreshCw size={14} /> 重整
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleCancelNovelEdit();
+                        setNovelFormOpen(true);
+                      }}
+                      style={{
+                        background: 'rgba(168, 85, 247, 0.15)',
+                        border: '1px solid #a855f7',
+                        color: '#c084fc',
+                        padding: '0.5rem 1.2rem',
+                        borderRadius: '4px',
+                        fontSize: '0.88rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      <Plus size={16} /> 建立全新小說
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 新增 / 編輯小說表單 */}
+              {novelFormOpen && (
+                <div className="glass-panel" style={{ padding: '2rem', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                  <h3 style={{ fontSize: '1.1rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {editingNovelId ? <Edit3 size={18} style={{ color: '#a855f7' }} /> : <Plus size={18} style={{ color: '#a855f7' }} />}
+                    {editingNovelId ? '編輯小說最上層資訊' : '建立全新小說'}
+                  </h3>
+
+                  {novelFormError && (
+                    <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                      {novelFormError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSaveNovel} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
+                    {/* 書名 */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        小說書名 *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例如：越界之前"
+                        value={nTitle}
+                        onChange={(e) => setNTitle(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                        required
+                      />
+                    </div>
+
+                    {/* 創作者 */}
+                    <div>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        創作者 / 作者
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="例如：Maxupport"
+                        value={nAuthor}
+                        onChange={(e) => setNAuthor(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                      />
+                    </div>
+
+                    {/* 連載狀態 */}
+                    <div>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        連載狀態
+                      </label>
+                      <select
+                        value={nStatus}
+                        onChange={(e) => setNStatus(e.target.value)}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                      >
+                        <option value="連載中">🟢 連載中</option>
+                        <option value="已完結">✅ 已完結</option>
+                        <option value="暫停連載">⏸️ 暫停連載</option>
+                      </select>
+                    </div>
+
+                    {/* 封面圖片 */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        封面圖片（URL 或上傳）
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                        <input
+                          type="url"
+                          placeholder="貼上圖片網址，或使用右方按鈕上傳..."
+                          value={nCoverUrl}
+                          onChange={(e) => setNCoverUrl(e.target.value)}
+                          className="museum-input"
+                          style={{ flex: 1, minWidth: '260px' }}
+                        />
+                        <label style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          background: 'rgba(168,85,247,0.12)',
+                          border: '1px solid rgba(168,85,247,0.35)',
+                          color: '#c084fc',
+                          padding: '0.55rem 1rem',
+                          borderRadius: '4px',
+                          fontSize: '0.85rem',
+                          cursor: uploadingNoverCover ? 'not-allowed' : 'pointer',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                          opacity: uploadingNoverCover ? 0.7 : 1
+                        }}>
+                          <Upload size={15} />
+                          {uploadingNoverCover ? '上傳中...' : '上傳封面圖'}
+                          <input type="file" accept="image/*" onChange={handleNovelCoverUpload} style={{ display: 'none' }} disabled={uploadingNoverCover} />
+                        </label>
+                      </div>
+                      {/* 封面預覽 */}
+                      {nCoverUrl && (
+                        <div style={{ marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <img
+                            src={nCoverUrl}
+                            alt="封面預覽"
+                            style={{
+                              width: '120px',
+                              height: '170px',
+                              objectFit: 'cover',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(168,85,247,0.4)',
+                              boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+                            }}
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                          <div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>封面預覽（書籍比例）</p>
+                            <button
+                              type="button"
+                              onClick={() => setNCoverUrl('')}
+                              style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.8rem', padding: '0.2rem 0', marginTop: '0.4rem' }}
+                            >
+                              ✕ 移除封面
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 小說簡介 */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        小說簡介 / 背景說明
+                      </label>
+                      <textarea
+                        placeholder="輸入小說的世界觀、背景設定或作品引言..."
+                        value={nDescription}
+                        onChange={(e) => setNDescription(e.target.value)}
+                        className="museum-input"
+                        rows={4}
+                        style={{ maxWidth: '100%', resize: 'vertical', fontFamily: 'var(--font-noto-sans)' }}
+                      />
+                    </div>
+
+                    {/* 排序 */}
+                    <div>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                        排序 (數字越小越前面)
+                      </label>
+                      <input
+                        type="number"
+                        value={nOrder}
+                        onChange={(e) => setNOrder(Number(e.target.value))}
+                        className="museum-input"
+                        style={{ maxWidth: '100%' }}
+                      />
+                    </div>
+
+                    {/* 操作按鈕 */}
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.8rem', justifyContent: 'flex-end', paddingTop: '0.8rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                      <button
+                        type="button"
+                        onClick={handleCancelNovelEdit}
+                        style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-secondary)', padding: '0.5rem 1.2rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.88rem' }}
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={savingNovel}
+                        style={{
+                          background: 'rgba(168,85,247,0.2)',
+                          border: '1px solid #a855f7',
+                          color: '#fff',
+                          padding: '0.5rem 1.4rem',
+                          borderRadius: '4px',
+                          cursor: savingNovel ? 'not-allowed' : 'pointer',
+                          fontSize: '0.88rem',
+                          fontWeight: 600,
+                          opacity: savingNovel ? 0.7 : 1
+                        }}
+                      >
+                        {savingNovel ? '儲存中...' : (editingNovelId ? '✓ 儲存變更' : '✓ 建立小說')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* 小說作品卡片列表 */}
+              {novelItems.length === 0 ? (
+                <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p style={{ letterSpacing: '1px' }}>目前尚無小說作品最上層資訊。</p>
+                  <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                    若已新增小說章節（類別=「小說」），點擊上方「重整」按鈕即可自動載入。
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.5rem' }}>
+                  {novelItems.map((novel) => (
+                    <div
+                      key={novel.id}
+                      className="glass-panel"
+                      style={{
+                        padding: '0',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(168,85,247,0.2)',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      {/* 封面圖 */}
+                      <div style={{
+                        width: '100%',
+                        height: '220px',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        background: 'rgba(168,85,247,0.06)',
+                        borderBottom: '1px solid rgba(168,85,247,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {novel.coverUrl ? (
+                          <img
+                            src={novel.coverUrl}
+                            alt={novel.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div style={{ textAlign: 'center', color: 'rgba(168,85,247,0.5)' }}>
+                            <BookOpen size={40} style={{ marginBottom: '0.5rem' }} />
+                            <span style={{ fontSize: '0.78rem', letterSpacing: '1px' }}>尚未設定封面</span>
+                          </div>
+                        )}
+                        {/* 連載狀態 badge */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '0.7rem',
+                          right: '0.7rem',
+                          background: novel.status === '已完結' ? 'rgba(74,222,128,0.2)' : 'rgba(168,85,247,0.25)',
+                          border: `1px solid ${novel.status === '已完結' ? 'rgba(74,222,128,0.5)' : 'rgba(168,85,247,0.5)'}`,
+                          color: novel.status === '已完結' ? '#4ade80' : '#c084fc',
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          backdropFilter: 'blur(8px)'
+                        }}>
+                          {novel.status}
+                        </div>
+                      </div>
+
+                      {/* 內容 */}
+                      <div style={{ padding: '1.4rem 1.6rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                        <h3 style={{ color: '#fff', fontSize: '1.25rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.4rem', lineHeight: 1.3 }}>
+                          {novel.title}
+                        </h3>
+                        <p style={{ color: 'rgba(192,132,252,0.9)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
+                          ✍️ {novel.author}
+                        </p>
+
+                        {/* 章節數 */}
+                        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.8rem', flexWrap: 'wrap' }}>
+                          <span style={{
+                            fontSize: '0.78rem',
+                            background: 'rgba(56,189,248,0.12)',
+                            color: '#38bdf8',
+                            border: '1px solid rgba(56,189,248,0.3)',
+                            padding: '0.15rem 0.6rem',
+                            borderRadius: '4px'
+                          }}>
+                            📚 共 {novel.totalChapters ?? 0} 個章節
+                          </span>
+                          {novel.latestChapterTitle && (
+                            <span style={{
+                              fontSize: '0.78rem',
+                              background: 'rgba(255,255,255,0.05)',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              padding: '0.15rem 0.6rem',
+                              borderRadius: '4px',
+                              maxWidth: '180px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              最新：{novel.latestChapterTitle}
+                            </span>
+                          )}
+                        </div>
+
+                        {novel.description && (
+                          <p style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.85rem',
+                            lineHeight: 1.6,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            marginBottom: '1rem'
+                          }}>
+                            {novel.description}
+                          </p>
+                        )}
+
+                        {/* 操作按鈕 */}
+                        <div style={{ display: 'flex', gap: '0.6rem', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <button
+                            onClick={() => handleEditNovel(novel)}
+                            style={{
+                              flex: 1,
+                              background: 'rgba(168,85,247,0.12)',
+                              border: '1px solid rgba(168,85,247,0.3)',
+                              color: '#c084fc',
+                              padding: '0.45rem 0.8rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.82rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem',
+                              fontWeight: 500
+                            }}
+                          >
+                            <Edit3 size={14} /> 編輯資訊
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveTab('articles');
+                              setFilterArticleExhibit('creation_lab');
+                              setArticleSubTab('editor');
+                              setWCategory('小說');
+                              setWTopic(novel.title);
+                            }}
+                            style={{
+                              flex: 1,
+                              background: 'rgba(56,189,248,0.08)',
+                              border: '1px solid rgba(56,189,248,0.25)',
+                              color: '#38bdf8',
+                              padding: '0.45rem 0.8rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.82rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem',
+                              fontWeight: 500
+                            }}
+                          >
+                            <Sparkles size={14} /> 新增章節
+                          </button>
+                          <button
+                            onClick={() => handleDeleteNovel(novel.id, novel.title)}
+                            style={{
+                              background: 'rgba(239,68,68,0.08)',
+                              border: '1px solid rgba(239,68,68,0.2)',
+                              color: '#f87171',
+                              padding: '0.45rem 0.7rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 創作 Lab - 音樂創作 */}
           {creationLabSubTab === 'music' && (
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {/* 音樂發布簡易區 */}
               <div className="glass-panel" style={{ padding: '2rem' }}>

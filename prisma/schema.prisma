@@ -96,6 +96,19 @@ model MusicItem {
   updatedAt   DateTime @updatedAt
 }
 
+// 小說作品最上層資訊 (Novel Metadata)
+model Novel {
+  id          String   @id @default(cuid())
+  title       String   @unique // 小說名稱 (例如 "越界之前")
+  author      String   @default("Maxupport") // 創作者
+  coverUrl    String?  // 顯示圖片 / 封面 URL
+  description String?  // 小說簡介
+  status      String   @default("連載中") // "連載中" | "已完結"
+  order       Int      @default(0) // 排序 (數字越小越前面)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // 全站文章與專題創作 (Universal Article / Writings Items)
 model WritingsItem {
   id          String   @id @default(cuid())

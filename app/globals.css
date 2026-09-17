@@ -246,4 +246,17 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Novel 2-col grid: responsive to 1-col on mobile */
+.novel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .novel-grid {
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+  }
+}
 
