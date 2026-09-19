@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
 
 // Map pathnames to Chinese exhibit names for email subject lines
 const EXHIBIT_NAME_MAP: Record<string, string> = {
+  '/museum/vc': '新創 / 風險投資',
   '/museum/venture_capital': '新創 / 風險投資',
+  '/museum/career': '職涯履歷 Max’s Career',
   '/museum/career_experience': '職涯履歷 Max’s Career',
   '/museum/finance_insurance': '商業議題分析',
   '/museum/sound': '聲音探索',

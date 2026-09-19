@@ -3080,14 +3080,36 @@ export default function AdminDashboardPage() {
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        fontWeight: 600
+                        gap: '0.4rem',
+                        transition: 'all 0.2s ease',
                       }}
                     >
-                      <Plus size={16} /> 建立全新小說
+                      <Plus size={16} /> 新增小說作品
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* 小說連載策展說明提示卡 (移至後台提供策展人參考) */}
+              <div
+                className="glass-panel"
+                style={{
+                  padding: '1.2rem 1.6rem',
+                  background: 'rgba(168, 85, 247, 0.05)',
+                  border: '1px solid rgba(168, 85, 247, 0.2)',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.6,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#c084fc', marginBottom: '0.4rem', fontWeight: 500 }}>
+                  <Sparkles size={16} />
+                  <span>小說連載策展說明</span>
+                </div>
+                <p style={{ margin: 0 }}>
+                  前台小說閱讀器支援即時連載同步。您可以在此設定小說基本資訊（書名、作者、封面與狀態），並在【全站文章發布中心】以類別「小說」發布各章節（主題填寫書名），系統即會自動將章節歸納至該小說，呈現為沉浸式小說閱讀格式。
+                </p>
               </div>
 
               {/* 新增 / 編輯小說表單 */}

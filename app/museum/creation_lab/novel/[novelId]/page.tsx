@@ -761,29 +761,6 @@ export default function NovelReaderPage({
           </div>
         )}
       </div>
-
-      {/* Notion 電腦版連載寫作說明提示卡 */}
-      <div
-        className="glass-panel"
-        style={{
-          marginTop: '4rem',
-          padding: '1.5rem 2rem',
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: '4px',
-          fontSize: '0.85rem',
-          color: 'var(--text-secondary)',
-          lineHeight: 1.6,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', marginBottom: '0.5rem', fontWeight: 500 }}>
-          <Sparkles size={16} color="var(--theme-possibility)" />
-          <span>小說連載策展說明</span>
-        </div>
-        <p>
-          本頁面支援後台即時連載同步。在管理後台的【創作 Lab → 小說作品管理】中設定小說基本資訊，並在【全站文章發布中心】以類別「小說」發布各章節，即可自動在此呈現為沉浸式小說閱讀格式。
-        </p>
-      </div>
         </div>
       </div>
     </div>
