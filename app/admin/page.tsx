@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, AlignLeft } from 'lucide-react';
+import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, AlignLeft, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 
 interface PasscodeItem {
@@ -22,9 +22,61 @@ interface PasscodeEntryStat {
   isPreset: boolean;
 }
 
+interface AiBotStat {
+  botName: string;
+  count: number;
+}
+
+interface AiFamilyDetail {
+  family: string;
+  name: string;
+  count: number;
+  lastCrawledAt: string | null;
+  bots: AiBotStat[];
+}
+
+interface AiCrawlerLogItem {
+  id: string;
+  botFamily: string;
+  botName: string;
+  path: string;
+  ip: string | null;
+  createdAt: string;
+  userAgent: string;
+}
+
+interface VisitorLogItem {
+  id: string;
+  visitorId: string;
+  path: string;
+  title: string | null;
+  referer: string | null;
+  device: string | null;
+  browser: string | null;
+  os: string | null;
+  createdAt: string;
+  passcode: { code: string; note: string | null } | null;
+}
+
 interface StatData {
   totalPageviews: number;
+  totalHumanUV?: number;
   totalPasscodeEntries: number;
+  externalVisitorsCount?: number;
+  passcodeVisitorLogsCount?: number;
+  totalAiCrawls?: number;
+  aiFourBreakdown?: {
+    openAI: AiFamilyDetail;
+    anthropic: AiFamilyDetail;
+    google: AiFamilyDetail;
+    perplexity: AiFamilyDetail;
+    others: AiFamilyDetail;
+  };
+  topAiPages?: { path: string; count: number; lastCrawledAt: string | null }[];
+  recentAiLogs?: AiCrawlerLogItem[];
+  topPages?: { path: string; count: number }[];
+  deviceStats?: { device: string; count: number }[];
+  recentVisitorLogs?: VisitorLogItem[];
   passcodeEntryStats: PasscodeEntryStat[];
   exhibitStats: { exhibitId: string; count: number }[];
   recentViews: {
@@ -2317,40 +2369,399 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Tab 4: Analytics & Traffic */}
+      {/* Tab 4: Analytics & Traffic (含真人訪客與四大 AI 系統抓取統計) */}
       {activeTab === 'stats' && (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+          {/* 頂部四核心數據概覽卡片 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
+            {/* 1. 真人總瀏覽量 (PV) */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
                 <Eye size={24} />
               </div>
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  總瀏覽人次 (Total Pageviews)
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  真人總瀏覽量 (PV)
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                <div style={{ fontSize: '2.1rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.2 }}>
                   {stats ? stats.totalPageviews : 0}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#38bdf8', marginTop: '0.2rem' }}>
+                  獨立訪客 (UV): <strong>{stats?.totalHumanUV || 0}</strong> 人
                 </div>
               </div>
             </div>
 
+            {/* 2. 四大 AI 系統抓取總次數 */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem', border: '1px solid rgba(168, 85, 247, 0.3)', background: 'rgba(168, 85, 247, 0.05)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c084fc' }}>
+                <Bot size={24} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.78rem', color: '#c084fc', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 600 }}>
+                  四大 AI 抓取總次數
+                </div>
+                <div style={{ fontSize: '2.1rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.2 }}>
+                  {stats ? (stats.totalAiCrawls || 0) : 0}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  OpenAI / Claude / Gemini / Perplexity
+                </div>
+              </div>
+            </div>
+
+            {/* 3. 通行碼貴賓通關次數 */}
             <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+              <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: 'rgba(74, 222, 128, 0.12)', border: '1px solid rgba(74, 222, 128, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4ade80' }}>
                 <Key size={24} />
               </div>
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  通行碼進入總次數 (Passcode Entries)
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  通行碼進入次數
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+                <div style={{ fontSize: '2.1rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.2 }}>
                   {stats ? stats.totalPasscodeEntries : 0}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#4ade80', marginTop: '0.2rem' }}>
+                  持專屬密碼解鎖訪客
+                </div>
+              </div>
+            </div>
+
+            {/* 4. 外部公開訪客次數 */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+              <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: 'rgba(236, 72, 153, 0.12)', border: '1px solid rgba(236, 72, 153, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ec4899' }}>
+                <Globe size={24} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  外部公開 / 匿名訪客
+                </div>
+                <div style={{ fontSize: '2.1rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.2 }}>
+                  {stats ? (stats.externalVisitorsCount || 0) : 0}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#ec4899', marginTop: '0.2rem' }}>
+                  首頁 / 專案 / 公開探索
                 </div>
               </div>
             </div>
           </div>
 
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* 深度專區：四大 AI 系統抓取與索引紀錄 (The Big 4 AI Systems Analytics) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <div className="glass-panel" style={{ padding: '2rem', border: '1px solid rgba(168, 85, 247, 0.25)', background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.04) 0%, rgba(0,0,0,0.4) 100%)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.8rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+                  <Cpu size={22} style={{ color: '#c084fc' }} />
+                  <h2 style={{ fontSize: '1.3rem', color: '#fff', margin: 0, fontFamily: 'var(--font-noto-serif)' }}>
+                    四大 AI 系統抓取與索引分析 (The Big 4 AI Systems Analytics)
+                  </h2>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.6 }}>
+                  即時追蹤 OpenAI、Anthropic、Google 與 Perplexity 等全球基礎模型爬蟲抓取您網站原創內容的次數與頻率，證明您原創內容具備被 AI 引用、索引與訓練之高價值。
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', color: '#d8b4fe' }}>
+                <Activity size={14} className="animate-pulse" />
+                <span>AI 索引守護運作中</span>
+              </div>
+            </div>
+
+            {/* 四大 AI 系統卡片 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.2rem', marginBottom: '2rem' }}>
+              {/* 1. OpenAI */}
+              {(() => {
+                const ai = stats?.aiFourBreakdown?.openAI;
+                const total = stats?.totalAiCrawls || 1;
+                const pct = Math.round(((ai?.count || 0) / Math.max(total, 1)) * 100);
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} />
+                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>OpenAI</span>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', padding: '0.15rem 0.5rem', borderRadius: '3px', fontFamily: 'monospace' }}>
+                        GPTBot / ChatGPT
+                      </span>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '1.8rem', color: '#fff', fontWeight: 400, fontFamily: 'var(--font-noto-serif)' }}>
+                        {ai?.count || 0} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>次抓取</span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: '#10b981', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>最後抓取：</span>
+                      <span style={{ color: ai?.lastCrawledAt ? '#e2e8f0' : 'var(--text-secondary)' }}>
+                        {ai?.lastCrawledAt ? new Date(ai.lastCrawledAt).toLocaleDateString() + ' ' + new Date(ai.lastCrawledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '尚無抓取紀錄'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 2. Anthropic (Claude) */}
+              {(() => {
+                const ai = stats?.aiFourBreakdown?.anthropic;
+                const total = stats?.totalAiCrawls || 1;
+                const pct = Math.round(((ai?.count || 0) / Math.max(total, 1)) * 100);
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '6px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }} />
+                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>Anthropic</span>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', padding: '0.15rem 0.5rem', borderRadius: '3px', fontFamily: 'monospace' }}>
+                        ClaudeBot
+                      </span>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '1.8rem', color: '#fff', fontWeight: 400, fontFamily: 'var(--font-noto-serif)' }}>
+                        {ai?.count || 0} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>次抓取</span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: '#f59e0b', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>最後抓取：</span>
+                      <span style={{ color: ai?.lastCrawledAt ? '#e2e8f0' : 'var(--text-secondary)' }}>
+                        {ai?.lastCrawledAt ? new Date(ai.lastCrawledAt).toLocaleDateString() + ' ' + new Date(ai.lastCrawledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '尚無抓取紀錄'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 3. Google AI (Gemini) */}
+              {(() => {
+                const ai = stats?.aiFourBreakdown?.google;
+                const total = stats?.totalAiCrawls || 1;
+                const pct = Math.round(((ai?.count || 0) / Math.max(total, 1)) * 100);
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '6px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#3b82f6' }} />
+                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>Google AI</span>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa', padding: '0.15rem 0.5rem', borderRadius: '3px', fontFamily: 'monospace' }}>
+                        Google-Extended
+                      </span>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '1.8rem', color: '#fff', fontWeight: 400, fontFamily: 'var(--font-noto-serif)' }}>
+                        {ai?.count || 0} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>次抓取</span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: '#3b82f6', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>最後抓取：</span>
+                      <span style={{ color: ai?.lastCrawledAt ? '#e2e8f0' : 'var(--text-secondary)' }}>
+                        {ai?.lastCrawledAt ? new Date(ai.lastCrawledAt).toLocaleDateString() + ' ' + new Date(ai.lastCrawledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '尚無抓取紀錄'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 4. Perplexity AI */}
+              {(() => {
+                const ai = stats?.aiFourBreakdown?.perplexity;
+                const total = stats?.totalAiCrawls || 1;
+                const pct = Math.round(((ai?.count || 0) / Math.max(total, 1)) * 100);
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '6px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#14b8a6' }} />
+                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>Perplexity AI</span>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(20, 184, 166, 0.12)', color: '#2dd4bf', padding: '0.15rem 0.5rem', borderRadius: '3px', fontFamily: 'monospace' }}>
+                        PerplexityBot
+                      </span>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '1.8rem', color: '#fff', fontWeight: 400, fontFamily: 'var(--font-noto-serif)' }}>
+                        {ai?.count || 0} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>次抓取</span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: '#14b8a6', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>最後抓取：</span>
+                      <span style={{ color: ai?.lastCrawledAt ? '#e2e8f0' : 'var(--text-secondary)' }}>
+                        {ai?.lastCrawledAt ? new Date(ai.lastCrawledAt).toLocaleDateString() + ' ' + new Date(ai.lastCrawledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '尚無抓取紀錄'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* AI 抓取內容分析：熱門被抓取路徑 vs 最新爬蟲造訪流水帳 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+              {/* 左：最常被 AI 抓取之內容 Top 10 */}
+              <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', padding: '1.2rem' }}>
+                <h3 style={{ fontSize: '1rem', color: '#fff', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Compass size={16} style={{ color: '#c084fc' }} />
+                  <span>最受 AI 關注的內容與路徑 Top 10</span>
+                </h3>
+
+                {(!stats?.topAiPages || stats.topAiPages.length === 0) ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    尚無 AI 抓取路徑數據，等待爬蟲索引中
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    {stats.topAiPages.map((item, idx) => (
+                      <div key={item.path} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', width: '18px', textAlign: 'center' }}>
+                            {idx + 1}.
+                          </span>
+                          <span style={{ color: '#38bdf8', fontFamily: 'monospace', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            {item.path}
+                          </span>
+                        </div>
+                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem', flexShrink: 0, marginLeft: '0.8rem' }}>
+                          {item.count} 次
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 右：即時 AI 爬蟲造訪流水帳 (Recent 30 Logs) */}
+              <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', padding: '1.2rem' }}>
+                <h3 style={{ fontSize: '1rem', color: '#fff', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Radio size={16} style={{ color: '#34d399' }} />
+                  <span>最新 AI 爬蟲造訪紀錄 (Recent Activity)</span>
+                </h3>
+
+                {(!stats?.recentAiLogs || stats.recentAiLogs.length === 0) ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    尚無 AI 造訪紀錄
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.3rem' }}>
+                    {stats.recentAiLogs.map((log) => {
+                      const familyColor = log.botFamily === 'OpenAI' ? '#10b981' : log.botFamily === 'Anthropic' ? '#f59e0b' : log.botFamily === 'Google' ? '#3b82f6' : log.botFamily === 'Perplexity' ? '#14b8a6' : '#a855f7';
+                      return (
+                        <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.8rem', background: 'rgba(0,0,0,0.4)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.82rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                            <span style={{ fontSize: '0.72rem', background: `${familyColor}20`, color: familyColor, border: `1px solid ${familyColor}40`, padding: '0.1rem 0.4rem', borderRadius: '3px', fontWeight: 600, flexShrink: 0 }}>
+                              {log.botName}
+                            </span>
+                            <span style={{ color: '#e2e8f0', fontFamily: 'monospace', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={log.path}>
+                              {log.path}
+                            </span>
+                          </div>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', flexShrink: 0, marginLeft: '0.8rem' }}>
+                            {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* 真人訪客分析 (Human Traffic & Referrers) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+            {/* 真人熱門頁面 Top 10 */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', color: '#fff', margin: '0 0 1.2rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                <Users size={18} style={{ color: '#38bdf8' }} />
+                <span>真人訪客最常造訪頁面 (Top Pages)</span>
+              </h3>
+
+              {(!stats?.topPages || stats.topPages.length === 0) ? (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  尚無頁面造訪數據
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  {stats.topPages.map((item, idx) => (
+                    <div key={item.path} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', width: '18px', textAlign: 'center' }}>
+                          {idx + 1}.
+                        </span>
+                        <span style={{ color: '#fff', fontFamily: 'monospace', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {item.path}
+                        </span>
+                      </div>
+                      <span style={{ color: '#38bdf8', fontWeight: 600, fontSize: '0.85rem', flexShrink: 0, marginLeft: '0.8rem' }}>
+                        {item.count} 次瀏覽
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 真人訪客裝置分佈 */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', color: '#fff', margin: '0 0 1.2rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                <Monitor size={18} style={{ color: '#ec4899' }} />
+                <span>訪客使用裝置分佈 (Device Breakdown)</span>
+              </h3>
+
+              {(!stats?.deviceStats || stats.deviceStats.length === 0) ? (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  尚無裝置數據
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {stats.deviceStats.map((item) => {
+                    const total = stats.deviceStats!.reduce((acc, curr) => acc + curr.count, 0);
+                    const pct = Math.round((item.count / Math.max(total, 1)) * 100);
+                    return (
+                      <div key={item.device} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: '#fff' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            {item.device === 'Mobile' ? <Smartphone size={16} style={{ color: '#ec4899' }} /> : <Monitor size={16} style={{ color: '#38bdf8' }} />}
+                            {item.device === 'Mobile' ? '行動裝置 (Mobile)' : item.device === 'Tablet' ? '平板電腦 (Tablet)' : '桌上型電腦 (Desktop)'}
+                          </span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{item.count} 次 ({pct}%)</span>
+                        </div>
+                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: item.device === 'Mobile' ? 'linear-gradient(90deg, #ec4899, #f472b6)' : 'linear-gradient(90deg, #0284c7, #38bdf8)', borderRadius: '4px', transition: 'width 0.6s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
           {/* 各通行碼進入次數統計 (首頁選擇通行碼登入) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
           <div className="glass-panel" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.6rem' }}>
               <h2 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, fontFamily: 'var(--font-noto-serif)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -2416,6 +2827,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* 各展區探索次數分布 (6大展區) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
           <div className="glass-panel" style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', fontFamily: 'var(--font-noto-serif)' }}>
               各展區探索次數分布 (6大展區)
@@ -2451,6 +2865,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* 近期造訪紀錄 (Recent Activity Logs) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
           <div className="glass-panel" style={{ padding: '2rem' }}>
             <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1.5rem', fontFamily: 'var(--font-noto-serif)' }}>
               近期造訪紀錄 (Recent Activity Logs)

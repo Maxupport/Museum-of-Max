@@ -22,6 +22,7 @@ model Passcode {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   pageviews   PageView[]
+  visitorLogs VisitorLog[]
 }
 
 // 流量統計 (Pageviews)
@@ -127,4 +128,39 @@ model WritingsItem {
   order       Int      @default(0)     // 排序 (數字越小越前面)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// AI 爬蟲造訪紀錄 (AI Crawler Logs for OpenAI, Anthropic, Google, Perplexity, etc.)
+model AiCrawlerLog {
+  id         String   @id @default(cuid())
+  botFamily  String   // "OpenAI" | "Anthropic" | "Google" | "Perplexity" | "Meta" | "Apple" | "Other"
+  botName    String   // "GPTBot" | "ClaudeBot" | "Google-Extended" | "PerplexityBot" etc.
+  userAgent  String   // Full User-Agent string
+  path       String   // Visited path e.g. "/", "/museum/sound", "/projects"
+  ip         String?  // Optional IP
+  referer    String?  // Referer if any
+  createdAt  DateTime @default(now())
+
+  @@index([botFamily])
+  @@index([createdAt])
+  @@index([path])
+}
+
+// 真人訪客紀錄 (Human Visitor Logs)
+model VisitorLog {
+  id         String    @id @default(cuid())
+  visitorId  String    // Anonymous client UUID for UV calculation
+  path       String    // Visited path
+  title      String?   // Page title
+  referer    String?   // Document referrer
+  device     String?   // "Desktop" | "Mobile" | "Tablet"
+  browser    String?   // "Chrome" | "Safari" | "Firefox" | "Edge" | "Other"
+  os         String?   // "macOS" | "Windows" | "iOS" | "Android" | "Linux"
+  passcodeId String?   // Linked passcode ID if entered
+  passcode   Passcode? @relation(fields: [passcodeId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+
+  @@index([visitorId])
+  @@index([path])
+  @@index([createdAt])
 }
