@@ -289,17 +289,25 @@ export default function AdminDashboardPage() {
 
   const handleEditMusic = (item: MusicItemData) => {
     setEditingMusicId(item.id);
-    setMCategory(item.category || '個人聲音探索心得');
+    setMCategory(item.category || (soundSubCategoryFilter !== '全部分類' ? soundSubCategoryFilter : '青春之歌計畫'));
     setMTitle(item.title);
     setMYoutubeUrl(item.youtubeUrl);
     setMDescription(item.description || '');
     setMOrder(item.order || 0);
     setMusicFormError('');
+    setTimeout(() => {
+      const formEl = document.getElementById('sound-music-form');
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 50);
   };
 
   const handleCancelMusicEdit = () => {
     setEditingMusicId(null);
-    setMCategory(activeTab === 'creation_lab' ? '音樂' : '個人聲音探索心得');
+    setMCategory(activeTab === 'creation_lab' ? '音樂' : (soundSubCategoryFilter !== '全部分類' ? soundSubCategoryFilter : '青春之歌計畫'));
     setMTitle('');
     setMYoutubeUrl('');
     setMDescription('');
@@ -2638,7 +2646,7 @@ export default function AdminDashboardPage() {
       {/* Tab 6: Sound Exploration (聲音探索專用後台頁籤) */}
       {activeTab === 'sound' && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* 頂部說明與全站文章編輯器跳轉按鈕 */}
+          {/* 頂部說明與動作按鈕 */}
           <div className="glass-panel" style={{ padding: '1.5rem 2rem', borderLeft: '4px solid #ec4899', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h2 style={{ fontSize: '1.3rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
@@ -2646,31 +2654,221 @@ export default function AdminDashboardPage() {
                 聲音探索 (Sound Exploration) 作品管理
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '0.4rem', margin: 0, lineHeight: 1.6 }}>
-                管理聲音探索專題文章與影音作品！文章發布與編輯已全面整合至全站文章發布中心。
+                管理聲音探索專題文章與影音作品！可在此發布與編輯 YouTube 聲音作品，或撰寫專題文章。
               </p>
             </div>
-            <button
-              onClick={() => {
-                setActiveTab('articles');
-                setFilterArticleExhibit('sound');
-                setArticleSubTab('editor');
-              }}
-              style={{
-                background: 'rgba(236, 72, 153, 0.15)',
-                border: '1px solid #ec4899',
-                color: '#fff',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '4px',
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: 500
-              }}
-            >
-              <Plus size={16} /> 撰寫聲音探索專題文章
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => {
+                  handleCancelMusicEdit();
+                  if (soundSubCategoryFilter !== '全部分類') {
+                    setMCategory(soundSubCategoryFilter);
+                  } else {
+                    setMCategory('青春之歌計畫');
+                  }
+                  const formEl = document.getElementById('sound-music-form');
+                  if (formEl) {
+                    formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }}
+                style={{
+                  background: 'rgba(236, 72, 153, 0.25)',
+                  border: '1px solid #ec4899',
+                  color: '#fff',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '4px',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontWeight: 500
+                }}
+              >
+                <Plus size={16} /> 新增聲音 / 音樂作品
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('articles');
+                  setFilterArticleExhibit('sound');
+                  setArticleSubTab('editor');
+                }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#fff',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '4px',
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontWeight: 500
+                }}
+              >
+                <Plus size={16} /> 撰寫聲音探索專題文章
+              </button>
+            </div>
+          </div>
+
+          {/* 聲音探索作品 (YouTube 影音/音樂) 發布與編輯表單 */}
+          <div
+            id="sound-music-form"
+            className="glass-panel"
+            style={{
+              padding: '2rem',
+              border: editingMusicId ? '1.5px solid #ec4899' : '1px solid rgba(255,255,255,0.1)',
+              background: editingMusicId ? 'rgba(236, 72, 153, 0.06)' : undefined,
+              transition: 'all 0.3s ease',
+              boxShadow: editingMusicId ? '0 0 25px rgba(236, 72, 153, 0.2)' : undefined,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
+                {editingMusicId ? <Edit3 size={20} style={{ color: '#ec4899' }} /> : <Plus size={20} style={{ color: '#ec4899' }} />}
+                {editingMusicId ? `編輯聲音作品：${mTitle || '編輯中'}` : '發布聲音探索影音 / 音樂作品'}
+              </h2>
+              {editingMusicId && (
+                <button
+                  type="button"
+                  onClick={handleCancelMusicEdit}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#fff',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.82rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem'
+                  }}
+                >
+                  <X size={14} /> 取消編輯
+                </button>
+              )}
+            </div>
+
+            {musicFormError && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.6rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                {musicFormError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveMusic} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    子分類 *
+                  </label>
+                  <select
+                    value={mCategory}
+                    onChange={(e) => setMCategory(e.target.value)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%', background: '#111827', color: '#fff' }}
+                    required
+                  >
+                    <option value="青春之歌計畫">青春之歌計畫</option>
+                    <option value="個人聲音探索心得">個人聲音探索心得</option>
+                    <option value="人聲優化歷程記錄">人聲優化歷程記錄</option>
+                    <option value="人聲優化課程">人聲優化課程</option>
+                    <option value="聲音探尋">聲音探尋</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    曲目 / 創作名稱 *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="例如: No.016 放心去飛 (原唱：小虎隊) Covered by Max"
+                    value={mTitle}
+                    onChange={(e) => setMTitle(e.target.value)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%' }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                    顯示排序 (數字越小越前面)
+                  </label>
+                  <input
+                    type="number"
+                    value={mOrder}
+                    onChange={(e) => setMOrder(parseInt(e.target.value) || 0)}
+                    className="museum-input"
+                    style={{ maxWidth: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  YouTube 影片網址 (URL) *
+                </label>
+                <input
+                  type="text"
+                  placeholder="例如: https://youtu.be/xxx 或 https://www.youtube.com/watch?v=xxx"
+                  value={mYoutubeUrl}
+                  onChange={(e) => setMYoutubeUrl(e.target.value)}
+                  className="museum-input"
+                  style={{ maxWidth: '100%' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                  曲目簡介 / 靈感故事 / 逐字歌詞
+                </label>
+                <textarea
+                  placeholder="輸入曲目介紹、創作背景、心得感想或完整歌詞..."
+                  value={mDescription}
+                  onChange={(e) => setMDescription(e.target.value)}
+                  className="museum-input"
+                  style={{ maxWidth: '100%', minHeight: '120px', resize: 'vertical', lineHeight: 1.6 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.8rem' }}>
+                <button
+                  type="submit"
+                  className="museum-btn"
+                  disabled={creatingMusic}
+                  style={{
+                    flex: 1,
+                    background: editingMusicId ? 'rgba(236, 72, 153, 0.25)' : 'rgba(236, 72, 153, 0.15)',
+                    borderColor: '#ec4899',
+                    color: '#fff',
+                    fontWeight: 600,
+                  }}
+                >
+                  {creatingMusic ? '儲存中...' : (editingMusicId ? '✓ 儲存更新作品' : '＋ 發布聲音作品')}
+                </button>
+                {editingMusicId && (
+                  <button
+                    type="button"
+                    onClick={handleCancelMusicEdit}
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'var(--text-secondary)',
+                      padding: '0.6rem 1.2rem',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    取消
+                  </button>
+                )}
+              </div>
+            </form>
           </div>
 
           {/* 子標籤切換選單 */}

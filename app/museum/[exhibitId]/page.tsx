@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2 } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, X } from 'lucide-react';
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { EXHIBITS, YOUTH_SONGS_YOUTUBE_CHANNEL } from '@/lib/constants';
@@ -119,6 +119,23 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   // Music Items state (for creation_lab music subcategory or sound exhibit)
   const [musicItems, setMusicItems] = useState<MusicItem[]>([]);
   const [musicLoading, setMusicLoading] = useState(false);
+  const [selectedMusicItem, setSelectedMusicItem] = useState<MusicItem | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedMusicItem(null);
+      }
+    };
+    if (selectedMusicItem) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedMusicItem]);
 
   // Writings Items state (for creation_lab FB文章備份 subcategory)
   const [writingsItems, setWritingsItems] = useState<WritingsItem[]>([]);
@@ -876,50 +893,37 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             )
           ) : (exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) ? (
             <>
-              {/* 青春之歌計畫專屬 YouTube 頻道 Banner */}
+              {/* 青春之歌計畫專屬 YouTube 頻道 Banner (精緻緊湊，聚焦展區內容) */}
               {activeSubCategory === '青春之歌計畫' && (
                 <div 
-                  className="glass-panel" 
-                  style={{ 
-                    marginBottom: '2.5rem', 
-                    padding: '1.8rem 2.2rem', 
-                    borderRadius: '8px', 
-                    background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    boxShadow: '0 8px 32px rgba(239, 68, 68, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '1.5rem'
-                  }}
+                  className="glass-panel youth-songs-banner" 
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: '240px', flex: '1 1 auto' }}>
                     <div style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '12px',
-                      background: 'rgba(255, 0, 0, 0.18)',
-                      border: '1px solid rgba(255, 0, 0, 0.4)',
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 0, 0, 0.16)',
+                      border: '1px solid rgba(255, 0, 0, 0.35)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#ff4d4d',
-                      boxShadow: '0 0 20px rgba(255, 0, 0, 0.3)',
+                      boxShadow: '0 0 10px rgba(255, 0, 0, 0.25)',
                       flexShrink: 0
                     }}>
-                      <YoutubeIcon size={28} />
+                      <YoutubeIcon size={18} />
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.2)', color: '#ff6b6b', padding: '0.15rem 0.6rem', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.4)', letterSpacing: '1px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.65rem', background: 'rgba(239, 68, 68, 0.2)', color: '#ff6b6b', padding: '0.1rem 0.45rem', borderRadius: '3px', border: '1px solid rgba(239, 68, 68, 0.35)', letterSpacing: '0.5px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           YOUTUBE CHANNEL
                         </span>
+                        <h3 style={{ fontSize: '1.02rem', color: '#fff', fontWeight: 600, fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
+                          {YOUTH_SONGS_YOUTUBE_CHANNEL.name}
+                        </h3>
                       </div>
-                      <h3 style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 600, fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
-                        {YOUTH_SONGS_YOUTUBE_CHANNEL.name}
-                      </h3>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.3rem', margin: 0 }}>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.15rem', margin: 0 }}>
                         {YOUTH_SONGS_YOUTUBE_CHANNEL.description}
                       </p>
                     </div>
@@ -932,29 +936,30 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.6rem',
-                      padding: '0.75rem 1.6rem',
+                      gap: '0.45rem',
+                      padding: '0.45rem 1rem',
                       borderRadius: '6px',
                       background: '#ff0000',
                       color: '#ffffff',
                       fontWeight: 600,
-                      fontSize: '0.92rem',
+                      fontSize: '0.84rem',
                       textDecoration: 'none',
-                      boxShadow: '0 4px 15px rgba(255, 0, 0, 0.4)',
-                      transition: 'all 0.3s ease'
+                      boxShadow: '0 3px 10px rgba(255, 0, 0, 0.35)',
+                      transition: 'all 0.25s ease',
+                      flexShrink: 0
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 0, 0, 0.6)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 5px 15px rgba(255, 0, 0, 0.5)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 0, 0, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 3px 10px rgba(255, 0, 0, 0.35)';
                     }}
                   >
-                    <YoutubeIcon size={18} />
+                    <YoutubeIcon size={16} />
                     <span>造訪 YouTube 頻道</span>
-                    <ExternalLink size={15} />
+                    <ExternalLink size={13} />
                   </a>
                 </div>
               )}
@@ -970,11 +975,23 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   </p>
                 </div>
               ) : (
-                <div className="exhibit-items-grid" style={{ gap: '2.5rem' }}>
+                <div className="exhibit-items-grid" style={{ gap: '2rem' }}>
                   {filteredMusicItems.map((item) => {
                     const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
                     return (
-                      <div key={item.id} className="glass-panel exhibit-card" style={{ padding: '0', overflow: 'hidden', color: exhibit.color, display: 'flex', flexDirection: 'column' }}>
+                      <div
+                        key={item.id}
+                        className="glass-panel exhibit-card"
+                        style={{
+                          padding: '0',
+                          overflow: 'hidden',
+                          color: exhibit.color,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          height: '100%',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
                         {/* 16:9 響應式 YouTube Player */}
                         <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
                           {embedUrl ? (
@@ -992,19 +1009,63 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           )}
                         </div>
 
-                        <div style={{ padding: '1.5rem 1.8rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>{item.category || '音樂創作'}</span>
-                            {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none' }}>{formatTimestamp(item.createdAt)}</span>}
+                        {/* 卡片下半部文字資訊：固定顯示3行並以...截斷，點擊可展開完整內文 */}
+                        <div
+                          onClick={() => setSelectedMusicItem(item)}
+                          style={{
+                            padding: '1.25rem 1.6rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flexGrow: 1,
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                          }}
+                          title="點擊查看完整內容與曲目故事"
+                        >
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            <span style={{ whiteSpace: 'nowrap' }}>{item.category || '音樂創作'}</span>
+                            {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none', whiteSpace: 'nowrap' }}>{formatTimestamp(item.createdAt)}</span>}
                           </div>
-                          <h3 style={{ color: '#fff', fontSize: '1.25rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.6rem', lineHeight: 1.4 }}>
+                          <h3 style={{ color: '#fff', fontSize: '1.2rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.5rem', lineHeight: 1.4 }}>
                             {item.title}
                           </h3>
                           {item.description && (
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6, marginTop: 'auto' }}>
+                            <p
+                              style={{
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.86rem',
+                                lineHeight: 1.6,
+                                marginTop: '0.2rem',
+                                marginBottom: 'auto',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                wordBreak: 'break-word',
+                              }}
+                            >
                               {item.description}
                             </p>
                           )}
+
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              color: '#ff6b6b',
+                              fontSize: '0.82rem',
+                              fontWeight: 500,
+                              marginTop: '0.9rem',
+                              paddingTop: '0.6rem',
+                              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                              transition: 'color 0.2s ease',
+                            }}
+                          >
+                            <span>閱讀完整內文</span>
+                            <ChevronRight size={14} />
+                          </div>
                         </div>
                       </div>
                     );
@@ -1371,6 +1432,198 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               <p style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem' }}>No exhibits found matching your criteria</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 青春之歌 / 音樂作品 完整內文彈出視窗 (Modal) */}
+      {selectedMusicItem && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+          onClick={() => setSelectedMusicItem(null)}
+        >
+          <div
+            className="glass-panel"
+            style={{
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#0f141c',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(239, 68, 68, 0.15)',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '1.2rem 1.5rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'rgba(255, 255, 255, 0.02)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    color: '#ff6b6b',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    letterSpacing: '1px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {selectedMusicItem.category || '青春之歌計畫'}
+                </span>
+                {selectedMusicItem.createdAt && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    {formatTimestamp(selectedMusicItem.createdAt)}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedMusicItem(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#aaa',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#aaa';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                }}
+                aria-label="關閉視窗"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div style={{ overflowY: 'auto', padding: '1.5rem', flex: 1 }}>
+              {/* Video Player in Modal */}
+              <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.25rem' }}>
+                {getYouTubeEmbedUrl(selectedMusicItem.youtubeUrl) ? (
+                  <iframe
+                    src={getYouTubeEmbedUrl(selectedMusicItem.youtubeUrl)!}
+                    title={selectedMusicItem.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  />
+                ) : (
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    無效的影片網址
+                  </div>
+                )}
+              </div>
+
+              <h2 style={{ fontSize: '1.35rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '1rem', lineHeight: 1.4 }}>
+                {selectedMusicItem.title}
+              </h2>
+
+              {selectedMusicItem.description && (
+                <div
+                  style={{
+                    color: 'rgba(255, 255, 255, 0.88)',
+                    fontSize: '0.95rem',
+                    lineHeight: 1.8,
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'var(--font-noto-sans)',
+                    paddingTop: '0.75rem',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {selectedMusicItem.description}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: '0.9rem 1.5rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'rgba(255, 255, 255, 0.02)',
+              }}
+            >
+              {selectedMusicItem.youtubeUrl && (
+                <a
+                  href={selectedMusicItem.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    color: '#ff4d4d',
+                    fontSize: '0.85rem',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                  }}
+                >
+                  <YoutubeIcon size={16} />
+                  <span>在 YouTube 上觀看完整影片</span>
+                  <ExternalLink size={13} />
+                </a>
+              )}
+              <button
+                onClick={() => setSelectedMusicItem(null)}
+                style={{
+                  padding: '0.45rem 1.2rem',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  marginLeft: 'auto'
+                }}
+              >
+                關閉
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

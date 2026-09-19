@@ -325,7 +325,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Exhibit page responsive container */
 .exhibit-page-container {
-  padding: 1.8rem 2rem 4rem 2rem;
+  padding: 1.25rem 2rem 4rem 2rem;
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
@@ -564,10 +564,32 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   position: relative;
+}
+
+.youth-songs-banner {
+  margin-bottom: 1.25rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(15, 23, 42, 0.5) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .youth-songs-banner {
+    padding: 0.6rem 0.85rem;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
 }
 
 .exhibit-subcategories-bar {
