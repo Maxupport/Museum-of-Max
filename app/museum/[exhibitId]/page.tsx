@@ -359,20 +359,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       </header>
 
       {/* 展區控制工具列：整合子分類頁籤與搜尋 (Unified Filter & Search Toolbar) */}
-      <div 
-        className="animate-fade-in" 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          flexWrap: 'wrap', 
-          gap: '1rem', 
-          marginBottom: '2rem',
-          paddingBottom: '1rem',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          position: 'relative'
-        }}
-      >
+      <div className="animate-fade-in exhibit-toolbar">
         {/* LED 亮線裝飾 */}
         <div style={{
           position: 'absolute',
@@ -386,7 +373,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
         {/* 子區塊頁籤 */}
         {exhibit.subcategories.length > 0 ? (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center' }}>
+          <div className="exhibit-subcategories-bar">
             {exhibit.subcategories.map((subCat) => {
               const isActive = activeSubCategory === subCat;
               return (
@@ -396,20 +383,12 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     setActiveSubCategory(subCat);
                     setSearchKeyword(''); 
                   }}
+                  className={`exhibit-subcategory-btn ${isActive ? 'active' : ''}`}
                   style={{
-                    padding: '0.45rem 1.2rem',
-                    border: '1px solid',
-                    borderColor: isActive ? exhibit.color : 'rgba(255,255,255,0.12)',
-                    background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                    color: isActive ? '#fff' : 'var(--text-secondary)',
-                    fontSize: '0.9rem',
-                    letterSpacing: '0.5px',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    fontFamily: 'var(--font-noto-sans)',
-                    borderRadius: '4px',
-                    boxShadow: isActive ? `0 0 12px ${exhibit.color}33` : 'none',
-                    fontWeight: isActive ? 500 : 400
+                    borderColor: isActive ? exhibit.color : undefined,
+                    background: isActive ? 'rgba(255,255,255,0.08)' : undefined,
+                    color: isActive ? '#fff' : undefined,
+                    boxShadow: isActive ? `0 0 12px ${exhibit.color}33` : undefined,
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
@@ -437,46 +416,25 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
         {/* 右側：搜尋列 (或 VC 專案洽詢按鈕 + 搜尋) */}
         {!exhibit.isTimeline && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginLeft: 'auto' }}>
+          <div className="exhibit-toolbar-actions">
             {exhibitId === 'vc' && (
               <a
                 href="mailto:maxupport@gmail.com?subject=【風險投資/FA諮詢】來自網站的合作與項目提案"
-                className="museum-btn"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.45rem 1rem',
-                  fontSize: '0.82rem',
-                  background: 'rgba(56, 189, 248, 0.12)',
-                  borderColor: 'rgba(56, 189, 248, 0.35)',
-                  color: '#38bdf8',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  transition: 'all 0.3s ease'
-                }}
+                className="museum-btn exhibit-email-btn"
               >
                 <Mail size={15} />
                 <span>Email 聯絡策展人</span>
               </a>
             )}
 
-            <div style={{ position: 'relative', width: '100%', minWidth: '200px', maxWidth: '280px' }}>
-              <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+            <div className="exhibit-search-container">
+              <Search size={16} className="exhibit-search-icon" />
               <input 
                 type="text" 
                 placeholder={exhibitId === 'vc' ? "Search venture projects..." : "Search in this section..."}
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                className="museum-input"
-                style={{
-                  padding: '0.45rem 1rem 0.45rem 2.5rem',
-                  fontSize: '0.85rem',
-                  border: 'none',
-                  borderBottom: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '0',
-                  background: 'rgba(255,255,255,0.02)'
-                }}
+                className="museum-input exhibit-search-input"
               />
             </div>
           </div>
@@ -498,11 +456,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               <p style={{ letterSpacing: '1px' }}>此子區塊尚無項目資料。</p>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-              gap: '2rem'
-            }}>
+            <div className="exhibit-items-grid">
               {filteredVentureItems.map((item) => {
                 const isCenteredLogo = ['早期投資', '早期投資項目', '新創項目評估', '創投項目評估', '募資 FA 服務', '募資FA服務'].includes(item.category) || true;
 
@@ -827,11 +781,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無作品。</p>
               </div>
             ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-                gap: '2.5rem'
-              }}>
+              <div className="exhibit-items-grid" style={{ gap: '2.5rem' }}>
                 {filteredWritingsItems.map((item, index) => {
                   let isVocal = item.category === '人聲優化課程' || item.category === '人聲優化歷程記錄';
                   let versionCount = 0;
@@ -1020,7 +970,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   </p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2.5rem' }}>
+                <div className="exhibit-items-grid" style={{ gap: '2.5rem' }}>
                   {filteredMusicItems.map((item) => {
                     const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
                     return (
@@ -1159,7 +1109,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.8rem' }}>
+                <div className="exhibit-items-grid" style={{ gap: '1.8rem' }}>
                   {filteredWritingsItems.map((item) => {
                     let coverImage: string | null = null;
                     if (item.content) {

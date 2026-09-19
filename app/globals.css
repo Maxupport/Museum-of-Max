@@ -31,6 +31,8 @@
 html {
   scroll-behavior: smooth;
   overscroll-behavior-y: none;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -43,6 +45,9 @@ body {
   background-image: radial-gradient(circle at 50% 0%, #151515 0%, #050505 50%);
   background-attachment: fixed;
   overscroll-behavior-y: none;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -57,6 +62,8 @@ h1, h2, h3, h4, h5, h6 {
   padding-top: 65px;
   position: relative;
   overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 /* Glassmorphism Panel - Changed to sleek museum display case */
@@ -232,19 +239,89 @@ h1, h2, h3, h4, h5, h6 {
 /* Museum Exhibition Hall 6-Galleries Grid (Desktop: 3x2) */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.8rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.gallery-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+}
+
+.gallery-grid .exhibit-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 1.8rem 2rem;
+  min-height: 230px;
+}
+
+.gallery-card-desc {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 1025px) {
+  .gallery-card-desc {
+    white-space: nowrap;
+    display: block;
+    text-overflow: ellipsis;
+  }
 }
 
 @media (max-width: 1024px) {
   .gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.4rem;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  #galleries-section {
+    padding: 2.5rem 1.25rem 5.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
   .gallery-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 1.25rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .gallery-grid .exhibit-card {
+    padding: 1.4rem 1.25rem !important;
+    min-height: auto !important;
+  }
+
+  .gallery-card-desc {
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    line-height: 1.5 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
   }
 }
 
@@ -254,11 +331,36 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 @media (max-width: 768px) {
   .exhibit-page-container {
     padding: 1rem 1rem 3rem 1rem;
+  }
+}
+
+/* Exhibit items responsive grid */
+.exhibit-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.exhibit-items-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .exhibit-items-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 1.25rem !important;
   }
 }
 
@@ -331,5 +433,226 @@ h1, h2, h3, h4, h5, h6 {
   .novel-reader-main-content {
     max-width: 100%;
   }
+}
+
+/* Mobile-specific optimizations for Novel Reader */
+@media (max-width: 768px) {
+  .novel-reader-wrapper {
+    padding: 1rem 0.85rem 4rem !important;
+  }
+  .novel-reader-topbar {
+    margin-bottom: 1rem !important;
+    gap: 0.6rem !important;
+  }
+  .novel-reader-header {
+    margin-bottom: 1.25rem !important;
+  }
+  .novel-reader-title {
+    font-size: 1.65rem !important;
+    margin-bottom: 0.4rem !important;
+    line-height: 1.25 !important;
+  }
+  .novel-reader-desc {
+    font-size: 0.88rem !important;
+    margin-bottom: 0.75rem !important;
+    line-height: 1.5 !important;
+  }
+  .novel-reader-meta {
+    font-size: 0.78rem !important;
+    gap: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .novel-chapter-container {
+    padding: 1.35rem 1rem !important;
+    margin-bottom: 2rem !important;
+    border-radius: 6px !important;
+  }
+  .novel-chapter-title {
+    font-size: 1.3rem !important;
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 0.75rem !important;
+    letter-spacing: 0.5px !important;
+  }
+  .novel-article-body {
+    font-size: 1rem !important;
+    line-height: 1.85 !important;
+    letter-spacing: 0.3px !important;
+  }
+  .novel-article-body p {
+    margin-bottom: 1.25rem !important;
+  }
+
+  /* Museum Intro Card Mobile Scaling */
+  .museum-intro-card {
+    padding: 0.9rem 0.75rem !important;
+  }
+  .museum-intro-title {
+    font-size: clamp(0.78rem, 3.8vw, 1.15rem) !important;
+    white-space: nowrap !important;
+    letter-spacing: 0.3px !important;
+    margin-bottom: 0.45rem !important;
+  }
+  .museum-intro-desc {
+    font-size: clamp(0.68rem, 2.5vw, 0.82rem) !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0.2px !important;
+  }
+  .museum-intro-reminder {
+    padding: 0.45rem 0.65rem !important;
+    margin-top: 0.75rem !important;
+    font-size: clamp(0.64rem, 2.25vw, 0.76rem) !important;
+    line-height: 1.45 !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  /* Keep subcategory buttons strictly on 1 row matching desktop */
+  .exhibit-toolbar {
+    gap: 0.75rem !important;
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .exhibit-subcategories-bar {
+    width: 100% !important;
+    gap: 0.35rem !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 2px !important;
+  }
+  .exhibit-subcategories-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .exhibit-subcategory-btn {
+    padding: 0.28rem 0.45rem !important;
+    font-size: clamp(0.7rem, 2.6vw, 0.8rem) !important;
+    letter-spacing: 0.2px !important;
+    flex-shrink: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .exhibit-toolbar-actions {
+    width: 100% !important;
+    margin-left: 0 !important;
+    gap: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .exhibit-email-btn {
+    padding: 0.32rem 0.6rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.35rem !important;
+    flex-shrink: 0 !important;
+  }
+  .exhibit-search-container {
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .exhibit-search-input {
+    padding: 0.35rem 0.6rem 0.35rem 2rem !important;
+    font-size: 0.78rem !important;
+  }
+  .exhibit-search-icon {
+    left: 0.65rem !important;
+    width: 13px !important;
+    height: 13px !important;
+  }
+}
+
+/* Exhibit Toolbar & Subcategory Base Styles */
+.exhibit-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+}
+
+.exhibit-subcategories-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.exhibit-subcategory-btn {
+  padding: 0.45rem 1.1rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: var(--font-noto-sans), sans-serif;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.exhibit-subcategory-btn:hover:not(.active) {
+  border-color: rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+.exhibit-subcategory-btn.active {
+  font-weight: 500;
+}
+
+.exhibit-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.exhibit-email-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem !important;
+  font-size: 0.82rem !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #38bdf8 !important;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.exhibit-search-container {
+  position: relative;
+  width: 100%;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.exhibit-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.exhibit-search-input {
+  padding: 0.45rem 1rem 0.45rem 2.5rem !important;
+  font-size: 0.85rem !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+  border-radius: 0 !important;
+  background: rgba(255,255,255,0.02) !important;
+  width: 100%;
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen } from 'lucide-react';
+import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, AlignLeft } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 
 interface PasscodeItem {
@@ -499,6 +499,46 @@ export default function AdminDashboardPage() {
   const [filterArticleExhibit, setFilterArticleExhibit] = useState<string>('all');
   const [isCustomNovelTitle, setIsCustomNovelTitle] = useState(false);
 
+  // 上架內文排版調整機制狀態與處理工具
+  const [autoTrimLeadingSpaces, setAutoTrimLeadingSpaces] = useState(true);
+  const [formatNotice, setFormatNotice] = useState<string | null>(null);
+
+  const handleFormatContentLeft = () => {
+    if (!wContent) return;
+    const formatted = wContent
+      .split('\n')
+      .map((line) => line.replace(/^[\s\u3000\u00A0\u2000-\u200B\uFEFF]+/, ''))
+      .join('\n');
+    setWContent(formatted);
+    setFormatNotice('已統一文字靠左排版，並清除所有段落首行空格！');
+    setTimeout(() => setFormatNotice(null), 3500);
+  };
+
+  const handleFormatContentIndent = () => {
+    if (!wContent) return;
+    const formatted = wContent
+      .split('\n')
+      .map((line) => {
+        const trimmed = line.replace(/^[\s\u3000\u00A0\u2000-\u200B\uFEFF]+/, '');
+        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('>') || /^[一二三四五六七八九十]+[、.]/.test(trimmed)) {
+          return trimmed;
+        }
+        return '　　' + trimmed;
+      })
+      .join('\n');
+    setWContent(formatted);
+    setFormatNotice('已轉換為傳統首行縮排排版（每段開頭加 2 格全形空格）');
+    setTimeout(() => setFormatNotice(null), 3500);
+  };
+
+  const handleFormatCleanEmptyLines = () => {
+    if (!wContent) return;
+    const formatted = wContent.replace(/\n{3,}/g, '\n\n');
+    setWContent(formatted);
+    setFormatNotice('已整理多餘連續空行');
+    setTimeout(() => setFormatNotice(null), 3500);
+  };
+
   const existingNovelTitles = Array.from(
     new Set(
       writingsItems
@@ -619,18 +659,25 @@ export default function AdminDashboardPage() {
       const method = editingWritingId ? 'PUT' : 'POST';
 
       const isVocalCategory = wCategory === '人聲優化歷程記錄' || wCategory === '人聲優化課程';
-      let finalContent = wContent;
+      let processedContent = wContent;
+      if (autoTrimLeadingSpaces) {
+        processedContent = wContent
+          .split('\n')
+          .map((line) => line.replace(/^[\s\u3000\u00A0\u2000-\u200B\uFEFF]+/, ''))
+          .join('\n');
+      }
+      let finalContent = processedContent;
       if (isVocalCategory) {
         finalContent = JSON.stringify({
           isVocalCourse: true,
           coverImage: wCoverImage || '',
-          overview: wExcerpt || wContent || '人聲優化歷程記錄 - 多版本對比演進錄音',
+          overview: wExcerpt || processedContent || '人聲優化歷程記錄 - 多版本對比演進錄音',
           versions: wVocalVersions
         });
       } else if (wCoverImage.trim()) {
         finalContent = JSON.stringify({
           coverImage: wCoverImage.trim(),
-          textContent: wContent
+          textContent: processedContent
         });
       }
 
@@ -742,6 +789,7 @@ export default function AdminDashboardPage() {
     setWYoutubeUrl('');
     setWVocalVersions([{ id: 'v1', versionTitle: 'Ver 1.0 課程前初測錄音', date: '', youtubeUrl: '', notes: '' }]);
     setWOrder(0);
+    setFormatNotice(null);
     setArticleSubTab('list');
   };
 
@@ -4493,9 +4541,69 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                        📜 章節內文 *
-                      </label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
+                          📜 章節內文 *
+                        </label>
+                        {/* 格式調整工具列 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={handleFormatContentLeft}
+                            style={{
+                              background: 'rgba(56, 189, 248, 0.12)',
+                              border: '1px solid rgba(56, 189, 248, 0.35)',
+                              color: '#38bdf8',
+                              fontSize: '0.78rem',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              fontWeight: 500,
+                            }}
+                            title="清除段落前所有半形/全形空格，使所有段落完全統一靠左對齊"
+                          >
+                            🪄 一鍵統一靠左（清除首行空格）
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFormatContentIndent}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              color: 'rgba(255, 255, 255, 0.75)',
+                              fontSize: '0.78rem',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                            }}
+                            title="每段首行縮排 2 個全形空格"
+                          >
+                            📐 轉為首行縮排 2 格
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFormatCleanEmptyLines}
+                            style={{
+                              background: 'none',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              color: 'rgba(255, 255, 255, 0.5)',
+                              fontSize: '0.75rem',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                            }}
+                            title="整理連續空行"
+                          >
+                            ✨ 整理空行
+                          </button>
+                        </div>
+                      </div>
                       <textarea
                         placeholder="請在此貼上或輸入小說章節的完整內文..."
                         value={wContent}
@@ -4504,6 +4612,25 @@ export default function AdminDashboardPage() {
                         style={{ maxWidth: '100%', minHeight: '380px', resize: 'vertical', lineHeight: '1.75', fontFamily: 'var(--font-noto-sans)', padding: '1rem', fontSize: '0.95rem' }}
                         required
                       />
+                      {formatNotice && (
+                        <div style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: '0.4rem', animation: 'fadeIn 0.2s ease' }}>
+                          ✅ {formatNotice}
+                        </div>
+                      )}
+                      {/* 上架排版調整機制開關 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.6rem', padding: '0.55rem 0.85rem', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id="autoTrimNovelCheck"
+                          checked={autoTrimLeadingSpaces}
+                          onChange={(e) => setAutoTrimLeadingSpaces(e.target.checked)}
+                          style={{ accentColor: '#38bdf8', cursor: 'pointer', width: '16px', height: '16px' }}
+                        />
+                        <label htmlFor="autoTrimNovelCheck" style={{ fontSize: '0.82rem', color: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontWeight: 600, color: '#38bdf8' }}>上架格式調整機制：</span>
+                          發布時自動統一段落靠左（清除每段開頭所有空格與縮排）
+                        </label>
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -4777,9 +4904,69 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', fontWeight: 500 }}>
-                        文章內文 (支援從 Google Docs 直接複製貼上) *
-                      </label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                        <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
+                          文章內文 (支援從 Google Docs 直接複製貼上) *
+                        </label>
+                        {/* 格式調整工具列 */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={handleFormatContentLeft}
+                            style={{
+                              background: 'rgba(56, 189, 248, 0.12)',
+                              border: '1px solid rgba(56, 189, 248, 0.35)',
+                              color: '#38bdf8',
+                              fontSize: '0.78rem',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              fontWeight: 500,
+                            }}
+                            title="清除段落前所有半形/全形空格，使所有段落完全統一靠左對齊"
+                          >
+                            🪄 一鍵統一靠左（清除首行空格）
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFormatContentIndent}
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              color: 'rgba(255, 255, 255, 0.75)',
+                              fontSize: '0.78rem',
+                              padding: '0.25rem 0.65rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                            }}
+                            title="每段首行縮排 2 個全形空格"
+                          >
+                            📐 轉為首行縮排 2 格
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFormatCleanEmptyLines}
+                            style={{
+                              background: 'none',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              color: 'rgba(255, 255, 255, 0.5)',
+                              fontSize: '0.75rem',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                            }}
+                            title="整理連續空行"
+                          >
+                            ✨ 整理空行
+                          </button>
+                        </div>
+                      </div>
                       <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', marginBottom: '0.6rem', lineHeight: 1.5 }}>
                         💡 提示：輸入 <code style={{ color: '#38bdf8' }}>一、</code> 或 <code style={{ color: '#38bdf8' }}>#</code> 可轉為章節標題；段落開頭輸入 <code style={{ color: '#f472b6' }}>&gt; </code> 可轉為亮點金句引言框。
                       </div>
@@ -4791,6 +4978,25 @@ export default function AdminDashboardPage() {
                         style={{ maxWidth: '100%', minHeight: '380px', resize: 'vertical', lineHeight: '1.75', fontFamily: 'var(--font-noto-sans)', padding: '1rem', fontSize: '0.95rem' }}
                         required
                       />
+                      {formatNotice && (
+                        <div style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: '0.4rem', animation: 'fadeIn 0.2s ease' }}>
+                          ✅ {formatNotice}
+                        </div>
+                      )}
+                      {/* 上架排版調整機制開關 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.6rem', padding: '0.55rem 0.85rem', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '6px' }}>
+                        <input
+                          type="checkbox"
+                          id="autoTrimArticleCheck"
+                          checked={autoTrimLeadingSpaces}
+                          onChange={(e) => setAutoTrimLeadingSpaces(e.target.checked)}
+                          style={{ accentColor: '#38bdf8', cursor: 'pointer', width: '16px', height: '16px' }}
+                        />
+                        <label htmlFor="autoTrimArticleCheck" style={{ fontSize: '0.82rem', color: '#e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontWeight: 600, color: '#38bdf8' }}>上架格式調整機制：</span>
+                          發布時自動統一段落靠左（清除每段開頭所有空格與縮排）
+                        </label>
+                      </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>

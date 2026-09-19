@@ -126,7 +126,7 @@ export default function ArticleDetailPage({
       } else {
         blocks.push({
           type: 'paragraph',
-          text: line,
+          text: line.replace(/^[\s\u3000\u00A0\u2000-\u200B\uFEFF]+/, '').trimEnd(),
         });
       }
     });
@@ -735,7 +735,7 @@ export default function ArticleDetailPage({
             }
 
             return (
-              <p key={i} style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
+              <p key={i} style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line', textAlign: 'left', textIndent: 0 }}>
                 {block.text}
               </p>
             );

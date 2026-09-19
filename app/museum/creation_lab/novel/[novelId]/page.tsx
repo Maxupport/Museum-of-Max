@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Calendar, User, Sparkles, Mail, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Calendar, User, Sparkles, Mail, X, AlignLeft } from 'lucide-react';
 
 interface ChapterItem {
   id: string;
@@ -41,6 +41,24 @@ export default function NovelReaderPage({
   const [currentChapterIdx, setCurrentChapterIdx] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [indentMode, setIndentMode] = useState<'flush' | 'indent'>('flush');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('novel_reader_indent_mode');
+      if (saved === 'indent' || saved === 'flush') {
+        setIndentMode(saved as 'flush' | 'indent');
+      }
+    } catch {}
+  }, []);
+
+  const toggleIndentMode = () => {
+    const next = indentMode === 'flush' ? 'indent' : 'flush';
+    setIndentMode(next);
+    try {
+      localStorage.setItem('novel_reader_indent_mode', next);
+    } catch {}
+  };
 
   const [subEmail, setSubEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
@@ -173,21 +191,26 @@ export default function NovelReaderPage({
 
   const currentChapter = chapters[currentChapterIdx] || chapters[0];
 
-  // 解析章節內文（支援 JSON 格式或純文字）
+  // 解析章節內文（支援 JSON 格式或純文字，去除開頭多餘空格確保統一靠左無空白）
   const parseChapterContent = (content: string): string[] => {
     if (!content) return [];
+    let lines: string[] = [];
     if (content.trim().startsWith('{')) {
       try {
         const p = JSON.parse(content);
         if (p.textContent) {
-          return p.textContent.split('\n').filter((line: string) => line.trim());
-        }
-        if (p.overview) {
-          return p.overview.split('\n').filter((line: string) => line.trim());
+          lines = p.textContent.split('\n');
+        } else if (p.overview) {
+          lines = p.overview.split('\n');
         }
       } catch {}
     }
-    return content.split('\n').filter((line) => line.trim());
+    if (lines.length === 0) {
+      lines = content.split('\n');
+    }
+    return lines
+      .map((line) => line.replace(/^[\s\u3000\u00A0\u2000-\u200B\uFEFF]+/, '').trimEnd())
+      .filter((line) => line.length > 0);
   };
 
   const contentParagraphs = parseChapterContent(currentChapter.content);
@@ -366,7 +389,7 @@ export default function NovelReaderPage({
   return (
     <div className="novel-reader-wrapper">
       {/* 頂部導覽列 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="novel-reader-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '0.8rem' }}>
         <button
           onClick={() => router.push('/museum/creation_lab')}
           style={{
@@ -388,7 +411,31 @@ export default function NovelReaderPage({
           返回創作 Lab 展區
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+          {/* 排版模式調整按鈕 (統一靠左無空格 / 首行縮排) */}
+          <button
+            onClick={toggleIndentMode}
+            style={{
+              background: indentMode === 'flush' ? 'rgba(56, 189, 248, 0.1)' : 'rgba(168, 85, 247, 0.12)',
+              border: '1px solid',
+              borderColor: indentMode === 'flush' ? 'rgba(56, 189, 248, 0.35)' : 'rgba(168, 85, 247, 0.35)',
+              color: '#fff',
+              padding: '0.45rem 0.9rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.85rem',
+              letterSpacing: '0.5px',
+              transition: 'all 0.25s ease',
+            }}
+            title="點擊調整文字排版機制：統一靠左（無空格）或首行縮排 2 格"
+          >
+            <AlignLeft size={15} style={{ color: indentMode === 'flush' ? '#38bdf8' : '#c084fc' }} />
+            <span>{indentMode === 'flush' ? '排版：統一靠左' : '排版：首行縮排'}</span>
+          </button>
+
           {/* 章節目錄大綱開關按鈕 (Google Docs 風格) */}
           <button
             onClick={() => {
@@ -474,17 +521,18 @@ export default function NovelReaderPage({
         >
 
       {/* 小說封面資訊頁標 */}
-      <header className="animate-fade-in" style={{ marginBottom: '3rem', position: 'relative' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', alignItems: 'center', marginBottom: '1rem' }}>
-          <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', color: 'var(--theme-possibility)', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <header className="animate-fade-in novel-reader-header" style={{ marginBottom: '2.5rem', position: 'relative' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <span style={{ fontSize: '0.75rem', background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(168, 85, 247, 0.3)', fontWeight: 500 }}>
             小說連載專區
           </span>
-          <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(74, 222, 128, 0.2)' }}>
+          <span style={{ fontSize: '0.75rem', background: 'rgba(74, 222, 128, 0.1)', color: '#4ade80', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(74, 222, 128, 0.2)', fontWeight: 500 }}>
             {novel.status}
           </span>
         </div>
 
         <h1
+          className="novel-reader-title"
           style={{
             fontSize: '2.4rem',
             fontWeight: 300,
@@ -498,12 +546,13 @@ export default function NovelReaderPage({
         </h1>
 
         {novel.description && (
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '1.5rem', fontFamily: 'var(--font-noto-sans)' }}>
+          <p className="novel-reader-desc" style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '1.2rem', fontFamily: 'var(--font-noto-sans)' }}>
             {novel.description}
           </p>
         )}
 
         <div
+          className="novel-reader-meta"
           style={{
             display: 'flex',
             gap: '1.5rem',
@@ -511,7 +560,7 @@ export default function NovelReaderPage({
             color: 'var(--text-secondary)',
             fontSize: '0.85rem',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
-            paddingBottom: '1.5rem',
+            paddingBottom: '1.2rem',
             flexWrap: 'wrap',
           }}
         >
@@ -534,7 +583,7 @@ export default function NovelReaderPage({
 
       {/* 小說章節內文區域 */}
       <main
-        className="animate-fade-in glass-panel"
+        className="animate-fade-in glass-panel novel-chapter-container"
         style={{
           padding: '3rem 2.5rem',
           color: 'rgba(255,255,255,0.9)',
@@ -547,6 +596,7 @@ export default function NovelReaderPage({
       >
         {/* 章節標題 */}
         <h2
+          className="novel-chapter-title"
           style={{
             fontSize: '1.8rem',
             color: '#fff',
@@ -562,15 +612,24 @@ export default function NovelReaderPage({
 
         {/* 文章段落 */}
         <article
+          className="novel-article-body"
           style={{
             fontFamily: 'var(--font-noto-serif)',
-            fontSize: '1.15rem',
-            lineHeight: 2.2,
-            letterSpacing: '0.6px',
+            fontSize: '1.12rem',
+            lineHeight: 2.1,
+            letterSpacing: '0.5px',
+            textAlign: 'left',
           }}
         >
           {contentParagraphs.length > 0 ? contentParagraphs.map((paragraph, index) => (
-            <p key={index} style={{ marginBottom: '2rem', textIndent: '2em' }}>
+            <p
+              key={index}
+              style={{
+                marginBottom: '2rem',
+                textIndent: indentMode === 'indent' ? '2em' : '0',
+                textAlign: 'left',
+              }}
+            >
               {paragraph}
             </p>
           )) : (

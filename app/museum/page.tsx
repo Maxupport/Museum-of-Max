@@ -167,7 +167,7 @@ export default function MuseumHall() {
               Private Collection
             </p>
 
-            <div style={{ 
+            <div className="museum-intro-card" style={{ 
               textAlign: 'center',
               padding: '1.2rem 1.6rem',
               borderTop: '1px solid rgba(255,255,255,0.1)',
@@ -177,27 +177,33 @@ export default function MuseumHall() {
               width: '100%',
               boxSizing: 'border-box'
             }}>
-              <h2 style={{ fontSize: 'clamp(1.15rem, 3.5vw, 1.35rem)', color: '#fff', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)' }}>歡迎來到 Max 的專屬策展空間</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', lineHeight: 1.7, letterSpacing: '1px', fontFamily: 'var(--font-noto-sans)' }}>
+              <h2 className="museum-intro-title" style={{ fontSize: 'clamp(0.82rem, 3.7vw, 1.35rem)', color: '#fff', marginBottom: '0.6rem', fontFamily: 'var(--font-noto-serif)', whiteSpace: 'nowrap' }}>
+                歡迎來到 Max 的專屬策展空間
+              </h2>
+              <p className="museum-intro-desc" style={{ color: 'var(--text-secondary)', fontSize: 'clamp(0.72rem, 2.6vw, 0.95rem)', lineHeight: 1.65, letterSpacing: '0.5px', fontFamily: 'var(--font-noto-sans)' }}>
                 這裡記錄了 Max 超過 14 年的跨界職涯軌跡，從新創 / 風險投資、職涯履歷、商業議題分析、聲音探索、創作 Lab 到人生擺渡，每個展區都代表著對不同領域的熱情與實踐。
               </p>
 
               {/* 返回通行碼選擇頁面提示 */}
-              <div style={{ 
-                marginTop: '1.2rem', 
-                padding: '0.65rem 1.1rem', 
+              <div className="museum-intro-reminder" style={{ 
+                marginTop: '1rem', 
+                padding: '0.55rem 0.85rem', 
                 background: 'rgba(56, 189, 248, 0.08)', 
                 border: '1px solid rgba(56, 189, 248, 0.25)', 
                 borderRadius: '4px',
                 display: 'inline-flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'center',
-                gap: '0.55rem',
+                gap: '0.5rem',
                 color: '#7dd3fc',
-                fontSize: '0.83rem',
-                letterSpacing: '0.5px'
+                fontSize: 'clamp(0.68rem, 2.4vw, 0.82rem)',
+                letterSpacing: '0.3px',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                textAlign: 'left',
+                lineHeight: 1.5,
               }}>
-                <Compass size={15} style={{ flexShrink: 0 }} />
+                <Compass size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <span>💡 <strong>觀展提醒</strong>：點擊頁面左上角「<strong>MAX&apos;S PRIVATE MUSEUM</strong>」可隨時返回【通行碼選擇頁面】切換參觀身份。</span>
               </div>
             </div>
@@ -251,10 +257,13 @@ export default function MuseumHall() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden'
           }}
         >
-          <div style={{ maxWidth: '1400px', width: '100%' }}>
+          <div style={{ maxWidth: '1400px', width: '100%', boxSizing: 'border-box' }}>
             
             {isRestrictedAccess ? (
               <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'rgba(20,20,20,0.6)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}>
@@ -270,7 +279,7 @@ export default function MuseumHall() {
                 </Link>
               </div>
             ) : (
-              <div>
+              <div style={{ width: '100%', boxSizing: 'border-box' }}>
                 <div style={{ 
                   fontSize: 'clamp(0.72rem, 2vw, 0.8rem)', 
                   letterSpacing: '4px', 
@@ -279,49 +288,61 @@ export default function MuseumHall() {
                   textTransform: 'uppercase', 
                   borderBottom: '1px solid rgba(255,255,255,0.1)', 
                   paddingBottom: '0.8rem',
-                  paddingRight: 'clamp(80px, 20vw, 130px)',
+                  boxSizing: 'border-box',
+                  width: '100%'
                 }}>
                   6 Exhibition Galleries
                 </div>
 
                 <div className="gallery-grid">
                   {visibleExhibits.map((exhibit, index) => (
-                    <Link href={`/museum/${exhibit.id}`} key={exhibit.id} style={{ textDecoration: 'none' }}>
+                    <Link 
+                      href={`/museum/${exhibit.id}`} 
+                      key={exhibit.id} 
+                      style={{ 
+                        textDecoration: 'none', 
+                        display: 'block', 
+                        width: '100%', 
+                        minWidth: 0, 
+                        maxWidth: '100%', 
+                        boxSizing: 'border-box' 
+                      }}
+                    >
                       <div 
                         className="glass-panel exhibit-card" 
                         style={{ 
-                          minHeight: '230px',
-                          padding: '1.8rem 2rem', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           justifyContent: 'space-between',
                           color: exhibit.color,
-                          transition: 'all 0.4s ease'
+                          transition: 'all 0.4s ease',
+                          width: '100%',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box'
                         }}
                       >
-                        <div>
+                        <div style={{ minWidth: 0, width: '100%' }}>
                           <div style={{ fontSize: '0.75rem', letterSpacing: '2px', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', fontFamily: 'var(--font-noto-sans)' }}>
                             Gallery 0{index + 1}
                           </div>
-                          <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '0.2rem', fontFamily: 'var(--font-noto-serif)' }}>
+                          <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 1.8rem)', color: '#fff', marginBottom: '0.2rem', fontFamily: 'var(--font-noto-serif)', wordBreak: 'break-word' }}>
                             {exhibit.title}
                           </h2>
-                          <h3 style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', letterSpacing: '1px', fontWeight: 300 }}>
+                          <h3 style={{ fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)', color: 'var(--text-secondary)', letterSpacing: '1px', fontWeight: 300, wordBreak: 'break-word' }}>
                             {exhibit.subtitle}
                           </h3>
                         </div>
                         
-                        <div style={{ marginTop: 'auto' }}>
-                          <p style={{
-                            color: 'rgba(255,255,255,0.65)',
-                            fontSize: '0.82rem',
-                            lineHeight: 1.5,
-                            borderTop: '1px solid rgba(255,255,255,0.1)',
-                            paddingTop: '1rem',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
+                        <div style={{ marginTop: 'auto', minWidth: 0, width: '100%' }}>
+                          <p 
+                            className="gallery-card-desc"
+                            style={{
+                              color: 'rgba(255,255,255,0.65)',
+                              fontSize: '0.82rem',
+                              borderTop: '1px solid rgba(255,255,255,0.1)',
+                              paddingTop: '1rem',
+                            }}
+                          >
                             {exhibit.desc}
                           </p>
                         </div>
