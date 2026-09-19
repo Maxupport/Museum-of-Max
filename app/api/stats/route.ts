@@ -207,6 +207,16 @@ export async function GET(request: NextRequest) {
           count: b._count.id,
         })),
       },
+      grok: {
+        family: 'xAI',
+        name: 'xAI (Grok / GrokBot)',
+        count: aiFamilyMap['xAI']?.count || 0,
+        lastCrawledAt: aiFamilyMap['xAI']?.lastCrawledAt || null,
+        bots: aiBotsGroup.filter((b) => b.botFamily === 'xAI').map((b) => ({
+          botName: b.botName,
+          count: b._count.id,
+        })),
+      },
       others: {
         family: 'Other',
         name: '其他 AI / 搜尋爬蟲 (Meta, Apple, Bing 等)',

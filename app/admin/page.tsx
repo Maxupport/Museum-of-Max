@@ -70,6 +70,7 @@ interface StatData {
     anthropic: AiFamilyDetail;
     google: AiFamilyDetail;
     perplexity: AiFamilyDetail;
+    grok?: AiFamilyDetail;
     others: AiFamilyDetail;
   };
   topAiPages?: { path: string; count: number; lastCrawledAt: string | null }[];
@@ -2399,13 +2400,13 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <div style={{ fontSize: '0.78rem', color: '#c084fc', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 600 }}>
-                  四大 AI 抓取總次數
+                  五大 AI 抓取總次數
                 </div>
                 <div style={{ fontSize: '2.1rem', fontWeight: 300, color: '#fff', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.2 }}>
                   {stats ? (stats.totalAiCrawls || 0) : 0}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  OpenAI / Claude / Gemini / Perplexity
+                  OpenAI / Claude / Gemini / Perplexity / Grok
                 </div>
               </div>
             </div>
@@ -2456,11 +2457,11 @@ export default function AdminDashboardPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
                   <Cpu size={22} style={{ color: '#c084fc' }} />
                   <h2 style={{ fontSize: '1.3rem', color: '#fff', margin: 0, fontFamily: 'var(--font-noto-serif)' }}>
-                    四大 AI 系統抓取與索引分析 (The Big 4 AI Systems Analytics)
+                    五大全球 AI 系統抓取與索引分析 (Top 5 AI Systems Analytics)
                   </h2>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.6 }}>
-                  即時追蹤 OpenAI、Anthropic、Google 與 Perplexity 等全球基礎模型爬蟲抓取您網站原創內容的次數與頻率，證明您原創內容具備被 AI 引用、索引與訓練之高價值。
+                  即時追蹤 OpenAI、Anthropic、Google、Perplexity 與 xAI (Grok) 等全球基礎模型爬蟲抓取您網站原創內容的次數與頻率，證明您原創內容具備被 AI 引用、索引與訓練之高價值。
                 </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', color: '#d8b4fe' }}>
@@ -2602,6 +2603,42 @@ export default function AdminDashboardPage() {
                       </div>
                       <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
                         <div style={{ width: `${pct}%`, height: '100%', background: '#14b8a6', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>最後抓取：</span>
+                      <span style={{ color: ai?.lastCrawledAt ? '#e2e8f0' : 'var(--text-secondary)' }}>
+                        {ai?.lastCrawledAt ? new Date(ai.lastCrawledAt).toLocaleDateString() + ' ' + new Date(ai.lastCrawledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '尚無抓取紀錄'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 5. xAI (Grok) */}
+              {(() => {
+                const ai = stats?.aiFourBreakdown?.grok;
+                const total = stats?.totalAiCrawls || 1;
+                const pct = Math.round(((ai?.count || 0) / Math.max(total, 1)) * 100);
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255, 255, 255, 0.3)', borderRadius: '6px', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 8px rgba(255,255,255,0.8)' }} />
+                        <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.95rem' }}>xAI (Grok)</span>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', padding: '0.15rem 0.5rem', borderRadius: '3px', fontFamily: 'monospace' }}>
+                        GrokBot / xAI
+                      </span>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '1.8rem', color: '#fff', fontWeight: 400, fontFamily: 'var(--font-noto-serif)' }}>
+                        {ai?.count || 0} <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>次抓取</span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '0.4rem' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: '#ffffff', transition: 'width 0.6s ease' }} />
                       </div>
                     </div>
 

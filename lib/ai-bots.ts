@@ -3,7 +3,7 @@
  * 專門辨識四大 AI 系統 (OpenAI, Anthropic, Google, Perplexity) 與其他主流搜尋/AI 爬蟲
  */
 
-export type AiBotFamily = 'OpenAI' | 'Anthropic' | 'Google' | 'Perplexity' | 'Meta' | 'Apple' | 'Other';
+export type AiBotFamily = 'OpenAI' | 'Anthropic' | 'Google' | 'Perplexity' | 'xAI' | 'Meta' | 'Apple' | 'Other';
 
 export interface AiBotDetectionResult {
   isAiBot: boolean;
@@ -59,7 +59,15 @@ export function detectAiBot(userAgent: string | null | undefined): AiBotDetectio
     return { isAiBot: true, botFamily: 'Perplexity', botName: 'PerplexityBot' };
   }
 
-  // 5. 其他主流 AI 與科技巨頭爬蟲
+  // 5. xAI (Grok) 系列
+  if (ua.includes('grokbot') || ua.includes('xai-grok') || ua.includes('grok')) {
+    return { isAiBot: true, botFamily: 'xAI', botName: 'GrokBot (xAI)' };
+  }
+  if (ua.includes('twitterbot') || ua.includes('xbot')) {
+    return { isAiBot: true, botFamily: 'xAI', botName: 'Twitterbot / Xbot (Grok Preview)' };
+  }
+
+  // 6. 其他主流 AI 與科技巨頭爬蟲
   if (ua.includes('meta-externalagent') || ua.includes('facebookbot') || ua.includes('meta-externalfetcher')) {
     return { isAiBot: true, botFamily: 'Meta', botName: 'Meta-ExternalAgent (Llama)' };
   }
