@@ -81,6 +81,43 @@ export default function MuseumHall() {
     return () => clearTimeout(timer);
   }, [router]);
 
+  useEffect(() => {
+    if (!checkedAuth) return;
+
+    const checkAndScrollToGalleries = () => {
+      if (typeof window === 'undefined') return;
+      const isGalleriesTarget =
+        window.location.search.includes('section=galleries') ||
+        window.location.hash.includes('galleries-section');
+
+      if (isGalleriesTarget) {
+        const el = document.getElementById('galleries-section');
+        if (el) {
+          const headerOffset = 65;
+          const elementPosition = el.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'instant'
+          });
+        }
+      }
+    };
+
+    checkAndScrollToGalleries();
+    const rafId = requestAnimationFrame(checkAndScrollToGalleries);
+    const t1 = setTimeout(checkAndScrollToGalleries, 50);
+    const t2 = setTimeout(checkAndScrollToGalleries, 150);
+    const t3 = setTimeout(checkAndScrollToGalleries, 350);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [checkedAuth]);
+
   if (!checkedAuth || allowedPermissions === null) {
     return null; // Don't render anything while verifying passcode auth
   }
@@ -251,6 +288,7 @@ export default function MuseumHall() {
         <section 
           id="galleries-section"
           style={{ 
+            scrollMarginTop: '65px',
             minHeight: 'calc(100dvh - 65px)', 
             padding: '3.5rem 1.5rem 6rem',
             display: 'flex',

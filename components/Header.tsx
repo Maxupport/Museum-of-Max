@@ -109,6 +109,11 @@ export function Header() {
           {!isNovelDirect && (
             <Link 
               href="/museum" 
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.location.pathname === '/museum') {
+                  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                }
+              }}
               style={{
                 textDecoration: 'none',
                 color: pathname === '/museum' ? '#fff' : 'var(--text-secondary)',

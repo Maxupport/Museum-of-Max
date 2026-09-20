@@ -385,10 +385,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       {!isNovelDirect && (
         <button 
           onClick={() => {
-            if (typeof window !== 'undefined') {
-              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-            }
-            router.push('/museum');
+            router.push('/museum?section=galleries');
           }}
           style={{ 
             background: 'none', 

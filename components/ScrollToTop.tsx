@@ -17,6 +17,15 @@ export default function ScrollToTop() {
       window.history.scrollRestoration = 'manual';
     }
 
+    // 若為六大展區錨點或參數，交由展覽大廳處理滾動定位，避免被強制拉到最頂部
+    const isGalleriesTarget =
+      window.location.search.includes('section=galleries') ||
+      window.location.hash.includes('galleries-section');
+
+    if (isGalleriesTarget) {
+      return;
+    }
+
     const scrollToZero = () => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
