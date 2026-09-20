@@ -73,7 +73,8 @@ export async function GET() {
         ok: true,
         data: updatedNovels.map((novel) => {
           const chapters = chaptersByNovelTitle[novel.title] || [];
-          const latestChapter = chapters.sort(
+          const sortedChapters = [...chapters].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          const latestChapter = [...chapters].sort(
             (a, b) =>
               new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           )[0];
@@ -82,14 +83,20 @@ export async function GET() {
             totalChapters: chapters.length,
             latestChapterTitle: latestChapter?.title || null,
             latestUpdatedAt: latestChapter?.updatedAt || null,
+            chapters: sortedChapters.map((c) => ({
+              id: c.id,
+              title: c.title,
+              order: c.order,
+            })),
           };
         }),
       });
     }
 
-    // 5. 組合回傳資料（附帶章節數）
+    // 5. 組合回傳資料（附帶章節數與章節列表）
     const data = novels.map((novel) => {
       const chapters = chaptersByNovelTitle[novel.title] || [];
+      const sortedChapters = [...chapters].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       const latestChapter = [...chapters].sort(
         (a, b) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -99,6 +106,11 @@ export async function GET() {
         totalChapters: chapters.length,
         latestChapterTitle: latestChapter?.title || null,
         latestUpdatedAt: latestChapter?.updatedAt || null,
+        chapters: sortedChapters.map((c) => ({
+          id: c.id,
+          title: c.title,
+          order: c.order,
+        })),
       };
     });
 

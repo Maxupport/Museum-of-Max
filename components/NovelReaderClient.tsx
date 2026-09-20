@@ -54,6 +54,20 @@ export default function NovelReaderClient({
     } catch {}
   }, []);
 
+  // 支援透過網址參數 ?ch= 直接切換至特定章節
+  useEffect(() => {
+    if (typeof window !== 'undefined' && novel?.chapters?.length) {
+      const params = new URLSearchParams(window.location.search);
+      const chParam = params.get('ch');
+      if (chParam !== null) {
+        const idx = parseInt(chParam, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < novel.chapters.length) {
+          setCurrentChapterIdx(idx);
+        }
+      }
+    }
+  }, [novel]);
+
   const toggleIndentMode = () => {
     const next = indentMode === 'flush' ? 'indent' : 'flush';
     setIndentMode(next);
