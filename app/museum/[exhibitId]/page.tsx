@@ -251,6 +251,25 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     }
   }, [exhibitId, activeSubCategory]);
 
+  // 1. 切換展區或頁面載入時，強制立即使視埠回到最頂端
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [exhibitId]);
+
+  // 2. 當各展區異步資料載入完成時，再次校準確保視埠維持在最頂端，避免高度變化導致卡在中間
+  useEffect(() => {
+    const isFinished = !careerLoading && !ventureLoading && !musicLoading && !writingsLoading && !novelLoading;
+    if (isFinished && typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [careerLoading, ventureLoading, musicLoading, writingsLoading, novelLoading]);
+
   if (!exhibit) {
     return (
       <div style={{ textAlign: 'center', padding: '10rem' }}>
@@ -334,7 +353,12 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       {/* 返回展覽大廳按鈕 (若為小說直通讀者則不顯示) */}
       {!isNovelDirect && (
         <button 
-          onClick={() => router.push('/museum')}
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }
+            router.push('/museum');
+          }}
           style={{ 
             background: 'none', 
             border: 'none', 
@@ -343,7 +367,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             display: 'flex',
             alignItems: 'center',
             gap: '0.6rem',
-            marginBottom: '1rem',
+            marginBottom: '0.75rem',
             fontSize: '0.82rem',
             letterSpacing: '1.5px',
             textTransform: 'uppercase',
@@ -358,18 +382,18 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       )}
 
       {/* 展區標題 */}
-      <header className="animate-fade-in" style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+      <header className="animate-fade-in" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
         <div style={{ 
           width: '3px', 
-          height: '38px', 
+          height: '36px', 
           background: exhibit.color, 
           boxShadow: `0 0 12px ${exhibit.color}` 
         }} />
         <div>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 400, color: '#fff', marginBottom: '0.2rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.15 }}>
+          <h1 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.1rem)', fontWeight: 400, color: '#fff', marginBottom: '0.15rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.15 }}>
             {exhibit.title}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', letterSpacing: '3px', textTransform: 'uppercase' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', letterSpacing: '2.5px', textTransform: 'uppercase' }}>
             {exhibit.subtitle}
           </p>
         </div>
@@ -398,7 +422,12 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   key={subCat}
                   onClick={() => {
                     setActiveSubCategory(subCat);
-                    setSearchKeyword(''); 
+                    setSearchKeyword('');
+                    if (typeof window !== 'undefined') {
+                      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                      document.documentElement.scrollTop = 0;
+                      document.body.scrollTop = 0;
+                    }
                   }}
                   className={`exhibit-subcategory-btn ${isActive ? 'active' : ''}`}
                   style={{
@@ -478,32 +507,32 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 const isCenteredLogo = ['早期投資', '早期投資項目', '新創項目評估', '創投項目評估', '募資 FA 服務', '募資FA服務'].includes(item.category) || true;
 
                 const CardContent = (
-                  <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color, display: 'flex', flexDirection: 'column', height: '100%', cursor: item.linkUrl ? 'pointer' : 'default' }}>
+                  <div className="glass-panel exhibit-card" style={{ padding: '1.5rem', color: exhibit.color, display: 'flex', flexDirection: 'column', height: '100%', cursor: item.linkUrl ? 'pointer' : 'default' }}>
                     {isCenteredLogo ? (
-                      /* 早期投資 & 新創項目評估：Logo 置中大圖呈現 */
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.2rem' }}>
+                      /* 早期投資 & 新創項目評估：Logo 置中呈現 */
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1rem' }}>
                         {item.logoUrl ? (
                           <img
                             src={item.logoUrl}
                             alt={item.title}
                             style={{
-                              width: '96px',
-                              height: '96px',
+                              width: '80px',
+                              height: '80px',
                               objectFit: 'contain',
                               borderRadius: '12px',
                               background: 'rgba(255, 255, 255, 0.06)',
-                              padding: '0.6rem',
+                              padding: '0.5rem',
                               border: '1px solid rgba(56, 189, 248, 0.25)',
                               boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-                              marginBottom: '1rem',
+                              marginBottom: '0.8rem',
                               transition: 'transform 0.3s ease',
                             }}
                           />
                         ) : (
                           <div
                             style={{
-                              width: '96px',
-                              height: '96px',
+                              width: '80px',
+                              height: '80px',
                               borderRadius: '12px',
                               background: 'rgba(56, 189, 248, 0.08)',
                               border: '1.5px dashed rgba(56, 189, 248, 0.35)',
@@ -512,23 +541,23 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                               alignItems: 'center',
                               justifyContent: 'center',
                               color: '#38bdf8',
-                              marginBottom: '1rem',
+                              marginBottom: '0.8rem',
                               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
                             }}
                           >
-                            <Building size={36} style={{ opacity: 0.9, marginBottom: '2px' }} />
+                            <Building size={32} style={{ opacity: 0.9, marginBottom: '2px' }} />
                             <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.8, letterSpacing: '1px' }}>LOGO</span>
                           </div>
                         )}
 
                         <div style={{ width: '100%' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
-                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0, wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
+                            <h3 style={{ fontSize: '1.35rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0, wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                               {item.title}
                             </h3>
-                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
+                            {item.linkUrl && <ExternalLink size={16} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
                           </div>
-                          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                             <Calendar size={13} />
                             {item.period}
                           </div>
@@ -536,7 +565,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       </div>
                     ) : (
                       /* 其他分類：原有橫向圖標排列 */
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                         {item.logoUrl ? (
                           <img src={item.logoUrl} alt={item.title} style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', padding: '0.2rem' }} />
                         ) : (
@@ -546,10 +575,10 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                         )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
+                            <h3 style={{ fontSize: '1.35rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
                               {item.title}
                             </h3>
-                            {item.linkUrl && <ExternalLink size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
+                            {item.linkUrl && <ExternalLink size={16} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
                           </div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                             <Calendar size={12} />
@@ -559,8 +588,8 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       </div>
                     )}
 
-                    <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.6rem 1rem', borderRadius: '4px', fontSize: '0.85rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8', flexShrink: 0 }} />
+                    <div style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.5rem 0.85rem', borderRadius: '4px', fontSize: '0.82rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8', flexShrink: 0 }} />
                       <span>現況更新: {item.status}</span>
                     </div>
 
@@ -595,8 +624,8 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           {/* 美觀優雅的展區結束分隔線 */}
           <div
             style={{
-              marginTop: '4.5rem',
-              marginBottom: '2rem',
+              marginTop: '2.5rem',
+              marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -627,8 +656,8 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
         </div>
       ) : exhibit.isTimeline ? (
         /* 職涯經歷 (Career Experience) 時間軸展示 */
-        <div className="animate-fade-in" style={{ padding: '2rem 0' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3rem' }}>
+        <div className="animate-fade-in" style={{ padding: '1rem 0 2rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1.25rem' }}>
             Career Timeline & Milestones
           </div>
 
@@ -644,7 +673,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           ) : (
             <div style={{ position: 'relative', paddingLeft: '2rem', borderLeft: '2px solid rgba(255,255,255,0.1)' }}>
               {careerItems.map((item) => (
-                <div key={item.id} style={{ position: 'relative', marginBottom: '3.5rem' }}>
+                <div key={item.id} style={{ position: 'relative', marginBottom: '2.5rem' }}>
                   <div style={{
                     position: 'absolute',
                     left: '-2.6rem',
@@ -656,7 +685,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     boxShadow: `0 0 10px ${exhibit.color}`
                   }} />
 
-                  <div className="glass-panel exhibit-card" style={{ padding: '2rem', color: exhibit.color }}>
+                  <div className="glass-panel exhibit-card" style={{ padding: '1.5rem 1.8rem', color: exhibit.color }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.2rem', marginBottom: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
                         {item.logoUrl ? (

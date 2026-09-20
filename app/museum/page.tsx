@@ -299,6 +299,14 @@ export default function MuseumHall() {
                     <Link 
                       href={`/museum/${exhibit.id}`} 
                       key={exhibit.id} 
+                      scroll={true}
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                          document.documentElement.scrollTop = 0;
+                          document.body.scrollTop = 0;
+                        }
+                      }}
                       style={{ 
                         textDecoration: 'none', 
                         display: 'block', 

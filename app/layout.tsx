@@ -3,6 +3,7 @@ import { Noto_Sans_TC, Noto_Serif_TC } from "next/font/google";
 import { Header } from "@/components/Header";
 import { ContactCuratorWidget } from "@/components/ContactCuratorWidget";
 import TrafficTracker from "@/components/TrafficTracker";
+import ScrollToTop from "@/components/ScrollToTop";
 import "./globals.css";
 
 const notoSans = Noto_Sans_TC({
@@ -116,6 +117,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${notoSans.variable} ${notoSerif.variable}`}>
+        <ScrollToTop />
         <TrafficTracker />
         <Header />
         <ContactCuratorWidget />
