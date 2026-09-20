@@ -1224,196 +1224,221 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               )}
             </>
           ) : ['creation_lab', 'communication', 'finance_insurance', 'sound'].includes(exhibitId) ? (
-            /* 小說子分類：專屬 2 欄大卡片展示版面 */
+            /* 小說子分類：專屬 2 欄大卡片展示版面 (比照新創頁面垂直置中與優雅底線) */
             activeSubCategory === '小說' ? (
-              novelLoading ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-                  <BookOpen size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                  <p>小說作品載入中...</p>
-                </div>
-              ) : novelItems.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                  <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                  <p style={{ letterSpacing: '1px' }}>目前尚無小說作品。</p>
-                </div>
-              ) : filteredNovelItems.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                  <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                  <p style={{ letterSpacing: '1px' }}>沒有符合「{searchKeyword}」的小說作品。</p>
-                </div>
-              ) : (
-                <div className="novel-grid animate-fade-in">
-                  {filteredNovelItems.map((novel) => {
-                    const chapters = novel.chapters || [];
-                    return (
-                      <Link
-                        key={novel.id}
-                        href={`/museum/creation_lab/novel/${encodeURIComponent(novel.title)}`}
-                        style={{ textDecoration: 'none', display: 'block', width: '100%' }}
-                      >
-                        <div className="novel-card-horizontal">
-                          {/* 左側：封面大圖 */}
-                          <div className="novel-card-cover">
-                            {novel.coverUrl ? (
-                              <img src={novel.coverUrl} alt={novel.title} />
-                            ) : (
-                              <div style={{
-                                width: '100%',
-                                height: '100%',
-                                minHeight: '380px',
-                                background: 'rgba(168, 85, 247, 0.08)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#c084fc',
-                              }}>
-                                <BookOpen size={44} style={{ opacity: 0.7, marginBottom: '0.5rem' }} />
-                                <span style={{ fontSize: '0.75rem', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7 }}>Novel</span>
-                              </div>
-                            )}
-                            <div style={{ position: 'absolute', top: '0.8rem', left: '0.8rem', background: novel.status === '已完結' ? 'rgba(74,222,128,0.25)' : 'rgba(168,85,247,0.35)', backdropFilter: 'blur(8px)', border: `1px solid ${novel.status === '已完結' ? 'rgba(74,222,128,0.5)' : 'rgba(168,85,247,0.6)'}`, color: novel.status === '已完結' ? '#4ade80' : '#c084fc', padding: '0.25rem 0.65rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>
-                              {novel.status === '連載中' ? '🟢' : novel.status === '已完結' ? '✅' : '⏸️'} {novel.status}
-                            </div>
-                            <div style={{ position: 'absolute', top: '0.8rem', right: '0.8rem', background: 'rgba(56,189,248,0.25)', backdropFilter: 'blur(8px)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8', padding: '0.25rem 0.65rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>
-                              📚 共 {novel.totalChapters} 章
-                            </div>
-                          </div>
-
-                          {/* 右側：小說資訊與章節目錄列表（強調最新章節） */}
-                          <div className="novel-card-content">
-                            <div>
-                              <h3 style={{ color: '#fff', fontSize: 'clamp(1.35rem, 2.2vw, 1.65rem)', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3, marginBottom: '0.35rem', letterSpacing: '0.5px' }}>
-                                《{novel.title}》
-                              </h3>
-                              <p style={{ color: 'rgba(192,132,252,0.95)', fontSize: '0.85rem', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                <Sparkles size={13} style={{ flexShrink: 0 }} />
-                                創作者：{novel.author}
-                              </p>
-
-                              {novel.description && (
-                                <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.86rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '0.85rem', fontFamily: 'var(--font-noto-serif)' }}>
-                                  {novel.description}
-                                </p>
-                              )}
-
-                              {/* 章節目錄列表 */}
-                              <div style={{ marginTop: '0.5rem', marginBottom: '0.8rem' }}>
-                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                  <BookOpen size={12} />
-                                  <span>目前章節 ({chapters.length || novel.totalChapters})</span>
+              <div className="animate-fade-in vc-showcase-container">
+                {novelLoading ? (
+                  <div style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                    <BookOpen size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p>小說作品載入中...</p>
+                  </div>
+                ) : novelItems.length === 0 ? (
+                  <div className="glass-panel" style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
+                    <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p style={{ letterSpacing: '1px' }}>目前尚無小說作品。</p>
+                  </div>
+                ) : filteredNovelItems.length === 0 ? (
+                  <div className="glass-panel" style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
+                    <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p style={{ letterSpacing: '1px' }}>沒有符合「{searchKeyword}」的小說作品。</p>
+                  </div>
+                ) : (
+                  <div className="novel-grid vc-items-grid">
+                    {filteredNovelItems.map((novel) => {
+                      const chapters = novel.chapters || [];
+                      return (
+                        <Link
+                          key={novel.id}
+                          href={`/museum/creation_lab/novel/${encodeURIComponent(novel.title)}`}
+                          style={{ textDecoration: 'none', display: 'block', width: '100%' }}
+                        >
+                          <div className="novel-card-horizontal">
+                            {/* 左側：封面大圖 */}
+                            <div className="novel-card-cover">
+                              {novel.coverUrl ? (
+                                <img src={novel.coverUrl} alt={novel.title} />
+                              ) : (
+                                <div style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  minHeight: '380px',
+                                  background: 'rgba(168, 85, 247, 0.08)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#c084fc',
+                                }}>
+                                  <BookOpen size={44} style={{ opacity: 0.7, marginBottom: '0.5rem' }} />
+                                  <span style={{ fontSize: '0.75rem', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7 }}>Novel</span>
                                 </div>
-
-                                {chapters.length > 0 ? (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '175px', overflowY: 'auto', paddingRight: '0.2rem' }}>
-                                    {chapters.map((ch, idx) => {
-                                      const isLatest = idx === chapters.length - 1 || ch.title === novel.latestChapterTitle;
-                                      return (
-                                        <div
-                                          key={ch.id || idx}
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: isLatest ? '0.42rem 0.75rem' : '0.32rem 0.65rem',
-                                            borderRadius: '6px',
-                                            background: isLatest 
-                                              ? 'linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.08))' 
-                                              : 'rgba(255, 255, 255, 0.03)',
-                                            border: isLatest 
-                                              ? '1px solid rgba(168, 85, 247, 0.55)' 
-                                              : '1px solid rgba(255, 255, 255, 0.06)',
-                                            fontSize: '0.82rem',
-                                            color: isLatest ? '#fff' : 'rgba(255, 255, 255, 0.72)',
-                                            fontWeight: isLatest ? 600 : 400,
-                                            boxShadow: isLatest ? '0 0 12px rgba(168, 85, 247, 0.2)' : 'none',
-                                            transition: 'all 0.2s ease',
-                                          }}
-                                        >
-                                          <span style={{
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
-                                            marginRight: '0.5rem',
-                                            color: isLatest ? '#f3e8ff' : undefined,
-                                          }}>
-                                            {ch.title}
-                                          </span>
-                                          {isLatest && (
-                                            <span style={{
-                                              flexShrink: 0,
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              gap: '0.25rem',
-                                              fontSize: '0.66rem',
-                                              padding: '0.12rem 0.45rem',
-                                              borderRadius: '4px',
-                                              background: 'rgba(168, 85, 247, 0.4)',
-                                              border: '1px solid rgba(168, 85, 247, 0.7)',
-                                              color: '#e9d5ff',
-                                              fontWeight: 600,
-                                              letterSpacing: '0.5px',
-                                              boxShadow: '0 0 8px rgba(168, 85, 247, 0.4)',
-                                            }}>
-                                              <Sparkles size={10} />
-                                              最新章節
-                                            </span>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                ) : novel.latestChapterTitle ? (
-                                  <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '0.45rem 0.75rem',
-                                    borderRadius: '6px',
-                                    background: 'linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.08))',
-                                    border: '1px solid rgba(168, 85, 247, 0.55)',
-                                    fontSize: '0.82rem',
-                                    color: '#fff',
-                                    fontWeight: 600,
-                                    boxShadow: '0 0 12px rgba(168, 85, 247, 0.2)',
-                                  }}>
-                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0.5rem' }}>
-                                      {novel.latestChapterTitle}
-                                    </span>
-                                    <span style={{
-                                      flexShrink: 0,
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.25rem',
-                                      fontSize: '0.66rem',
-                                      padding: '0.12rem 0.45rem',
-                                      borderRadius: '4px',
-                                      background: 'rgba(168, 85, 247, 0.4)',
-                                      border: '1px solid rgba(168, 85, 247, 0.7)',
-                                      color: '#e9d5ff',
-                                      fontWeight: 600,
-                                    }}>
-                                      <Sparkles size={10} />
-                                      最新章節
-                                    </span>
-                                  </div>
-                                ) : null}
+                              )}
+                              <div style={{ position: 'absolute', top: '0.8rem', left: '0.8rem', background: novel.status === '已完結' ? 'rgba(74,222,128,0.25)' : 'rgba(168,85,247,0.35)', backdropFilter: 'blur(8px)', border: `1px solid ${novel.status === '已完結' ? 'rgba(74,222,128,0.5)' : 'rgba(168,85,247,0.6)'}`, color: novel.status === '已完結' ? '#4ade80' : '#c084fc', padding: '0.25rem 0.65rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>
+                                {novel.status === '連載中' ? '🟢' : novel.status === '已完結' ? '✅' : '⏸️'} {novel.status}
+                              </div>
+                              <div style={{ position: 'absolute', top: '0.8rem', right: '0.8rem', background: 'rgba(56,189,248,0.25)', backdropFilter: 'blur(8px)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8', padding: '0.25rem 0.65rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 600 }}>
+                                📚 共 {novel.totalChapters} 章
                               </div>
                             </div>
 
-                            {/* 底部行動呼籲按鈕 */}
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#c084fc', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '0.85rem', borderTop: '1px solid rgba(168,85,247,0.2)' }}>
-                              <BookOpen size={15} />
-                              <span>📖 進入沉浸式閱讀器</span>
-                              <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
+                            {/* 右側：小說資訊與章節目錄列表（強調最新章節） */}
+                            <div className="novel-card-content">
+                              <div>
+                                <h3 style={{ color: '#fff', fontSize: 'clamp(1.35rem, 2.2vw, 1.65rem)', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.3, marginBottom: '0.35rem', letterSpacing: '0.5px' }}>
+                                  《{novel.title}》
+                                </h3>
+                                <p style={{ color: 'rgba(192,132,252,0.95)', fontSize: '0.85rem', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <Sparkles size={13} style={{ flexShrink: 0 }} />
+                                  創作者：{novel.author}
+                                </p>
+
+                                {novel.description && (
+                                  <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.86rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '0.85rem', fontFamily: 'var(--font-noto-serif)' }}>
+                                    {novel.description}
+                                  </p>
+                                )}
+
+                                {/* 章節目錄列表 */}
+                                <div style={{ marginTop: '0.5rem', marginBottom: '0.8rem' }}>
+                                  <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <BookOpen size={12} />
+                                    <span>目前章節 ({chapters.length || novel.totalChapters})</span>
+                                  </div>
+
+                                  {chapters.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '175px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+                                      {chapters.map((ch, idx) => {
+                                        const isLatest = idx === chapters.length - 1 || ch.title === novel.latestChapterTitle;
+                                        return (
+                                          <div
+                                            key={ch.id || idx}
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'space-between',
+                                              padding: isLatest ? '0.42rem 0.75rem' : '0.32rem 0.65rem',
+                                              borderRadius: '6px',
+                                              background: isLatest 
+                                                ? 'linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.08))' 
+                                                : 'rgba(255, 255, 255, 0.03)',
+                                              border: isLatest 
+                                                ? '1px solid rgba(168, 85, 247, 0.55)' 
+                                                : '1px solid rgba(255, 255, 255, 0.06)',
+                                              fontSize: '0.82rem',
+                                              color: isLatest ? '#fff' : 'rgba(255, 255, 255, 0.72)',
+                                              fontWeight: isLatest ? 600 : 400,
+                                              boxShadow: isLatest ? '0 0 12px rgba(168, 85, 247, 0.2)' : 'none',
+                                              transition: 'all 0.2s ease',
+                                            }}
+                                          >
+                                            <span style={{
+                                              overflow: 'hidden',
+                                              textOverflow: 'ellipsis',
+                                              whiteSpace: 'nowrap',
+                                              marginRight: '0.5rem',
+                                              color: isLatest ? '#f3e8ff' : undefined,
+                                            }}>
+                                              {ch.title}
+                                            </span>
+                                            {isLatest && (
+                                              <span style={{
+                                                flexShrink: 0,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                fontSize: '0.66rem',
+                                                padding: '0.12rem 0.45rem',
+                                                borderRadius: '4px',
+                                                background: 'rgba(168, 85, 247, 0.4)',
+                                                border: '1px solid rgba(168, 85, 247, 0.7)',
+                                                color: '#e9d5ff',
+                                                fontWeight: 600,
+                                                letterSpacing: '0.5px',
+                                                boxShadow: '0 0 8px rgba(168, 85, 247, 0.4)',
+                                              }}>
+                                                <Sparkles size={10} />
+                                                最新章節
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : novel.latestChapterTitle ? (
+                                    <div style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '0.45rem 0.75rem',
+                                      borderRadius: '6px',
+                                      background: 'linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.08))',
+                                      border: '1px solid rgba(168, 85, 247, 0.55)',
+                                      fontSize: '0.82rem',
+                                      color: '#fff',
+                                      fontWeight: 600,
+                                      boxShadow: '0 0 12px rgba(168, 85, 247, 0.2)',
+                                    }}>
+                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0.5rem' }}>
+                                        {novel.latestChapterTitle}
+                                      </span>
+                                      <span style={{
+                                        flexShrink: 0,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem',
+                                        fontSize: '0.66rem',
+                                        padding: '0.12rem 0.45rem',
+                                        borderRadius: '4px',
+                                        background: 'rgba(168, 85, 247, 0.4)',
+                                        border: '1px solid rgba(168, 85, 247, 0.7)',
+                                        color: '#e9d5ff',
+                                        fontWeight: 600,
+                                      }}>
+                                        <Sparkles size={10} />
+                                        最新章節
+                                      </span>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              {/* 底部行動呼籲按鈕 */}
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#c084fc', fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '0.85rem', borderTop: '1px solid rgba(168,85,247,0.2)' }}>
+                                <BookOpen size={15} />
+                                <span>📖 進入沉浸式閱讀器</span>
+                                <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 美觀優雅的展區結束分隔線 (底線) */}
+                <div className="vc-termination-divider">
+                  <div
+                    style={{
+                      height: '1px',
+                      width: '100%',
+                      maxWidth: '550px',
+                      background: 'linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.35), rgba(255, 255, 255, 0.7), rgba(168, 85, 247, 0.35), transparent)',
+                      boxShadow: '0 0 12px rgba(168, 85, 247, 0.3)',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      background: '#c084fc',
+                      boxShadow: '0 0 10px #c084fc, 0 0 18px rgba(168, 85, 247, 0.6)',
+                    }}
+                  />
                 </div>
-              )
+              </div>
             ) : writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : filteredWritingsItems.length === 0 ? (
