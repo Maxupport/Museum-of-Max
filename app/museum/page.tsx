@@ -299,7 +299,7 @@ export default function MuseumHall() {
                     <Link 
                       href={`/museum/${exhibit.id}`} 
                       key={exhibit.id} 
-                      scroll={true}
+                      scroll={false}
                       onClick={() => {
                         if (typeof window !== 'undefined') {
                           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });

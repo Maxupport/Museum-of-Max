@@ -31,6 +31,7 @@
 html {
   overflow-x: clip;
   max-width: 100%;
+  overflow-anchor: none;
 }
 
 body {
@@ -45,6 +46,7 @@ body {
   overflow-x: clip;
   max-width: 100%;
   width: 100%;
+  overflow-anchor: none;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -253,22 +253,46 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
 
   // 1. 切換展區或頁面載入時，強制立即使視埠回到最頂端
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+    const resetScroll = () => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-    }
+    };
+    resetScroll();
+    const rafId = requestAnimationFrame(resetScroll);
+    const t1 = setTimeout(resetScroll, 60);
+    const t2 = setTimeout(resetScroll, 200);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [exhibitId]);
 
-  // 2. 當各展區異步資料載入完成時，再次校準確保視埠維持在最頂端，避免高度變化導致卡在中間
+  // 2. 當職涯經歷或各展區異步資料載入完成時，再次校準確保視埠維持在最頂端，避免高度暴增導致卡在中間
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const isFinished = !careerLoading && !ventureLoading && !musicLoading && !writingsLoading && !novelLoading;
-    if (isFinished && typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+    if (isFinished) {
+      const resetScroll = () => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      };
+      resetScroll();
+      const rafId = requestAnimationFrame(resetScroll);
+      const t1 = setTimeout(resetScroll, 80);
+      const t2 = setTimeout(resetScroll, 250);
+      const t3 = setTimeout(resetScroll, 500);
+      return () => {
+        cancelAnimationFrame(rafId);
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
     }
-  }, [careerLoading, ventureLoading, musicLoading, writingsLoading, novelLoading]);
+  }, [careerLoading, ventureLoading, musicLoading, writingsLoading, novelLoading, careerItems.length]);
 
   if (!exhibit) {
     return (
@@ -656,11 +680,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
         </div>
       ) : exhibit.isTimeline ? (
         /* 職涯經歷 (Career Experience) 時間軸展示 */
-        <div className="animate-fade-in" style={{ padding: '1rem 0 2rem' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1.25rem' }}>
-            Career Timeline & Milestones
-          </div>
-
+        <div className="animate-fade-in" style={{ padding: '0.25rem 0 2rem' }}>
           {careerLoading ? (
             <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               載入職涯經歷中...
@@ -672,145 +692,174 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             </div>
           ) : (
             <div style={{ position: 'relative', paddingLeft: '2rem', borderLeft: '2px solid rgba(255,255,255,0.1)' }}>
-              {careerItems.map((item) => (
-                <div key={item.id} style={{ position: 'relative', marginBottom: '2.5rem' }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: '-2.6rem',
-                    top: '0.3rem',
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    background: exhibit.color,
-                    boxShadow: `0 0 10px ${exhibit.color}`
-                  }} />
+              {careerItems.map((item, index) => {
+                const isLatest = index === 0;
+                return (
+                  <div key={item.id} style={{ position: 'relative', marginBottom: isLatest ? '2.5rem' : '2.5rem' }}>
+                    {/* 時間軸節點指示燈 */}
+                    <div style={{
+                      position: 'absolute',
+                      left: '-2.6rem',
+                      top: '0.4rem',
+                      width: isLatest ? '20px' : '16px',
+                      height: isLatest ? '20px' : '16px',
+                      borderRadius: '50%',
+                      background: isLatest ? '#f59e0b' : exhibit.color,
+                      boxShadow: isLatest ? '0 0 16px #f59e0b, 0 0 6px #fff' : `0 0 10px ${exhibit.color}`,
+                      border: isLatest ? '2px solid #ffffff' : 'none',
+                      zIndex: 2,
+                    }} />
 
-                  <div className="glass-panel exhibit-card" style={{ padding: '1.5rem 1.8rem', color: exhibit.color }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.2rem', marginBottom: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.4rem' }}>
-                        {item.logoUrl ? (
-                          <img
-                            src={item.logoUrl}
-                            alt={`${item.company} Logo`}
-                            style={{
-                              width: '76px',
-                              height: '76px',
-                              objectFit: 'contain',
-                              background: 'rgba(255, 255, 255, 0.08)',
-                              borderRadius: '12px',
-                              padding: '0.5rem',
-                              border: '1.5px solid rgba(245, 158, 11, 0.35)',
-                              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
-                              flexShrink: 0,
-                            }}
-                          />
-                        ) : (
-                          <div
-                            title="Company Logo 預留位置"
-                            style={{
-                              width: '76px',
-                              height: '76px',
-                              borderRadius: '12px',
-                              border: '2px dashed rgba(245, 158, 11, 0.5)',
-                              background: 'rgba(245, 158, 11, 0.08)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'var(--theme-career)',
-                              flexShrink: 0,
-                              textAlign: 'center',
-                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-                            }}
-                          >
-                            <Building2 size={28} style={{ opacity: 0.9, marginBottom: '3px' }} />
-                            <span style={{ fontSize: '0.65rem', fontWeight: 600, opacity: 0.9, letterSpacing: '1px' }}>LOGO</span>
-                          </div>
-                        )}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h2 style={{ fontSize: '1.8rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.3rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
-                            {item.company}
-                          </h2>
-                          <h3 style={{ fontSize: '1.1rem', color: 'var(--theme-career)', fontWeight: 400, wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
-                            {item.role}
-                          </h3>
+                    <div
+                      className="glass-panel exhibit-card"
+                      style={{
+                        padding: '1.4rem 1.6rem',
+                        color: exhibit.color,
+                        border: isLatest ? '1.5px solid rgba(245, 158, 11, 0.45)' : undefined,
+                        boxShadow: isLatest ? '0 12px 35px rgba(245, 158, 11, 0.12)' : undefined,
+                      }}
+                    >
+                      {/* 最上方：最新職涯經歷標籤與時間 */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                        {isLatest ? (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            padding: '0.22rem 0.7rem',
+                            borderRadius: '12px',
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            border: '1px solid rgba(245, 158, 11, 0.5)',
+                            color: '#fbbf24',
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            letterSpacing: '1.2px'
+                          }}>
+                            <Sparkles size={12} />
+                            最新經歷 · CURRENT MILESTONE
+                          </span>
+                        ) : <span />}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: isLatest ? 'rgba(245, 158, 11, 0.08)' : 'rgba(255,255,255,0.05)', padding: '0.35rem 0.75rem', borderRadius: '4px', fontSize: '0.82rem', color: isLatest ? '#fbbf24' : 'var(--text-secondary)' }}>
+                          <Calendar size={13} />
+                          <span style={{ fontWeight: isLatest ? 600 : 400 }}>{item.period}</span>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                          <Calendar size={14} />
-                          {item.period}
+
+                      {/* 公司與職位標題區 */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.2rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', width: '100%' }}>
+                          {item.logoUrl ? (
+                            <img
+                              src={item.logoUrl}
+                              alt={`${item.company} Logo`}
+                              style={{
+                                width: '68px',
+                                height: '68px',
+                                objectFit: 'contain',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                borderRadius: '12px',
+                                padding: '0.4rem',
+                                border: isLatest ? '1.5px solid rgba(245, 158, 11, 0.5)' : '1.5px solid rgba(255, 255, 255, 0.15)',
+                                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35)',
+                                flexShrink: 0,
+                              }}
+                            />
+                          ) : (
+                            <div
+                              title="Company Logo 預留位置"
+                              style={{
+                                width: '68px',
+                                height: '68px',
+                                borderRadius: '12px',
+                                border: '2px dashed rgba(245, 158, 11, 0.5)',
+                                background: 'rgba(245, 158, 11, 0.08)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--theme-career)',
+                                flexShrink: 0,
+                                textAlign: 'center',
+                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                              }}
+                            >
+                              <Building2 size={26} style={{ opacity: 0.9, marginBottom: '2px' }} />
+                              <span style={{ fontSize: '0.62rem', fontWeight: 600, opacity: 0.9, letterSpacing: '1px' }}>LOGO</span>
+                            </div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h2 style={{ fontSize: 'clamp(1.35rem, 2.8vw, 1.7rem)', color: '#fff', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.2rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
+                              {item.company}
+                            </h2>
+                            <h3 style={{ fontSize: 'clamp(0.95rem, 2vw, 1.05rem)', color: isLatest ? '#f59e0b' : 'var(--text-secondary)', fontWeight: 400, wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'balance' }}>
+                              {item.role}
+                            </h3>
+                          </div>
                         </div>
-                        {item.createdAt && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                            {formatTimestamp(item.createdAt)}
-                          </span>
+                      </div>
+
+                      {/* 內容區：左右併排（桌機）/ 上下排列（手機），確保首頁不被拉長切斷 */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: item.photoUrl ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr',
+                        gap: '1.2rem',
+                        alignItems: 'center',
+                        marginTop: '0.8rem',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                        paddingTop: '1rem',
+                      }}>
+                        {item.photoUrl ? (
+                          <div
+                            style={{
+                              borderRadius: '10px',
+                              overflow: 'hidden',
+                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              background: 'rgba(0, 0, 0, 0.45)',
+                              padding: '0.35rem',
+                              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+                              maxHeight: '230px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <img
+                              src={item.photoUrl}
+                              alt={`${item.company} 工作現場照片`}
+                              style={{
+                                width: '100%',
+                                maxHeight: '220px',
+                                objectFit: 'contain',
+                                borderRadius: '6px',
+                                display: 'block',
+                              }}
+                            />
+                          </div>
+                        ) : null}
+
+                        {item.description && (
+                          <div
+                            style={{
+                              color: 'rgba(255, 255, 255, 0.85)',
+                              fontSize: '0.92rem',
+                              lineHeight: 1.7,
+                              whiteSpace: 'pre-line',
+                              fontFamily: 'var(--font-noto-sans)',
+                              letterSpacing: '0.3px',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              textWrap: 'pretty',
+                            }}
+                          >
+                            {item.description}
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    {/* 兩張照片空間之二：個人工作照 / 現場照片 (Work Photo) */}
-                    {item.photoUrl ? (
-                      <div
-                        style={{
-                          margin: '1.2rem auto',
-                          maxWidth: '520px',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          border: '1px solid rgba(255, 255, 255, 0.15)',
-                          background: 'rgba(0, 0, 0, 0.45)',
-                          padding: '0.4rem',
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
-                        }}
-                      >
-                        <img
-                          src={item.photoUrl}
-                          alt={`${item.company} 工作現場照片`}
-                          style={{
-                            width: '100%',
-                            maxHeight: '260px',
-                            objectFit: 'contain',
-                            borderRadius: '8px',
-                            display: 'block',
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          margin: '1.2rem auto',
-                          maxWidth: '520px',
-                          padding: '1.8rem 1rem',
-                          borderRadius: '12px',
-                          border: '2px dashed rgba(245, 158, 11, 0.35)',
-                          background: 'rgba(245, 158, 11, 0.03)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.4rem',
-                          color: 'rgba(245, 158, 11, 0.85)',
-                          textAlign: 'center',
-                        }}
-                      >
-                        <ImageIcon size={28} style={{ opacity: 0.75 }} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '1px' }}>
-                          📷 【工作現場 / 團體照片 預留位置】
-                        </span>
-                        <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
-                          工作現場與團體照片專屬展示區塊
-                        </span>
-                      </div>
-                    )}
-
-                    {item.description && (
-                      <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-line', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1rem', marginTop: '1rem', wordBreak: 'break-word', overflowWrap: 'break-word', textWrap: 'pretty' }}>
-                        {item.description}
-                      </p>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
