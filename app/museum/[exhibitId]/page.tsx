@@ -514,19 +514,19 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
       {/* 展區內容區域 */}
       {exhibitId === 'vc' ? (
         /* 風險投資 (VC Projects) 後台即時卡片展示 (不連結 Notion) */
-        <div className="animate-fade-in">
+        <div className="animate-fade-in vc-showcase-container">
 
           {ventureLoading ? (
-            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div style={{ margin: 'auto 0', padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               載入風險投資項目中...
             </div>
           ) : filteredVentureItems.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div className="glass-panel" style={{ margin: 'auto 0', padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <TrendingUp size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
               <p style={{ letterSpacing: '1px' }}>此子區塊尚無項目資料。</p>
             </div>
           ) : (
-            <div className="exhibit-items-grid">
+            <div className="exhibit-items-grid vc-items-grid">
               {filteredVentureItems.map((item) => {
                 const isCenteredLogo = ['早期投資', '早期投資項目', '新創項目評估', '創投項目評估', '募資 FA 服務', '募資FA服務'].includes(item.category) || true;
 
@@ -646,17 +646,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           )}
 
           {/* 美觀優雅的展區結束分隔線 */}
-          <div
-            style={{
-              marginTop: '2.5rem',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              width: '100%',
-            }}
-          >
+          <div className="vc-termination-divider">
             <div
               style={{
                 height: '1px',

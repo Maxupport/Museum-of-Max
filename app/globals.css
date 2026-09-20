@@ -363,6 +363,47 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* VC Showcase Container - 垂直置中卡片於工具列下緣線與終止線之間，避免整體往上飄 */
+.vc-showcase-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: calc(100vh - 270px);
+  min-height: calc(100dvh - 270px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vc-items-grid {
+  margin: auto 0;
+  padding: 2.5rem 0;
+}
+
+.vc-termination-divider {
+  margin-top: auto;
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .vc-showcase-container {
+    min-height: auto;
+  }
+  .vc-items-grid {
+    margin: 1rem 0;
+    padding: 0.5rem 0;
+  }
+  .vc-termination-divider {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
 /* Single Featured Card (上下置中於下方空間，靠左對齊不強制水平置中，避免留白) */
 .exhibit-single-featured-container {
   display: flex;
