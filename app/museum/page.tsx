@@ -62,12 +62,12 @@ export default function MuseumHall() {
 
                 setAllowedPermissions(mappedPerms);
               } else {
-                router.replace('/');
+                router.replace('/?redirect=/museum');
                 return;
               }
             }
           } catch {
-            router.replace('/');
+            router.replace('/?redirect=/museum');
             return;
           } finally {
             setCheckedAuth(true);
@@ -75,7 +75,7 @@ export default function MuseumHall() {
         }
       })
       .catch(() => {
-        router.replace('/');
+        router.replace('/?redirect=/museum');
       });
 
     return () => clearTimeout(timer);

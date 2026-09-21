@@ -80,28 +80,10 @@ export default function NovelReaderClient({
   const [subscribing, setSubscribing] = useState(false);
   const [subMessage, setSubMessage] = useState('');
 
-  // 權限驗證
+  // 權限驗證：開放公開閱讀連載小說，僅記錄策展人身分供進階操作
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const isCuratorCookie = document.cookie.includes('is_curator=true');
-      if (!isCuratorCookie) {
-        const match = document.cookie.match(/(?:^|; )visitor_permissions=([^;]*)/);
-        if (match && match[1]) {
-          try {
-            const perms = JSON.parse(decodeURIComponent(match[1]));
-            const hasAccess = Array.isArray(perms) && (perms.includes('creation_lab') || perms.includes('creation_lab_novel'));
-            if (!hasAccess) {
-              router.replace('/');
-            }
-          } catch {
-            router.replace('/');
-          }
-        } else {
-          router.replace('/');
-        }
-      }
-    }
-  }, [router]);
+    // 允許外部讀者免通行碼直接閱讀連載章節
+  }, []);
 
   // 客戶端備用載入 (若 SSR 未獲取到)
   useEffect(() => {

@@ -49,14 +49,25 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
   }
 
   // 保護 /museum 及 /museum/* (需持有訪客通行證或管理員 Token)
+  // 但開放個別專題文章詳細頁 (如 /museum/sound/cmualw4is000104l6hemu5567) 與小說閱讀頁 (如 /museum/creation_lab/novel/[novelId]) 供外部人直接閱讀與引用
   if (pathname.startsWith('/museum')) {
-    const visitorToken = request.cookies.get('visitor_token')?.value;
-    const visitorPermissions = request.cookies.get('visitor_permissions')?.value;
-    const adminToken = request.cookies.get('admin_token')?.value;
+    const normalizedPath = pathname.replace(/\/$/, '') || '/';
+    const isNovelDetailPage = /^\/museum\/creation_lab\/novel\/[^/]+$/.test(normalizedPath);
+    const isArticleDetailPage = /^\/museum\/[^/]+\/[^/]+$/.test(normalizedPath) && !normalizedPath.startsWith('/museum/creation_lab/novel');
+    const isPublicDetailPage = isArticleDetailPage || isNovelDetailPage;
 
-    if (!adminToken && (!visitorToken || !visitorPermissions)) {
-      // 未經驗證之真人訪客導回首頁輸入通行碼
-      return NextResponse.redirect(new URL('/', request.url));
+    if (!isPublicDetailPage) {
+      const visitorToken = request.cookies.get('visitor_token')?.value;
+      const visitorPermissions = request.cookies.get('visitor_permissions')?.value;
+      const adminToken = request.cookies.get('admin_token')?.value;
+
+      if (!adminToken && (!visitorToken || !visitorPermissions)) {
+        // 未經驗證之真人訪客導回首頁輸入通行碼，並攜帶原始目標以供驗證後轉跳回導
+        const redirectTarget = pathname + (request.nextUrl.search || '');
+        return NextResponse.redirect(
+          new URL(`/?redirect=${encodeURIComponent(redirectTarget)}`, request.url)
+        );
+      }
     }
   }
 

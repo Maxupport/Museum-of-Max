@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, User, Lock, ArrowLeft, KeyRound, Sparkles, ArrowRight } from 'lucide-react';
 
@@ -69,6 +69,19 @@ export default function Home() {
   const [visitorLoading, setVisitorLoading] = useState(false);
   const [clickCount, setClickCount] = useState(0);
 
+  // Target redirect URL if user was intercepted when visiting protected routes
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const target = params.get('redirect');
+      if (target && target.startsWith('/') && !target.startsWith('//')) {
+        setRedirectUrl(target);
+      }
+    }
+  }, []);
+
   // Admin login state
   const [adminUser, setAdminUser] = useState('');
   const [adminPass, setAdminPass] = useState('');
@@ -93,7 +106,7 @@ export default function Home() {
       if (res.ok && data.ok) {
         setIsEntering(true);
         setTimeout(() => {
-          router.push(data.redirectUrl || '/museum');
+          router.push(redirectUrl || data.redirectUrl || '/museum');
         }, 1200);
       } else {
         setVisitorError(data.error || '通行密碼驗證失敗，請手動確認');
@@ -130,7 +143,7 @@ export default function Home() {
       if (res.ok && data.ok) {
         setIsEntering(true);
         setTimeout(() => {
-          router.push(data.redirectUrl || '/museum');
+          router.push(redirectUrl || data.redirectUrl || '/museum');
         }, 1200);
       } else {
         setVisitorError(data.error || '通行密碼無效，請重新確認');
@@ -241,6 +254,23 @@ export default function Home() {
                   董鈺新 Max / yuo1238 / Maxupport / Nathan
                 </p>
 
+                {redirectUrl && (
+                  <div style={{
+                    background: 'rgba(56, 189, 248, 0.08)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    borderRadius: '6px',
+                    padding: '0.6rem 1rem',
+                    marginBottom: '1.8rem',
+                    fontSize: '0.85rem',
+                    color: '#38bdf8',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}>
+                    <span>🎯 您正在前往目標展區，請選擇參觀身分以繼續導向</span>
+                  </div>
+                )}
+
                 {/* Modal / Card when an option is clicked */}
                 {selectedOption ? (
                   <div className="animate-fade-in" style={{ padding: '0.5rem 0' }}>
@@ -300,7 +330,7 @@ export default function Home() {
                           boxShadow: '0 4px 20px rgba(56, 189, 248, 0.25)'
                         }}
                       >
-                        {visitorLoading ? '驗證進入中...' : '帶入通行碼並進入博物館'}
+                        {visitorLoading ? '驗證進入中...' : (redirectUrl ? '帶入通行碼並前往目標頁面' : '帶入通行碼並進入博物館')}
                         {!visitorLoading && <ArrowRight size={18} />}
                       </button>
 

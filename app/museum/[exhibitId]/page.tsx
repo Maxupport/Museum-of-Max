@@ -225,7 +225,8 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             }
           } catch {}
         } else {
-          router.replace('/');
+          const redirectTarget = typeof window !== 'undefined' ? window.location.pathname + window.location.search : `/museum/${exhibitId}`;
+          router.replace(`/?redirect=${encodeURIComponent(redirectTarget)}`);
         }
       }
     }
