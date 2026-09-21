@@ -1,14 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, X } from 'lucide-react';
-import { use, useState, useEffect } from 'react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, X, ArrowUpDown } from 'lucide-react';
+import { use, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { EXHIBITS, YOUTH_SONGS_YOUTUBE_CHANNEL } from '@/lib/constants';
 import { getYouTubeEmbedUrl } from '@/utils/youtube';
 
-const YoutubeIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+const YoutubeIcon = ({ size = 20, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={style}>
     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
   </svg>
 );
@@ -46,6 +46,9 @@ interface MusicItem {
   description: string | null;
   order: number;
   createdAt?: string;
+  isPinned?: boolean;
+  isHidden?: boolean;
+  type?: 'music' | 'writing';
 }
 
 interface WritingsItem {
@@ -127,6 +130,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   const [musicItems, setMusicItems] = useState<MusicItem[]>([]);
   const [musicLoading, setMusicLoading] = useState(false);
   const [selectedMusicItem, setSelectedMusicItem] = useState<MusicItem | null>(null);
+  const [musicSortOrder, setMusicSortOrder] = useState<'desc' | 'asc'>('desc');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -329,30 +333,84 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     (item.description && item.description.toLowerCase().includes(searchKeyword.toLowerCase()))
   );
 
-  const filteredMusicItems = musicItems.filter((item) => {
-    const matchesSearch = searchKeyword
-      ? item.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchKeyword.toLowerCase()))
-      : true;
-
-    if (!matchesSearch) return false;
-
-    if (exhibitId === 'sound') {
-      if (activeSubCategory) {
-        return item.category === activeSubCategory && activeSubCategory !== '個人聲音探索心得';
-      }
-      return item.category !== '個人聲音探索心得';
-    }
-
-    if (exhibitId === 'creation_lab') {
-      if (activeSubCategory === '音樂') {
+  const filteredMusicItems = useMemo(() => {
+    // 1. 取得原始 musicItems (來自 /api/music)
+    const rawMusic: MusicItem[] = musicItems
+      .filter((item) => {
+        if (exhibitId === 'sound') {
+          if (activeSubCategory) {
+            return item.category === activeSubCategory && activeSubCategory !== '個人聲音探索心得';
+          }
+          return item.category !== '個人聲音探索心得';
+        }
+        if (exhibitId === 'creation_lab') {
+          if (activeSubCategory === '音樂') return true;
+          return (
+            item.category === '音樂' ||
+            item.category === '創作 Lab - 音樂' ||
+            !item.category ||
+            !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '')
+          );
+        }
         return true;
-      }
-      return item.category === '音樂' || item.category === '創作 Lab - 音樂' || !item.category || !['個人聲音探索心得', '青春之歌計畫', '人聲優化課程', '人聲優化歷程記錄'].includes(item.category || '');
-    }
+      })
+      .map((m) => ({ ...m, type: 'music' as const }));
 
-    return true;
-  });
+    // 2. 當處於「青春之歌計畫」時，一併納入在後台透過「撰寫一般文章」發布的「青春之歌計畫」作品 (writingsItems)
+    const writingMusic: MusicItem[] = (exhibitId === 'sound' && activeSubCategory === '青春之歌計畫')
+      ? writingsItems
+          .filter((w) => (w.category === '青春之歌計畫' || w.topic === '青春之歌計畫') && !w.isHidden)
+          .map((w) => {
+            let yt = w.youtubeUrl || '';
+            if (!yt && w.content) {
+              const match = w.content.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+              if (match) yt = match[0];
+            }
+            return {
+              id: w.id,
+              category: w.category || '青春之歌計畫',
+              title: w.title,
+              youtubeUrl: yt,
+              description: w.content || w.excerpt || '',
+              order: w.order ?? 0,
+              createdAt: w.createdAt,
+              isPinned: w.isPinned ?? false,
+              isHidden: w.isHidden ?? false,
+              type: 'writing' as const,
+            };
+          })
+      : [];
+
+    const combined = [...rawMusic, ...writingMusic];
+
+    // 3. 關鍵字搜尋
+    const searched = searchKeyword
+      ? combined.filter((item) =>
+          item.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+          (item.description && item.description.toLowerCase().includes(searchKeyword.toLowerCase()))
+        )
+      : combined;
+
+    // 4. 排序：預設為上傳順序 (createdAt: desc，最新上傳在最前面；可切換為依最早發布順序)
+    return [...searched].sort((a, b) => {
+      // 置頂優先
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+
+      // 若兩者有自訂且不同的 order，則 order 優先
+      if (a.order !== b.order && (a.order > 0 || b.order > 0)) {
+        return a.order - b.order;
+      }
+
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+      if (musicSortOrder === 'asc') {
+        return timeA - timeB; // 依最早建立順序
+      }
+      return timeB - timeA; // 預設：最新上傳優先 (由新到舊)
+    });
+  }, [musicItems, writingsItems, exhibitId, activeSubCategory, searchKeyword, musicSortOrder]);
 
   const filteredNovelItems = novelItems.filter((novel) => {
     if (!searchKeyword) return true;
@@ -1170,7 +1228,47 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 </div>
               )}
 
-              {musicLoading ? (
+              {/* 排序控制條 (預設為最新上傳順序) */}
+              {filteredMusicItems.length > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    共 {filteredMusicItems.length} 部聲音作品
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMusicSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: 'rgba(255, 255, 255, 0.85)',
+                      padding: '0.35rem 0.85rem',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                    }}
+                    title="點擊切換上傳呈現順序"
+                  >
+                    <ArrowUpDown size={13} />
+                    <span>呈現順序：{musicSortOrder === 'desc' ? '最新上傳優先 (預設)' : '依最早發布順序'}</span>
+                  </button>
+                </div>
+              )}
+
+              {musicLoading || (exhibitId === 'sound' && activeSubCategory === '青春之歌計畫' && writingsLoading) ? (
                 <div style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂與聲音作品載入中...</div>
               ) : filteredMusicItems.length === 0 ? (
                 <div className="glass-panel" style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
@@ -1179,6 +1277,129 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                       ? `目前【${activeSubCategory}】標籤下尚無作品。`
                       : '目前尚無音樂與聲音作品。'}
                   </p>
+                </div>
+              ) : filteredMusicItems.length === 1 ? (
+                /* 單篇精選專題卡：分為 2 張卡片空間，佔據左半邊 50% */
+                <div className="showcase-two-col-grid vc-items-grid">
+                  {filteredMusicItems.map((item) => {
+                    const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
+                    return (
+                      <div
+                        key={item.id}
+                        className="glass-panel exhibit-card"
+                        style={{
+                          padding: '0',
+                          overflow: 'hidden',
+                          color: exhibit.color,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          height: '100%',
+                          transition: 'all 0.3s ease',
+                          width: '100%',
+                          maxWidth: '100%',
+                        }}
+                      >
+                        {/* 16:9 響應式 YouTube Player */}
+                        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
+                          {embedUrl ? (
+                            <iframe
+                              src={embedUrl}
+                              title={item.title}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                            />
+                          ) : (
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'linear-gradient(135deg, rgba(236,72,153,0.15) 0%, rgba(15,20,28,0.95) 100%)',
+                              color: '#ff6b6b',
+                              gap: '0.5rem',
+                              padding: '1rem',
+                              textAlign: 'center'
+                            }}>
+                              <YoutubeIcon size={36} style={{ opacity: 0.8 }} />
+                              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', letterSpacing: '0.5px' }}>{item.title}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 卡片下半部文字資訊 */}
+                        <div
+                          onClick={() => setSelectedMusicItem(item)}
+                          style={{
+                            padding: '1.25rem 1.6rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flexGrow: 1,
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                          }}
+                          title="點擊查看完整內容與曲目故事"
+                        >
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              <span style={{ whiteSpace: 'nowrap' }}>{item.category || '青春之歌計畫'}</span>
+                              {item.isPinned && (
+                                <span style={{ fontSize: '0.7rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '0.1rem 0.4rem', borderRadius: '3px', border: '1px solid rgba(56, 189, 248, 0.4)', fontWeight: 600 }}>
+                                  📌 置頂
+                                </span>
+                              )}
+                            </div>
+                            {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none', whiteSpace: 'nowrap' }}>{formatTimestamp(item.createdAt)}</span>}
+                          </div>
+                          <h3 style={{ color: '#fff', fontSize: '1.2rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.5rem', lineHeight: 1.4 }}>
+                            {item.title}
+                          </h3>
+                          {item.description && (
+                            <p
+                              style={{
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.86rem',
+                                lineHeight: 1.6,
+                                marginTop: '0.2rem',
+                                marginBottom: 'auto',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {item.description}
+                            </p>
+                          )}
+
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              color: '#ff6b6b',
+                              fontSize: '0.82rem',
+                              fontWeight: 500,
+                              marginTop: '0.9rem',
+                              paddingTop: '0.6rem',
+                              borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                              transition: 'color 0.2s ease',
+                            }}
+                          >
+                            <span>閱讀完整內文</span>
+                            <ChevronRight size={14} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="exhibit-items-grid vc-items-grid" style={{ gap: '2rem' }}>
@@ -1209,13 +1430,29 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                             />
                           ) : (
-                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                              無效的影片網址
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'linear-gradient(135deg, rgba(236,72,153,0.15) 0%, rgba(15,20,28,0.95) 100%)',
+                              color: '#ff6b6b',
+                              gap: '0.5rem',
+                              padding: '1rem',
+                              textAlign: 'center'
+                            }}>
+                              <YoutubeIcon size={36} style={{ opacity: 0.8 }} />
+                              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', letterSpacing: '0.5px' }}>{item.title}</span>
                             </div>
                           )}
                         </div>
 
-                        {/* 卡片下半部文字資訊：固定顯示3行並以...截斷，點擊可展開完整內文 */}
+                        {/* 卡片下半部文字資訊 */}
                         <div
                           onClick={() => setSelectedMusicItem(item)}
                           style={{
@@ -1229,7 +1466,14 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                           title="點擊查看完整內容與曲目故事"
                         >
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
-                            <span style={{ whiteSpace: 'nowrap' }}>{item.category || '音樂創作'}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              <span style={{ whiteSpace: 'nowrap' }}>{item.category || '青春之歌計畫'}</span>
+                              {item.isPinned && (
+                                <span style={{ fontSize: '0.7rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '0.1rem 0.4rem', borderRadius: '3px', border: '1px solid rgba(56, 189, 248, 0.4)', fontWeight: 600 }}>
+                                  📌 置頂
+                                </span>
+                              )}
+                            </div>
                             {item.createdAt && <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'none', whiteSpace: 'nowrap' }}>{formatTimestamp(item.createdAt)}</span>}
                           </div>
                           <h3 style={{ color: '#fff', fontSize: '1.2rem', fontFamily: 'var(--font-noto-serif)', marginBottom: '0.5rem', lineHeight: 1.4 }}>
@@ -1957,8 +2201,24 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                   />
                 ) : (
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                    無效的影片網址
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, rgba(236,72,153,0.2) 0%, rgba(15,20,28,0.95) 100%)',
+                    color: '#ff6b6b',
+                    gap: '0.6rem',
+                    padding: '1.5rem',
+                    textAlign: 'center'
+                  }}>
+                    <YoutubeIcon size={44} style={{ opacity: 0.8 }} />
+                    <span style={{ fontSize: '0.92rem', color: 'rgba(255,255,255,0.9)', letterSpacing: '0.5px' }}>{selectedMusicItem.title}</span>
                   </div>
                 )}
               </div>
@@ -1993,29 +2253,55 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.8rem',
                 background: 'rgba(255, 255, 255, 0.02)',
               }}
             >
-              {selectedMusicItem.youtubeUrl && (
-                <a
-                  href={selectedMusicItem.youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    color: '#ff4d4d',
-                    fontSize: '0.85rem',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                  }}
-                >
-                  <YoutubeIcon size={16} />
-                  <span>在 YouTube 上觀看完整影片</span>
-                  <ExternalLink size={13} />
-                </a>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                {selectedMusicItem.type === 'writing' && (
+                  <Link
+                    href={`/museum/sound/${selectedMusicItem.id}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      color: '#ec4899',
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      background: 'rgba(236, 72, 153, 0.12)',
+                      border: '1px solid rgba(236, 72, 153, 0.3)',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    <BookOpen size={14} />
+                    <span>閱讀專題文章全文</span>
+                    <ExternalLink size={12} />
+                  </Link>
+                )}
+                {selectedMusicItem.youtubeUrl && (
+                  <a
+                    href={selectedMusicItem.youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      color: '#ff4d4d',
+                      fontSize: '0.85rem',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <YoutubeIcon size={16} />
+                    <span>在 YouTube 上觀看完整影片</span>
+                    <ExternalLink size={13} />
+                  </a>
+                )}
+              </div>
               <button
                 onClick={() => setSelectedMusicItem(null)}
                 style={{
