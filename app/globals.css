@@ -404,7 +404,22 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Single Featured Card (上下置中於下方空間，靠左對齊不強制水平置中，避免留白) */
+/* Single Featured Card & 2-Col Showcase Grid (佔據左半邊 50%，預留 2 張卡片空間，視覺感穩健平衡) */
+.showcase-two-col-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.8rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 960px) {
+  .showcase-two-col-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
 .exhibit-single-featured-container {
   display: flex;
   justify-content: flex-start;
@@ -419,9 +434,9 @@ h1, h2, h3, h4, h5, h6 {
 .exhibit-single-featured-card {
   display: flex;
   flex-direction: row;
-  max-width: 960px;
+  max-width: 100%;
   width: 100%;
-  min-height: 400px;
+  min-height: 380px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: 6px;
@@ -438,8 +453,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .exhibit-single-featured-cover {
-  width: 45%;
-  min-height: 380px;
+  width: 42%;
+  min-width: 180px;
+  min-height: 360px;
   position: relative;
   overflow: hidden;
   background: #000;
@@ -458,8 +474,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .exhibit-single-featured-content {
-  width: 55%;
-  padding: 2.2rem 2.5rem;
+  width: 58%;
+  padding: 1.5rem 1.6rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -473,7 +489,7 @@ h1, h2, h3, h4, h5, h6 {
   }
   .exhibit-single-featured-card {
     flex-direction: column;
-    max-width: 540px;
+    max-width: 100%;
     min-height: auto;
   }
   .exhibit-single-featured-cover {
@@ -483,7 +499,7 @@ h1, h2, h3, h4, h5, h6 {
   }
   .exhibit-single-featured-content {
     width: 100%;
-    padding: 1.5rem;
+    padding: 1.4rem;
   }
 }
 

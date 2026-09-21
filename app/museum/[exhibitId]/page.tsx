@@ -379,6 +379,42 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     return text.replace(/^#+\s*|^>\s*/gm, '').slice(0, 150);
   };
 
+  const EXHIBIT_RGB_MAP: Record<string, string> = {
+    vc: '56, 189, 248',
+    career: '245, 158, 11',
+    finance_insurance: '16, 185, 129',
+    sound: '236, 72, 153',
+    creation_lab: '168, 85, 247',
+    communication: '99, 102, 241',
+  };
+
+  const renderTerminationDivider = () => {
+    const rgb = EXHIBIT_RGB_MAP[exhibitId] || '255, 255, 255';
+    return (
+      <div className="vc-termination-divider">
+        <div
+          style={{
+            height: '1px',
+            width: '100%',
+            maxWidth: '550px',
+            background: `linear-gradient(90deg, transparent, rgba(${rgb}, 0.35), rgba(255, 255, 255, 0.7), rgba(${rgb}, 0.35), transparent)`,
+            boxShadow: `0 0 12px rgba(${rgb}, 0.3)`,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: `rgb(${rgb})`,
+            boxShadow: `0 0 10px rgb(${rgb}), 0 0 18px rgba(${rgb}, 0.6)`,
+          }}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="exhibit-page-container">
       {/* 返回展覽大廳按鈕 (若為小說直通讀者則不顯示) */}
@@ -854,8 +890,24 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   </div>
                 );
               })}
+
+              {/* 時間軸結尾標記 */}
+              <div style={{ position: 'relative', marginTop: '1.5rem' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: '-2.35rem',
+                  top: '0',
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  background: exhibit.color,
+                  boxShadow: `0 0 10px ${exhibit.color}`,
+                }} />
+              </div>
             </div>
           )}
+
+          {renderTerminationDivider()}
         </div>
       ) : (
         /* 部落格型展區 (卡片清單與 Notion Blog 文章入口) */
@@ -863,93 +915,18 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
           
           {/* 個人聲音探索心得 / 人聲優化歷程記錄 (文章卡片與時間軸架構) 或 音樂與聲音探尋 YouTube 影片嵌入網格 */}
           {(exhibitId === 'sound' && (activeSubCategory === '個人聲音探索心得' || activeSubCategory === '人聲優化歷程記錄' || activeSubCategory === '人聲優化課程')) ? (
-            writingsLoading ? (
-              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章與歷程記錄中...</div>
-            ) : filteredWritingsItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無作品。</p>
-              </div>
-            ) : (
-            filteredWritingsItems.length === 1 ? (
-              /* 單篇精選專題卡：拉長且置中於下方空間，消除無謂空白 */
-              (() => {
-                const item = filteredWritingsItems[0];
-                let isVocal = item.category === '人聲優化課程' || item.category === '人聲優化歷程記錄';
-                let versionCount = 0;
-                let coverImage: string | null = null;
-                if (item.content) {
-                  try {
-                    const p = JSON.parse(item.content);
-                    if (p) {
-                      if (Array.isArray(p.versions)) versionCount = p.versions.length;
-                      if (p.coverImage) coverImage = p.coverImage;
-                    }
-                  } catch {}
-                }
-
-                return (
-                  <div className="exhibit-single-featured-container animate-fade-in">
-                    <Link href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none', width: '100%', maxWidth: '960px' }}>
-                      <div className="exhibit-single-featured-card" style={{ color: exhibit.color }}>
-                        <div className="exhibit-single-featured-cover">
-                          {coverImage ? (
-                            <img src={coverImage} alt={item.title} />
-                          ) : (
-                            <div style={{
-                              width: '100%',
-                              height: '100%',
-                              minHeight: '380px',
-                              background: 'rgba(236, 72, 153, 0.08)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'var(--theme-music, #ec4899)',
-                            }}>
-                              <BookOpen size={48} style={{ opacity: 0.8 }} />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="exhibit-single-featured-content">
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.6rem' }}>
-                              <span style={{ fontSize: '0.8rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', padding: '0.25rem 0.75rem', borderRadius: '4px', border: '1px solid rgba(236, 72, 153, 0.3)', fontWeight: 500 }}>
-                                {item.category || '個人聲音探索心得'}
-                              </span>
-                              {versionCount > 0 && (
-                                <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.2rem 0.6rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                                  🎙️ {versionCount} 個演進版本
-                                </span>
-                              )}
-                              {item.createdAt && (
-                                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
-                                  📅 {formatTimestamp(item.createdAt)}
-                                </span>
-                              )}
-                            </div>
-
-                            <h3 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 2.5vw, 1.95rem)', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.35, letterSpacing: '0.5px' }}>
-                              {item.title}
-                            </h3>
-
-                            <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.96rem', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', fontFamily: 'var(--font-noto-serif)' }}>
-                              {item.excerpt || cleanExcerpt(item.content)}
-                            </p>
-                          </div>
-
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: '#f472b6', fontSize: '0.92rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '1.2rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                            <span>{isVocal ? '進入多版本時間軸演進錄音' : '閱讀文章完整內容'}</span>
-                            <ChevronRight size={18} />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
-                );
-              })()
-            ) : (
-              <div className="exhibit-items-grid" style={{ gap: '2.5rem' }}>
-                {filteredWritingsItems.map((item, index) => {
+            <div className="animate-fade-in vc-showcase-container">
+              {writingsLoading ? (
+                <div style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章與歷程記錄中...</div>
+              ) : filteredWritingsItems.length === 0 ? (
+                <div className="glass-panel" style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
+                  <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                  <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無作品。</p>
+                </div>
+              ) : filteredWritingsItems.length === 1 ? (
+                /* 單篇精選專題卡：分為 2 張卡片空間，佔據左半邊 50% */
+                (() => {
+                  const item = filteredWritingsItems[0];
                   let isVocal = item.category === '人聲優化課程' || item.category === '人聲優化歷程記錄';
                   let versionCount = 0;
                   let coverImage: string | null = null;
@@ -964,85 +941,164 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   }
 
                   return (
-                    <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
-                      <div className="glass-panel exhibit-card" style={{
-                        padding: '0',
-                        cursor: 'pointer',
-                        color: exhibit.color,
-                        animationDelay: `${index * 0.1}s`,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                        transition: 'all 0.4s ease'
-                      }}>
-                        {coverImage ? (
-                          <div style={{
-                            width: '100%',
-                            height: '200px',
-                            overflow: 'hidden',
-                            borderBottom: '1px solid rgba(255,255,255,0.08)',
-                            background: '#000',
-                            position: 'relative'
-                          }}>
-                            <img
-                              src={coverImage}
-                              alt={item.title}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </div>
-                        ) : (
-                          <div style={{ 
-                            width: '100%', 
-                            height: '180px', 
-                            background: 'rgba(236, 72, 153, 0.08)', 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--theme-music, #ec4899)',
-                            fontSize: '0.8rem',
-                            letterSpacing: '2px',
-                            textTransform: 'uppercase',
-                            borderBottom: '1px solid rgba(255,255,255,0.05)'
-                          }}>
-                            <BookOpen size={32} style={{ opacity: 0.8 }} />
-                          </div>
-                        )}
-                        <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-                            <span style={{ fontSize: '0.75rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-                              {item.category || '個人聲音探索心得'}
-                            </span>
-                            {versionCount > 0 && (
-                              <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                                🎙️ {versionCount} 個演進版本
-                              </span>
-                            )}
-                            {item.createdAt && (
-                              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
-                                📅 {formatTimestamp(item.createdAt)}
-                              </span>
+                    <div className="showcase-two-col-grid vc-items-grid">
+                      <Link href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none', width: '100%' }}>
+                        <div className="exhibit-single-featured-card" style={{ color: exhibit.color, maxWidth: '100%' }}>
+                          <div className="exhibit-single-featured-cover">
+                            {coverImage ? (
+                              <img src={coverImage} alt={item.title} />
+                            ) : (
+                              <div style={{
+                                width: '100%',
+                                height: '100%',
+                                minHeight: '380px',
+                                background: 'rgba(236, 72, 153, 0.08)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--theme-music, #ec4899)',
+                              }}>
+                                <BookOpen size={48} style={{ opacity: 0.8 }} />
+                              </div>
                             )}
                           </div>
-                          <h3 style={{ color: '#fff', fontSize: '1.35rem', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
-                            {item.title}
-                          </h3>
-                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
-                            {item.excerpt || cleanExcerpt(item.content)}
-                          </p>
-                          
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f472b6', fontSize: '0.85rem', fontWeight: 500 }}>
-                            <span>{isVocal ? '進入多版本時間軸演進錄音' : '閱讀文章完整內容'}</span>
-                            <ChevronRight size={16} />
+
+                          <div className="exhibit-single-featured-content">
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '0.78rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', padding: '0.22rem 0.7rem', borderRadius: '4px', border: '1px solid rgba(236, 72, 153, 0.3)', fontWeight: 500 }}>
+                                  {item.category || '個人聲音探索心得'}
+                                </span>
+                                {versionCount > 0 && (
+                                  <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.18rem 0.55rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                                    🎙️ {versionCount} 個演進版本
+                                  </span>
+                                )}
+                                {item.createdAt && (
+                                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
+                                    📅 {formatTimestamp(item.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 style={{ color: '#fff', fontSize: 'clamp(1.3rem, 2vw, 1.6rem)', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.35, letterSpacing: '0.5px' }}>
+                                {item.title}
+                              </h3>
+
+                              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.88rem', lineHeight: 1.65, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-serif)' }}>
+                                {item.excerpt || cleanExcerpt(item.content)}
+                              </p>
+                            </div>
+
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#f472b6', fontSize: '0.88rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                              <span>{isVocal ? '進入多版本時間軸演進錄音' : '閱讀文章完整內容'}</span>
+                              <ChevronRight size={16} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    </div>
                   );
-                })}
-              </div>
-            ))
+                })()
+              ) : (
+                <div className="exhibit-items-grid vc-items-grid" style={{ gap: '2.5rem' }}>
+                  {filteredWritingsItems.map((item, index) => {
+                    let isVocal = item.category === '人聲優化課程' || item.category === '人聲優化歷程記錄';
+                    let versionCount = 0;
+                    let coverImage: string | null = null;
+                    if (item.content) {
+                      try {
+                        const p = JSON.parse(item.content);
+                        if (p) {
+                          if (Array.isArray(p.versions)) versionCount = p.versions.length;
+                          if (p.coverImage) coverImage = p.coverImage;
+                        }
+                      } catch {}
+                    }
+
+                    return (
+                      <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
+                        <div className="glass-panel exhibit-card" style={{
+                          padding: '0',
+                          cursor: 'pointer',
+                          color: exhibit.color,
+                          animationDelay: `${index * 0.1}s`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          height: '100%',
+                          transition: 'all 0.4s ease'
+                        }}>
+                          {coverImage ? (
+                            <div style={{
+                              width: '100%',
+                              height: '200px',
+                              overflow: 'hidden',
+                              borderBottom: '1px solid rgba(255,255,255,0.08)',
+                              background: '#000',
+                              position: 'relative'
+                            }}>
+                              <img
+                                src={coverImage}
+                                alt={item.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            </div>
+                          ) : (
+                            <div style={{ 
+                              width: '100%', 
+                              height: '180px', 
+                              background: 'rgba(236, 72, 153, 0.08)', 
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'var(--theme-music, #ec4899)',
+                              fontSize: '0.8rem',
+                              letterSpacing: '2px',
+                              textTransform: 'uppercase',
+                              borderBottom: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                              <BookOpen size={32} style={{ opacity: 0.8 }} />
+                            </div>
+                          )}
+                          <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+                              <span style={{ fontSize: '0.75rem', background: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', padding: '0.2rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
+                                {item.category || '個人聲音探索心得'}
+                              </span>
+                              {versionCount > 0 && (
+                                <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                                  🎙️ {versionCount} 個演進版本
+                                </span>
+                              )}
+                              {item.createdAt && (
+                                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
+                                  📅 {formatTimestamp(item.createdAt)}
+                                </span>
+                              )}
+                            </div>
+                            <h3 style={{ color: '#fff', fontSize: '1.35rem', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.4 }}>
+                              {item.title}
+                            </h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 'auto', marginBottom: '1.2rem' }}>
+                              {item.excerpt || cleanExcerpt(item.content)}
+                            </p>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f472b6', fontSize: '0.85rem', fontWeight: 500 }}>
+                              <span>{isVocal ? '進入多版本時間軸演進錄音' : '閱讀文章完整內容'}</span>
+                              <ChevronRight size={16} />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {renderTerminationDivider()}
+            </div>
           ) : (exhibitId === 'sound' || (exhibitId === 'creation_lab' && activeSubCategory === '音樂')) ? (
-            <>
+            <div className="animate-fade-in vc-showcase-container">
               {/* 青春之歌計畫專屬 YouTube 頻道 Banner (精緻緊湊，聚焦展區內容) */}
               {activeSubCategory === '青春之歌計畫' && (
                 <div 
@@ -1115,9 +1171,9 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               )}
 
               {musicLoading ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂與聲音作品載入中...</div>
+                <div style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>音樂與聲音作品載入中...</div>
               ) : filteredMusicItems.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                <div className="glass-panel" style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
                   <p style={{ letterSpacing: '1px' }}>
                     {activeSubCategory
                       ? `目前【${activeSubCategory}】標籤下尚無作品。`
@@ -1125,7 +1181,7 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   </p>
                 </div>
               ) : (
-                <div className="exhibit-items-grid" style={{ gap: '2rem' }}>
+                <div className="exhibit-items-grid vc-items-grid" style={{ gap: '2rem' }}>
                   {filteredMusicItems.map((item) => {
                     const embedUrl = getYouTubeEmbedUrl(item.youtubeUrl);
                     return (
@@ -1222,7 +1278,9 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                   })}
                 </div>
               )}
-            </>
+
+              {renderTerminationDivider()}
+            </div>
           ) : ['creation_lab', 'communication', 'finance_insurance', 'sound'].includes(exhibitId) ? (
             /* 小說子分類：專屬 2 欄大卡片展示版面 (比照新創頁面垂直置中與優雅底線) */
             activeSubCategory === '小說' ? (
@@ -1442,11 +1500,14 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             ) : writingsLoading ? (
               <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>載入文章創作中...</div>
             ) : filteredWritingsItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
-                <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory === 'FB文章備份' ? '社群隨筆' : (activeSubCategory || exhibit.title)}】尚無文章。</p>
+              <div className="vc-showcase-container">
+                <div style={{ margin: 'auto 0', textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                  <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory === 'FB文章備份' ? '社群隨筆' : (activeSubCategory || exhibit.title)}】尚無文章。</p>
+                </div>
+                {renderTerminationDivider()}
               </div>
             ) : filteredWritingsItems.length === 1 ? (
-              /* 單篇精案卡：拉長且置中於下方空間，消除無謂空白 */
+              /* 單篇精選專題卡：分為 2 張卡片空間，佔據左半邊 50% */
               (() => {
                 const item = filteredWritingsItems[0];
                 let coverImage: string | null = null;
@@ -1458,99 +1519,102 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 }
 
                 return (
-                  <div className="exhibit-single-featured-container animate-fade-in">
-                    <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none', width: '100%', maxWidth: '960px' }}>
-                      <div className="exhibit-single-featured-card" style={{ color: exhibit.color }}>
-                        <div className="exhibit-single-featured-cover">
-                          {coverImage ? (
-                            <img src={coverImage} alt={item.title} />
-                          ) : (
-                            <div style={{
-                              width: '100%',
-                              height: '100%',
-                              minHeight: '380px',
-                              background: 'rgba(255,255,255,0.03)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: exhibit.color,
-                            }}>
-                              <BookOpen size={48} style={{ opacity: 0.6 }} />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="exhibit-single-featured-content">
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.6rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                <span style={{ 
-                                  fontSize: '0.8rem', 
-                                  background: item.category === '小說' ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.08)', 
-                                  color: item.category === '小說' ? '#c084fc' : '#fff', 
-                                  padding: '0.25rem 0.75rem', 
-                                  borderRadius: '4px', 
-                                  border: '1px solid rgba(255,255,255,0.15)', 
-                                  fontWeight: 500 
-                                }}>
-                                  {item.category === '小說' ? '📖 小說連載' : (item.category === 'FB文章備份' ? '社群隨筆' : (item.category || exhibit.title))}
-                                </span>
-                                {item.isPinned && (
-                                  <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '0.2rem 0.55rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.4)', fontWeight: 600 }}>
-                                    📌 置頂
-                                  </span>
-                                )}
-                              </div>
-                              {item.createdAt && (
-                                <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
-                                  📅 {formatTimestamp(item.createdAt)}
-                                </span>
-                              )}
-                            </div>
-
-                            <h3 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 2.5vw, 1.95rem)', marginBottom: '1rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.35, letterSpacing: '0.5px' }}>
-                              {item.title}
-                            </h3>
-
-                            {/* 標題下方標籤: 文章主題, FB 發布時間, FB 連結 */}
-                            {(item.topic || item.fbDate || item.fbUrl) && (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '1.2rem' }}>
-                                {item.topic && (
-                                  <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.06)', padding: '0.2rem 0.6rem', borderRadius: '3px' }}>
-                                    📌 {item.topic}
-                                  </span>
-                                )}
-                                {item.fbDate && (
-                                  <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.6rem', borderRadius: '3px' }}>
-                                    📅 FB: {item.fbDate}
-                                  </span>
-                                )}
-                                {item.fbUrl && (
-                                  <span style={{ fontSize: '0.78rem', color: '#38bdf8', background: 'rgba(56,189,248,0.1)', padding: '0.2rem 0.6rem', borderRadius: '3px' }}>
-                                    🔗 FB 連結
-                                  </span>
-                                )}
+                  <div className="vc-showcase-container">
+                    <div className="showcase-two-col-grid vc-items-grid">
+                      <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none', width: '100%' }}>
+                        <div className="exhibit-single-featured-card" style={{ color: exhibit.color, maxWidth: '100%' }}>
+                          <div className="exhibit-single-featured-cover">
+                            {coverImage ? (
+                              <img src={coverImage} alt={item.title} />
+                            ) : (
+                              <div style={{
+                                width: '100%',
+                                height: '100%',
+                                minHeight: '380px',
+                                background: 'rgba(255,255,255,0.03)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: exhibit.color,
+                              }}>
+                                <BookOpen size={48} style={{ opacity: 0.6 }} />
                               </div>
                             )}
-
-                            <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.96rem', lineHeight: 1.8, display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.5rem', fontFamily: 'var(--font-noto-serif)' }}>
-                              {item.excerpt || cleanExcerpt(item.content)}
-                            </p>
                           </div>
 
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: exhibit.color, fontSize: '0.92rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '1.2rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                            <span>閱讀文章完整內容</span>
-                            <ChevronRight size={18} />
+                          <div className="exhibit-single-featured-content">
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  <span style={{ 
+                                    fontSize: '0.78rem', 
+                                    background: item.category === '小說' ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.08)', 
+                                    color: item.category === '小說' ? '#c084fc' : '#fff', 
+                                    padding: '0.22rem 0.7rem', 
+                                    borderRadius: '4px', 
+                                    border: '1px solid rgba(255,255,255,0.15)', 
+                                    fontWeight: 500 
+                                  }}>
+                                    {item.category === '小說' ? '📖 小說連載' : (item.category === 'FB文章備份' ? '社群隨筆' : (item.category || exhibit.title))}
+                                  </span>
+                                  {item.isPinned && (
+                                    <span style={{ fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '0.18rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.4)', fontWeight: 600 }}>
+                                      📌 置頂
+                                    </span>
+                                  )}
+                                </div>
+                                {item.createdAt && (
+                                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-noto-sans)' }}>
+                                    📅 {formatTimestamp(item.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 style={{ color: '#fff', fontSize: 'clamp(1.3rem, 2vw, 1.6rem)', marginBottom: '0.8rem', fontFamily: 'var(--font-noto-serif)', lineHeight: 1.35, letterSpacing: '0.5px' }}>
+                                {item.title}
+                              </h3>
+
+                              {/* 標題下方標籤: 文章主題, FB 發布時間, FB 連結 */}
+                              {(item.topic || item.fbDate || item.fbUrl) && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', marginBottom: '0.9rem' }}>
+                                  {item.topic && (
+                                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.06)', padding: '0.18rem 0.55rem', borderRadius: '3px' }}>
+                                      📌 {item.topic}
+                                    </span>
+                                  )}
+                                  {item.fbDate && (
+                                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.04)', padding: '0.18rem 0.55rem', borderRadius: '3px' }}>
+                                      📅 FB: {item.fbDate}
+                                    </span>
+                                  )}
+                                  {item.fbUrl && (
+                                    <span style={{ fontSize: '0.75rem', color: '#38bdf8', background: 'rgba(56,189,248,0.1)', padding: '0.18rem 0.55rem', borderRadius: '3px' }}>
+                                      🔗 FB 連結
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.88rem', lineHeight: 1.65, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: '1.2rem', fontFamily: 'var(--font-noto-serif)' }}>
+                                {item.excerpt || cleanExcerpt(item.content)}
+                              </p>
+                            </div>
+
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: exhibit.color, fontSize: '0.88rem', fontWeight: 600, letterSpacing: '0.5px', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                              <span>閱讀文章完整內容</span>
+                              <ChevronRight size={16} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    </div>
+                    {renderTerminationDivider()}
                   </div>
                 );
               })()
             ) : (
-              <>
-                <div className="exhibit-items-grid" style={{ gap: '1.8rem' }}>
+              <div className="vc-showcase-container">
+                <div className="exhibit-items-grid vc-items-grid" style={{ gap: '1.8rem' }}>
                   {filteredWritingsItems.map((item) => {
                     let coverImage: string | null = null;
                     if (item.content) {
@@ -1768,7 +1832,9 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                     <ChevronDown size={18} style={{ color: exhibit.color }} />
                   </div>
                 )}
-              </>
+
+                {renderTerminationDivider()}
+              </div>
             )
           ) : (
             <div style={{ textAlign: 'center', padding: '6rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
