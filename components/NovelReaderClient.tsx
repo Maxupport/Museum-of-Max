@@ -79,10 +79,14 @@ export default function NovelReaderClient({
   const [subEmail, setSubEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [subMessage, setSubMessage] = useState('');
+  const [originUrl, setOriginUrl] = useState('');
 
   // 權限驗證：開放公開閱讀連載小說，僅記錄策展人身分供進階操作
   useEffect(() => {
     // 允許外部讀者免通行碼直接閱讀連載章節
+    if (typeof window !== 'undefined') {
+      setOriginUrl(window.location.origin);
+    }
   }, []);
 
   // 客戶端備用載入 (若 SSR 未獲取到)
@@ -637,7 +641,7 @@ export default function NovelReaderClient({
                 {novel.author} (2026). 《{novel.title}》- {currentChapter.title}. Maxupport 私人博物館.
               </div>
               <div style={{ color: '#c084fc', fontFamily: 'monospace', fontSize: '0.8rem', marginTop: '0.2rem' }}>
-                https://maxupport.com/museum/creation_lab/novel/{novelId}
+                {originUrl ? `${originUrl}/museum/creation_lab/novel/${novelId}` : `https://museum-of-max.vercel.app/museum/creation_lab/novel/${novelId}`}
               </div>
             </div>
           </main>

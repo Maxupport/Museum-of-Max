@@ -39,10 +39,14 @@ export default function ArticleDetailClient({
   const [dbArticle, setDbArticle] = useState<SerializedArticleData | null>(initialArticle);
   const [articleLoading, setArticleLoading] = useState(!initialArticle);
   const [isCurator, setIsCurator] = useState(false);
+  const [originUrl, setOriginUrl] = useState('');
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
       setIsCurator(document.cookie.includes('is_curator=true'));
+    }
+    if (typeof window !== 'undefined') {
+      setOriginUrl(window.location.origin);
     }
   }, []);
 
@@ -689,7 +693,7 @@ export default function ArticleDetailClient({
               Maxupport (2026). 《{articleData?.title}》. Maxupport 私人博物館 - {exhibit.title}展區.
             </div>
             <div style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '0.8rem', marginTop: '0.2rem' }}>
-              https://maxupport.com/museum/{exhibitId}/{articleId}
+              {originUrl ? `${originUrl}/museum/${exhibitId}/${articleId}` : `https://museum-of-max.vercel.app/museum/${exhibitId}/${articleId}`}
             </div>
           </div>
         </article>
