@@ -252,8 +252,18 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
     }
   }, [exhibitId, router]);
 
-  // 獨立紀錄所有展區頁面與子分類切換的瀏覽流量
+  // 獨立紀錄所有展區頁面與子分類切換的瀏覽流量 (創作者或排除標記不計入統計)
   useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const isCuratorOrExcluded =
+        document.cookie.includes('is_curator=true') ||
+        document.cookie.includes('admin_token=') ||
+        document.cookie.includes('visitor_token=curator_admin') ||
+        document.cookie.includes('exclude_from_analytics=true') ||
+        localStorage.getItem('exclude_from_analytics') === 'true';
+      if (isCuratorOrExcluded) return;
+    }
+
     if (exhibitId) {
       fetch('/api/pageview', {
         method: 'POST',

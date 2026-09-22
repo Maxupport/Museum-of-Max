@@ -66,12 +66,15 @@ model VentureItem {
 
 // 小說連載訂閱者名單 (Novel Email Subscribers)
 model Subscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?  // 訂閱者姓名 (選填)
-  novelId   String   @default("all") // 訂閱的小說 ID，預設 "all"
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String?   // 訂閱者姓名 (選填)
+  novelId          String    @default("all") // 訂閱的小說 ID，預設 "all"
+  sourceChapter    Int?      // 訂閱時所在的章節序號
+  unsubscribeToken String?   @unique @default(cuid()) // 退訂驗證金鑰
+  active           Boolean   @default(true)
+  lastNotifiedAt   DateTime? // 上次發送電子報的時間
+  createdAt        DateTime  @default(now())
 }
 
 // 小說更新通知日誌 (Novel Update Digest Log)

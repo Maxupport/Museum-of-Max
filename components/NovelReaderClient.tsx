@@ -77,6 +77,8 @@ export default function NovelReaderClient({
   };
 
   const [subEmail, setSubEmail] = useState('');
+  const [subName, setSubName] = useState('');
+  const [subHoneypot, setSubHoneypot] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [subMessage, setSubMessage] = useState('');
   const [originUrl, setOriginUrl] = useState('');
@@ -108,8 +110,17 @@ export default function NovelReaderClient({
     }
   }, [novelId, novel]);
 
-  // 頁面瀏覽紀錄
+  // 頁面瀏覽紀錄 (創作者或排除標記不計入統計)
   useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const isCurator =
+        document.cookie.includes('is_curator=true') ||
+        document.cookie.includes('admin_token=') ||
+        document.cookie.includes('exclude_from_analytics=true') ||
+        localStorage.getItem('exclude_from_analytics') === 'true';
+      if (isCurator) return;
+    }
+
     if (novelId) {
       fetch('/api/pageview', {
         method: 'POST',
@@ -129,23 +140,21 @@ export default function NovelReaderClient({
       const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: subEmail, novelId }),
+        body: JSON.stringify({
+          email: subEmail,
+          name: subName || null,
+          novelId,
+          novelTitle: novel?.title || '連載作品',
+          sourceChapter: currentChapterIdx + 1,
+          website_url: subHoneypot, // 蜜罐欄位
+        }),
       });
       const data = await res.json();
 
-      const googleScriptUrl = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
-      if (googleScriptUrl && novel) {
-        fetch(googleScriptUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: subEmail, novelTitle: novel.title }),
-        }).catch((err) => console.error('Google Apps Script post error:', err));
-      }
-
       if (data.ok) {
-        setSubMessage('🎉 ' + data.message + ' (已同步至 Google 試算表)');
+        setSubMessage('🎉 ' + (data.message || '感謝訂閱！新章節發布時將寄信通知您。'));
         setSubEmail('');
+        setSubName('');
       } else {
         setSubMessage(data.error || '訂閱失敗');
       }
@@ -743,21 +752,47 @@ export default function NovelReaderClient({
               </h3>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-              留下您的 Email，當作者更新最新章節時，將於隔日固定時間為您寄送專屬連載更新通知信件。
+              留下您的 Email，當作者更新最新章節時，將自動寄送專屬連載更新通知信件。
             </p>
-            <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
-              <input
-                type="email"
-                placeholder="請輸入您的 Email 電子郵件地址..."
-                value={subEmail}
-                onChange={(e) => setSubEmail(e.target.value)}
-                className="museum-input"
-                style={{ flex: 1, minWidth: '260px' }}
-                required
-              />
-              <button type="submit" className="museum-btn" disabled={subscribing} style={{ background: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.3)' }}>
-                {subscribing ? '訂閱處理中...' : '免費訂閱連載更新'}
-              </button>
+            <form onSubmit={handleSubscribe} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {/* 蜜罐欄位 (隱藏，若機器人填入則伺服器攔截) */}
+              <div style={{ display: 'none' }} aria-hidden="true">
+                <input
+                  type="text"
+                  name="website_url"
+                  value={subHoneypot}
+                  onChange={(e) => setSubHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="您的稱呼 (選填，如: Alex)"
+                  value={subName}
+                  onChange={(e) => setSubName(e.target.value)}
+                  className="museum-input"
+                  style={{ width: '160px', flex: '0 0 auto' }}
+                />
+                <input
+                  type="email"
+                  placeholder="請輸入您的 Email 電子郵件地址..."
+                  value={subEmail}
+                  onChange={(e) => setSubEmail(e.target.value)}
+                  className="museum-input"
+                  style={{ flex: 1, minWidth: '220px' }}
+                  required
+                />
+                <button type="submit" className="museum-btn" disabled={subscribing} style={{ background: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.3)', whiteSpace: 'nowrap' }}>
+                  {subscribing ? '訂閱處理中...' : '免費訂閱連載更新'}
+                </button>
+              </div>
+
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.2rem' }}>
+                🔒 我們尊重您的隱私，絕不向第三方透露您的信箱，信件內隨時可一鍵取消訂閱。
+              </div>
             </form>
             {subMessage && (
               <div style={{ color: '#4ade80', fontSize: '0.85rem', marginTop: '1rem', background: 'rgba(74, 222, 128, 0.1)', padding: '0.6rem 1rem', borderRadius: '4px', border: '1px solid rgba(74, 222, 128, 0.2)' }}>

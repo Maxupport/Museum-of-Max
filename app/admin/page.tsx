@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, AlignLeft, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor } from 'lucide-react';
+import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, AlignLeft, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor, Download, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 
 interface PasscodeItem {
@@ -235,6 +235,54 @@ export default function AdminDashboardPage() {
 
   // Stats state
   const [stats, setStats] = useState<StatData | null>(null);
+  const [isExcludedThisDevice, setIsExcludedThisDevice] = useState(false);
+  const [resettingStats, setResettingStats] = useState(false);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const excluded =
+        document.cookie.includes('exclude_from_analytics=true') ||
+        localStorage.getItem('exclude_from_analytics') === 'true';
+      setIsExcludedThisDevice(excluded);
+    }
+  }, []);
+
+  const toggleExcludeThisDevice = () => {
+    const next = !isExcludedThisDevice;
+    setIsExcludedThisDevice(next);
+    if (typeof document !== 'undefined') {
+      if (next) {
+        document.cookie = 'exclude_from_analytics=true; path=/; max-age=315360000; SameSite=Lax';
+        try { localStorage.setItem('exclude_from_analytics', 'true'); } catch {}
+      } else {
+        document.cookie = 'exclude_from_analytics=; path=/; max-age=0; SameSite=Lax';
+        try { localStorage.removeItem('exclude_from_analytics'); } catch {}
+      }
+    }
+  };
+
+  const handleResetTrafficStats = async () => {
+    const confirmed = window.confirm(
+      '⚠️ 警告：確定要將所有真人流量數據（總 PV、UV、熱門路徑、裝置分佈、展區造訪、文章點擊數）全數歸零嗎？\n\n此操作無法復原！（AI 搜尋爬蟲抓取紀錄將會完整保留）。'
+    );
+    if (!confirmed) return;
+
+    setResettingStats(true);
+    try {
+      const res = await fetch('/api/stats/reset', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        alert('🎉 ' + data.message);
+        fetchStats();
+      } else {
+        alert('歸零失敗：' + (data.error || '未知錯誤'));
+      }
+    } catch {
+      alert('連線錯誤，請稍後再試');
+    } finally {
+      setResettingStats(false);
+    }
+  };
 
   // Subscribers state
   interface SubscriberItem {
@@ -242,12 +290,16 @@ export default function AdminDashboardPage() {
     email: string;
     name?: string;
     novelId: string;
+    sourceChapter?: number | null;
     active: boolean;
     createdAt: string;
+    lastNotifiedAt?: string | null;
   }
   const [subscribers, setSubscribers] = useState<SubscriberItem[]>([]);
   const [subscribersCount, setSubscribersCount] = useState(0);
   const [loadingSubscribers, setLoadingSubscribers] = useState(false);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [subscriberFilter, setSubscriberFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Dispatch Newsletter state
   const [dispatchNovelTitle, setDispatchNovelTitle] = useState('');
@@ -255,6 +307,41 @@ export default function AdminDashboardPage() {
   const [dispatchSummary, setDispatchSummary] = useState('');
   const [dispatching, setDispatching] = useState(false);
   const [dispatchMessage, setDispatchMessage] = useState('');
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+
+  const handleSendTestNewsletter = async () => {
+    if (!dispatchChapterTitle.trim()) {
+      alert('請先填寫新更新章節名稱');
+      return;
+    }
+    const emailToTest = window.prompt('請輸入接收測試信的信箱：', 'maxupport@gmail.com');
+    if (!emailToTest || !emailToTest.includes('@')) return;
+
+    setSendingTestEmail(true);
+    try {
+      const res = await fetch('/api/newsletter/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          novelTitle: dispatchNovelTitle || '原創小說連載',
+          chapterTitle: dispatchChapterTitle,
+          summary: dispatchSummary,
+          isTest: true,
+          testEmail: emailToTest.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert('🎉 ' + data.message);
+      } else {
+        alert('發送測試信失敗：' + (data.error || '未知錯誤'));
+      }
+    } catch {
+      alert('發送測試信連線失敗');
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
 
   const fetchSubscribers = useCallback(async () => {
     setLoadingSubscribers(true);
@@ -2372,7 +2459,75 @@ export default function AdminDashboardPage() {
 
       {/* Tab 4: Analytics & Traffic (含真人訪客與四大 AI 系統抓取統計) */}
       {activeTab === 'stats' && (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* 創作者本機排除狀態與數據歸零管理列 */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '8px',
+            padding: '1rem 1.4rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>創作者本機狀態：</span>
+              <button
+                type="button"
+                onClick={toggleExcludeThisDevice}
+                className="museum-btn"
+                style={{
+                  fontSize: '0.82rem',
+                  padding: '0.4rem 0.9rem',
+                  background: isExcludedThisDevice ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                  borderColor: isExcludedThisDevice ? 'rgba(34, 197, 94, 0.4)' : 'rgba(234, 179, 8, 0.4)',
+                  color: isExcludedThisDevice ? '#4ade80' : '#facc15',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+                title="點擊切換是否將目前這台電腦瀏覽器排除在流量統計之外"
+              >
+                {isExcludedThisDevice ? (
+                  <>
+                    <ShieldCheck size={15} />
+                    <span>🛡️ 此電腦已排除統計（點擊解除）</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert size={15} />
+                    <span>⚠️ 此電腦會計入統計（點擊排除本機）</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <button
+                type="button"
+                onClick={handleResetTrafficStats}
+                disabled={resettingStats}
+                className="museum-btn"
+                style={{
+                  fontSize: '0.82rem',
+                  padding: '0.4rem 0.9rem',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  borderColor: 'rgba(239, 68, 68, 0.35)',
+                  color: '#ef4444',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+                title="將所有真人 PV、UV、展區造訪紀錄與文章點擊數歸零（AI 爬蟲紀錄將會保留）"
+              >
+                <Trash2 size={14} />
+                <span>{resettingStats ? '歸零處理中...' : '重設真人流量數據（歸零）'}</span>
+              </button>
+            </div>
+          </div>
+
           {/* 頂部四核心數據概覽卡片 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
             {/* 1. 真人總瀏覽量 (PV) */}
@@ -3018,81 +3173,178 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="museum-btn"
-                disabled={dispatching}
-                style={{ marginTop: '0.5rem', width: '100%', background: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.3)' }}
-              >
-                {dispatching ? '安排排程中...' : '安排隔日固定時間寄送廣播通知'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleSendTestNewsletter}
+                  disabled={sendingTestEmail}
+                  className="museum-btn"
+                  style={{ flex: 1, minWidth: '150px', background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc', fontSize: '0.82rem' }}
+                >
+                  <Send size={13} style={{ marginRight: '4px' }} />
+                  {sendingTestEmail ? '發送測試信中...' : '寄送測試信至我的信箱'}
+                </button>
+                <button
+                  type="submit"
+                  className="museum-btn"
+                  disabled={dispatching}
+                  style={{ flex: 2, minWidth: '180px', background: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.3)', fontSize: '0.82rem' }}
+                >
+                  {dispatching ? '安排排程中...' : '向所有訂閱者發送更新廣播'}
+                </button>
+              </div>
             </form>
           </div>
 
           {/* 右欄：訂閱者名單列表 */}
           <div className="glass-panel" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.8rem' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#fff', fontFamily: 'var(--font-noto-serif)', margin: 0 }}>
                 連載訂閱者名單 ({subscribersCount})
               </h2>
-              <button onClick={fetchSubscribers} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-                <RefreshCw size={14} /> 重整
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <a
+                  href="/api/subscribe/export"
+                  download
+                  className="museum-btn"
+                  style={{
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontSize: '0.8rem',
+                    padding: '0.35rem 0.8rem',
+                    background: 'rgba(56, 189, 248, 0.12)',
+                    borderColor: 'rgba(56, 189, 248, 0.35)',
+                    color: '#38bdf8'
+                  }}
+                >
+                  <Download size={14} />
+                  <span>匯出 CSV 名單</span>
+                </a>
+                <button onClick={fetchSubscribers} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+                  <RefreshCw size={14} /> 重整
+                </button>
+              </div>
+            </div>
+
+            {/* 搜尋與篩選列 */}
+            <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '1.2rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="搜尋 Email 或稱呼..."
+                value={subscriberSearch}
+                onChange={(e) => setSubscriberSearch(e.target.value)}
+                className="museum-input"
+                style={{ flex: 1, minWidth: '180px', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+              />
+              <select
+                value={subscriberFilter}
+                onChange={(e) => setSubscriberFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                className="museum-input"
+                style={{ width: '130px', padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
+              >
+                <option value="all">全部狀態</option>
+                <option value="active">有效訂閱中</option>
+                <option value="inactive">已取消訂閱</option>
+              </select>
             </div>
 
             {loadingSubscribers ? (
               <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>載入中...</div>
-            ) : subscribers.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <Mail size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                <p style={{ letterSpacing: '1px' }}>目前尚無讀者訂閱，當讀者在小說閱讀頁面留下 Email 時將會顯示於此。</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {subscribers.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: 'rgba(0,0,0,0.4)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      padding: '1rem 1.2rem',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '1rem', color: '#fff', fontWeight: 500, fontFamily: 'monospace' }}>
-                        {item.email}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                        訂閱時間: {new Date(item.createdAt).toLocaleDateString('zh-TW')} • 訂閱對象: {item.novelId}
-                      </div>
-                    </div>
+            ) : (() => {
+              const filteredSubscribers = subscribers.filter((item) => {
+                if (subscriberFilter === 'active' && !item.active) return false;
+                if (subscriberFilter === 'inactive' && item.active) return false;
+                if (subscriberSearch.trim()) {
+                  const q = subscriberSearch.toLowerCase();
+                  const matchEmail = item.email.toLowerCase().includes(q);
+                  const matchName = item.name ? item.name.toLowerCase().includes(q) : false;
+                  const matchNovel = item.novelId.toLowerCase().includes(q);
+                  return matchEmail || matchName || matchNovel;
+                }
+                return true;
+              });
 
-                    <button
-                      onClick={() => handleDeleteSubscriber(item.id)}
+              if (filteredSubscribers.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <Mail size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <p style={{ letterSpacing: '1px' }}>
+                      {subscribers.length === 0 ? '目前尚無讀者訂閱，當讀者在小說閱讀頁面留下 Email 時將會顯示於此。' : '無符合篩選條件的訂閱者。'}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  {filteredSubscribers.map((item) => (
+                    <div
+                      key={item.id}
                       style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        color: '#ef4444',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '2px',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
+                        background: 'rgba(0,0,0,0.4)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        padding: '1rem 1.2rem',
+                        borderRadius: '4px',
                         display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        gap: '0.3rem'
+                        gap: '1rem'
                       }}
                     >
-                      <Trash2 size={14} />
-                      移除
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 500, fontFamily: 'monospace' }}>
+                            {item.email}
+                          </span>
+                          {item.name && (
+                            <span style={{ fontSize: '0.8rem', color: '#c084fc', background: 'rgba(192, 132, 252, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '3px' }}>
+                              {item.name}
+                            </span>
+                          )}
+                          <span style={{
+                            fontSize: '0.72rem',
+                            padding: '0.1rem 0.45rem',
+                            borderRadius: '3px',
+                            background: item.active ? 'rgba(74, 222, 128, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                            color: item.active ? '#4ade80' : '#f87171',
+                            border: `1px solid ${item.active ? 'rgba(74, 222, 128, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                          }}>
+                            {item.active ? '有效訂閱' : '已退訂'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
+                          訂閱時間: {new Date(item.createdAt).toLocaleDateString('zh-TW')} • 作品: {item.novelId}
+                          {item.sourceChapter ? ` (第 ${item.sourceChapter} 章)` : ''}
+                          {item.lastNotifiedAt ? ` • 上次通知: ${new Date(item.lastNotifiedAt).toLocaleDateString('zh-TW')}` : ''}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteSubscriber(item.id)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          border: '1px solid rgba(239, 68, 68, 0.2)',
+                          color: '#ef4444',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '2px',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          flexShrink: 0
+                        }}
+                      >
+                        <Trash2 size={14} />
+                        移除
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

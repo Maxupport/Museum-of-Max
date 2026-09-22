@@ -11,6 +11,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Path 為必填' }, { status: 400 });
     }
 
+    // 創作者或排除裝置檢查：不記錄到 visitorLog 且不累加文章 views
+    const isCurator =
+      request.cookies.get('is_curator')?.value === 'true' ||
+      Boolean(request.cookies.get('admin_token')?.value) ||
+      request.cookies.get('visitor_token')?.value === 'curator_admin' ||
+      request.cookies.get('exclude_from_analytics')?.value === 'true';
+
+    if (isCurator) {
+      return NextResponse.json({ ok: true, ignored: true });
+    }
+
     const userAgent = request.headers.get('user-agent');
     const { device, browser, os } = parseClientEnvironment(userAgent);
 

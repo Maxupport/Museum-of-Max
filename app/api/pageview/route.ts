@@ -6,6 +6,17 @@ export async function POST(request: NextRequest) {
     const { exhibitId, notionId } = await request.json();
     const rawPasscodeId = request.cookies.get('visitor_token')?.value || null;
 
+    // 創作者或排除裝置檢查：不記錄到 PageView 與文章 views
+    const isCurator =
+      request.cookies.get('is_curator')?.value === 'true' ||
+      Boolean(request.cookies.get('admin_token')?.value) ||
+      rawPasscodeId === 'curator_admin' ||
+      request.cookies.get('exclude_from_analytics')?.value === 'true';
+
+    if (isCurator) {
+      return NextResponse.json({ ok: true, ignored: true });
+    }
+
     if (!exhibitId) {
       return NextResponse.json({ ok: false, error: '展區 ID 為必填' }, { status: 400 });
     }

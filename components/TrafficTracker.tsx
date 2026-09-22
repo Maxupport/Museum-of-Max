@@ -13,6 +13,20 @@ export default function TrafficTracker() {
       return;
     }
 
+    // 創作者身分與本機排除檢查：創作者自身操作或標記排除的裝置不計入統計
+    if (typeof document !== 'undefined') {
+      const isCuratorOrExcluded =
+        document.cookie.includes('is_curator=true') ||
+        document.cookie.includes('admin_token=') ||
+        document.cookie.includes('visitor_token=curator_admin') ||
+        document.cookie.includes('exclude_from_analytics=true') ||
+        localStorage.getItem('exclude_from_analytics') === 'true';
+
+      if (isCuratorOrExcluded) {
+        return;
+      }
+    }
+
     // 避免短時間內同一路徑重複回報 (例如頁面重渲染)
     if (lastTrackedPath.current === pathname) {
       return;
