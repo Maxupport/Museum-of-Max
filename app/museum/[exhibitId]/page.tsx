@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, X, ArrowUpDown } from 'lucide-react';
+import { ArrowLeft, Search, Calendar, Briefcase, ChevronRight, ChevronDown, BookOpen, TrendingUp, Building, ExternalLink, Sparkles, Mail, Image as ImageIcon, Building2, X, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
 import { use, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { EXHIBITS, YOUTH_SONGS_YOUTUBE_CHANNEL } from '@/lib/constants';
@@ -111,6 +111,26 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [isNovelDirect, setIsNovelDirect] = useState(false);
   const [isCurator, setIsCurator] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('museum_view_mode');
+      if (saved === 'grid' || saved === 'list') {
+        setViewMode(saved);
+      }
+    } catch {}
+  }, []);
+
+  const handleViewModeChange = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('museum_view_mode', mode);
+    } catch {}
+  };
+
+  // 當處於小說專區時，強制維持 card/grid 顯示，不受 list 模式影響
+  const effectiveViewMode = (activeSubCategory === '小說' || isNovelDirect) ? 'grid' : viewMode;
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -596,6 +616,30 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               </a>
             )}
 
+            {/* Google Drive 風格 卡片 / 條列 切換鈕 (適用於非小說內容) */}
+            {activeSubCategory !== '小說' && !isNovelDirect && (
+              <div className="exhibit-view-toggle" title="切換檢視方式">
+                <button
+                  type="button"
+                  className={`exhibit-view-toggle-btn ${effectiveViewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => handleViewModeChange('grid')}
+                  title="卡片網格檢視"
+                  aria-label="卡片網格檢視"
+                >
+                  <LayoutGrid size={16} />
+                </button>
+                <button
+                  type="button"
+                  className={`exhibit-view-toggle-btn ${effectiveViewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => handleViewModeChange('list')}
+                  title="條列清單檢視"
+                  aria-label="條列清單檢視"
+                >
+                  <List size={16} />
+                </button>
+              </div>
+            )}
+
             <div className="exhibit-search-container">
               <Search size={16} className="exhibit-search-icon" />
               <input 
@@ -623,6 +667,80 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
             <div className="glass-panel" style={{ margin: 'auto 0', padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <TrendingUp size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
               <p style={{ letterSpacing: '1px' }}>此子區塊尚無項目資料。</p>
+            </div>
+          ) : effectiveViewMode === 'list' ? (
+            /* 創投專題：條列清單檢視 (List View) */
+            <div className="exhibit-list-view">
+              {filteredVentureItems.map((item) => {
+                const Content = (
+                  <div
+                    className="exhibit-list-item"
+                    style={{
+                      '--item-accent-color': '#38bdf8',
+                      borderLeftColor: '#38bdf8',
+                    } as React.CSSProperties}
+                  >
+                    <div className="exhibit-list-item-main">
+                      <div className="exhibit-list-item-title-row">
+                        <span style={{
+                          fontSize: '0.74rem',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          color: '#38bdf8',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          whiteSpace: 'nowrap',
+                          fontWeight: 500
+                        }}>
+                          {item.category}
+                        </span>
+                        <span style={{
+                          fontSize: '0.72rem',
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          color: '#38bdf8',
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#38bdf8' }} />
+                          {item.status}
+                        </span>
+                        <h3 className="exhibit-list-item-title">
+                          {item.title}
+                        </h3>
+                        {item.linkUrl && <ExternalLink size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />}
+                      </div>
+                      {item.description && (
+                        <p className="exhibit-list-item-excerpt">
+                          {item.description.replace(/\n+/g, ' ')}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="exhibit-list-item-meta">
+                      <div className="exhibit-list-item-date">
+                        <Calendar size={13} />
+                        <span>{item.period}</span>
+                      </div>
+                      <div className="exhibit-list-item-action">
+                        <ChevronRight size={16} />
+                      </div>
+                    </div>
+                  </div>
+                );
+
+                if (item.linkUrl) {
+                  return (
+                    <a key={item.id} href={item.linkUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                      {Content}
+                    </a>
+                  );
+                }
+                return <div key={item.id}>{Content}</div>;
+              })}
             </div>
           ) : (
             <div className="exhibit-items-grid vc-items-grid">
@@ -981,6 +1099,84 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
                 <div className="glass-panel" style={{ margin: 'auto 0', textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
                   <BookOpen size={36} style={{ marginBottom: '1rem', opacity: 0.5 }} />
                   <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory}】尚無作品。</p>
+                </div>
+              ) : effectiveViewMode === 'list' ? (
+                /* 聲音歷程：條列清單檢視 (List View) */
+                <div className="exhibit-list-view">
+                  {filteredWritingsItems.map((item) => {
+                    let versionCount = 0;
+                    if (item.content) {
+                      try {
+                        const p = JSON.parse(item.content);
+                        if (p && Array.isArray(p.versions)) versionCount = p.versions.length;
+                      } catch {}
+                    }
+                    const readTime = Math.max(1, Math.ceil((item.content?.length || 300) / 400));
+                    const displayExcerpt = item.excerpt || cleanExcerpt(item.content);
+
+                    return (
+                      <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
+                        <div
+                          className="exhibit-list-item"
+                          style={{
+                            '--item-accent-color': '#f472b6',
+                            borderLeftColor: '#f472b6',
+                          } as React.CSSProperties}
+                        >
+                          <div className="exhibit-list-item-main">
+                            <div className="exhibit-list-item-title-row">
+                              <span style={{
+                                fontSize: '0.74rem',
+                                background: 'rgba(236, 72, 153, 0.15)',
+                                color: '#f472b6',
+                                padding: '0.15rem 0.55rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(236, 72, 153, 0.3)',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500
+                              }}>
+                                {item.category || '個人聲音探索心得'}
+                              </span>
+                              {versionCount > 0 && (
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  background: 'rgba(56, 189, 248, 0.15)',
+                                  color: '#38bdf8',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  🎙️ {versionCount} 個演進版本
+                                </span>
+                              )}
+                              <h3 className="exhibit-list-item-title">
+                                {item.title}
+                              </h3>
+                            </div>
+                            {displayExcerpt && (
+                              <p className="exhibit-list-item-excerpt">
+                                {displayExcerpt}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="exhibit-list-item-meta">
+                            <span className="exhibit-list-item-readtime">☕ {readTime} min</span>
+                            {item.createdAt && (
+                              <div className="exhibit-list-item-date">
+                                <Calendar size={13} />
+                                <span>{new Date(item.createdAt).toLocaleDateString('zh-TW')}</span>
+                              </div>
+                            )}
+                            <div className="exhibit-list-item-action">
+                              <ChevronRight size={16} />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : filteredWritingsItems.length === 1 ? (
                 /* 單篇精選專題卡：分為 2 張卡片空間，佔據左半邊 50% */
@@ -1748,6 +1944,95 @@ export default function ExhibitDetail({ params }: { params: Promise<{ exhibitId:
               <div className="vc-showcase-container">
                 <div style={{ margin: 'auto 0', textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-secondary)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
                   <p style={{ letterSpacing: '1px' }}>目前【{activeSubCategory === 'FB文章備份' ? '社群隨筆' : (activeSubCategory || exhibit.title)}】尚無文章。</p>
+                </div>
+                {renderTerminationDivider()}
+              </div>
+            ) : effectiveViewMode === 'list' ? (
+              /* 一般專題文章 & FB隨筆：條列清單檢視 (List View) */
+              <div className="vc-showcase-container">
+                <div className="exhibit-list-view">
+                  {filteredWritingsItems.map((item) => {
+                    const isNovel = item.category === '小說';
+                    const categoryLabel = isNovel ? '📖 小說連載' : (item.category === 'FB文章備份' ? '社群隨筆' : (item.category || exhibit.title));
+                    const displayExcerpt = item.excerpt || cleanExcerpt(item.content);
+                    const readTime = Math.max(1, Math.ceil((item.content?.length || 300) / 400));
+
+                    return (
+                      <Link key={item.id} href={`/museum/${exhibit.id}/${item.id}`} style={{ textDecoration: 'none' }}>
+                        <div
+                          className="exhibit-list-item"
+                          style={{
+                            '--item-accent-color': exhibit.color || '#c084fc',
+                            borderLeftColor: item.isPinned ? '#38bdf8' : (exhibit.color || '#c084fc'),
+                          } as React.CSSProperties}
+                        >
+                          <div className="exhibit-list-item-main">
+                            <div className="exhibit-list-item-title-row">
+                              <span style={{
+                                fontSize: '0.74rem',
+                                background: isNovel ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.08)',
+                                color: isNovel ? '#c084fc' : '#fff',
+                                padding: '0.15rem 0.55rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500
+                              }}>
+                                {categoryLabel}
+                              </span>
+                              {item.isPinned && (
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  background: 'rgba(56, 189, 248, 0.2)',
+                                  color: '#38bdf8',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                                  whiteSpace: 'nowrap',
+                                  fontWeight: 600
+                                }}>
+                                  📌 置頂
+                                </span>
+                              )}
+                              {item.topic && (
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  background: 'rgba(255,255,255,0.06)',
+                                  color: 'rgba(255,255,255,0.85)',
+                                  padding: '0.15rem 0.45rem',
+                                  borderRadius: '3px',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  #{item.topic}
+                                </span>
+                              )}
+                              <h3 className="exhibit-list-item-title">
+                                {item.title}
+                              </h3>
+                            </div>
+                            {displayExcerpt && (
+                              <p className="exhibit-list-item-excerpt">
+                                {displayExcerpt}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="exhibit-list-item-meta">
+                            <span className="exhibit-list-item-readtime">☕ {readTime} min</span>
+                            {(item.fbDate || item.createdAt) && (
+                              <div className="exhibit-list-item-date">
+                                <Calendar size={13} />
+                                <span>{item.fbDate ? `FB: ${item.fbDate}` : new Date(item.createdAt!).toLocaleDateString('zh-TW')}</span>
+                              </div>
+                            )}
+                            <div className="exhibit-list-item-action">
+                              <ChevronRight size={16} />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
                 {renderTerminationDivider()}
               </div>

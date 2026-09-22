@@ -886,3 +886,167 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
 }
 
+/* ==========================================================================
+   Google Drive 風格：卡片網格與條列清單切換樣式 (View Mode Toggle & List View)
+   ========================================================================== */
+.exhibit-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.exhibit-view-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.exhibit-view-toggle-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.exhibit-view-toggle-btn.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* 條列清單容器 (List View Container) */
+.exhibit-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* 條列單項 (List Row Item) */
+.exhibit-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1rem 1.4rem;
+  background: rgba(18, 18, 22, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  backdrop-filter: blur(12px);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.exhibit-list-item:hover {
+  background: rgba(28, 28, 36, 0.85);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.exhibit-list-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.exhibit-list-item-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.exhibit-list-item-title {
+  font-family: var(--font-noto-serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+  transition: color 0.2s ease;
+  word-break: break-word;
+}
+
+.exhibit-list-item:hover .exhibit-list-item-title {
+  color: var(--item-accent-color, #38bdf8);
+}
+
+.exhibit-list-item-excerpt {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.exhibit-list-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.exhibit-list-item-date {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.exhibit-list-item-readtime {
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.exhibit-list-item-action {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.exhibit-list-item:hover .exhibit-list-item-action {
+  color: #fff;
+  transform: translateX(3px);
+}
+
+@media (max-width: 768px) {
+  .exhibit-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+  }
+  .exhibit-list-item-meta {
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.5rem;
+  }
+  .exhibit-list-item-excerpt {
+    display: none;
+  }
+}
+
