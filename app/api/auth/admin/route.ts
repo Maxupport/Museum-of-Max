@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAdminCredentials, generateAdminToken, validateAdminRequest } from '@/lib/auth';
+import { ADMIN_SESSION_MAX_AGE, checkAdminCredentials, generateAdminToken, validateAdminRequest } from '@/lib/auth';
 import { ALL_EXHIBIT_KEYS } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
 
-    if (!username || !password) {
+    if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password.trim()) {
       return NextResponse.json({ ok: false, error: '請輸入帳號與密碼' }, { status: 400 });
     }
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: ADMIN_SESSION_MAX_AGE,
       sameSite: 'lax',
     });
 

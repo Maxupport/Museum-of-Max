@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
 import { detectAiBot } from '@/lib/ai-bots';
+import { validateAdminRequest } from '@/lib/auth';
 
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
@@ -42,8 +43,7 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
   // 2. 一般人類訪客之權限保護
   // 保護 /admin 及 /admin/* (除 /admin/login 外)
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    const adminToken = request.cookies.get('admin_token')?.value;
-    if (!adminToken) {
+    if (!validateAdminRequest(request)) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
@@ -59,9 +59,9 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
     if (!isPublicDetailPage) {
       const visitorToken = request.cookies.get('visitor_token')?.value;
       const visitorPermissions = request.cookies.get('visitor_permissions')?.value;
-      const adminToken = request.cookies.get('admin_token')?.value;
+      const isAdmin = validateAdminRequest(request);
 
-      if (!adminToken && (!visitorToken || !visitorPermissions)) {
+      if (!isAdmin && (!visitorToken || !visitorPermissions)) {
         // 未經驗證之真人訪客導回首頁輸入通行碼，並攜帶原始目標以供驗證後轉跳回導
         const redirectTarget = pathname + (request.nextUrl.search || '');
         return NextResponse.redirect(

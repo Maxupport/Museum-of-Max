@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, AlignLeft, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor, Download, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor, Download, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 
 interface PasscodeItem {
@@ -642,7 +642,6 @@ export default function AdminDashboardPage() {
   const [editingWritingId, setEditingWritingId] = useState<string | null>(null);
   const [creatingWriting, setCreatingWriting] = useState(false);
   const [writingFormError, setWritingFormError] = useState('');
-  const [showArticlePreview, setShowArticlePreview] = useState(false);
   const [articleSubTab, setArticleSubTab] = useState<'list' | 'editor' | 'preview'>('list');
   const [filterArticleExhibit, setFilterArticleExhibit] = useState<string>('all');
   const [isCustomNovelTitle, setIsCustomNovelTitle] = useState(false);

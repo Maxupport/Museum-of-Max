@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
+import { getArticle } from '@/lib/articles';
 
 export async function GET(
   request: NextRequest,
@@ -8,9 +9,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const article = await prisma.writingsItem.findUnique({
-      where: { id },
-    });
+    const article = await getArticle(id, validateAdminRequest(request));
     if (!article) {
       return NextResponse.json({ ok: false, error: '文章不存在' }, { status: 404 });
     }
