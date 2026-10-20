@@ -9,10 +9,11 @@ const apiRoutes = import.meta.glob('../app/api/**/route.ts') as Record<string, (
 
 const mocks = vi.hoisted(() => ({
   cookieValues: new Map<string, string>(),
+  after: vi.fn(),
   prisma: {
     writingsItem: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     novel: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    subscriber: { findMany: vi.fn(), upsert: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    subscriber: { findMany: vi.fn(), create: vi.fn(), upsert: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     passcode: { findMany: vi.fn() },
     pageView: { create: vi.fn() },
   },
@@ -20,6 +21,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/prisma', () => ({ prisma: mocks.prisma }));
+vi.mock('next/server', async (importOriginal) => ({
+  ...await importOriginal<typeof import('next/server')>(), after: mocks.after,
+}));
 vi.mock('@/lib/email', () => ({ sendWelcomeEmail: mocks.sendWelcomeEmail }));
 vi.mock('@/components/ArticleDetailClient', () => ({ default: () => null }));
 vi.mock('next/headers', () => ({
@@ -42,6 +46,7 @@ beforeEach(() => {
   vi.stubEnv('ADMIN_PASSWORD', 'test-only-password');
   vi.stubEnv('ADMIN_SESSION_SECRET', 'test-only-session-secret');
   mocks.cookieValues.clear();
+  mocks.prisma.subscriber.findUnique.mockResolvedValue(null);
 });
 
 afterEach(() => vi.unstubAllEnvs());
@@ -227,14 +232,40 @@ describe('visitor and subscription compatibility', () => {
 
   it('accepts subscriptions without exposing subscriber details or unsubscribe tokens', async () => {
     const { POST } = await import('@/app/api/subscribe/route');
-    mocks.prisma.subscriber.upsert.mockResolvedValue({
+    mocks.prisma.subscriber.create.mockResolvedValue({
       id: 'subscriber-1', email: 'reader@example.test', unsubscribeToken: 'private-token', active: true,
     });
     const response = await POST(request('/api/subscribe', 'POST', { email: ' Reader@Example.test ', novelId: 'novel-1' }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, message: expect.any(String) });
-    expect(mocks.prisma.subscriber.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { email: 'reader@example.test' } }));
+    expect(mocks.prisma.subscriber.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ email: 'reader@example.test' }) }));
+    expect(mocks.sendWelcomeEmail).not.toHaveBeenCalled();
+    await mocks.after.mock.calls[0][0]();
     expect(mocks.sendWelcomeEmail).toHaveBeenCalledWith(expect.objectContaining({ unsubscribeToken: 'private-token' }));
+  });
+
+  it('does not resend welcomes, overwrite a reader, or reactivate an opted-out email', async () => {
+    const { POST } = await import('@/app/api/subscribe/route');
+    mocks.prisma.subscriber.findUnique.mockResolvedValue({ id: 'existing-1' });
+    const response = await POST(request('/api/subscribe', 'POST', { email: 'reader@example.test', name: 'overwrite' }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, message: expect.any(String) });
+    expect(mocks.prisma.subscriber.create).not.toHaveBeenCalled();
+    expect(mocks.prisma.subscriber.update).not.toHaveBeenCalled();
+    expect(mocks.after).not.toHaveBeenCalled();
+  });
+
+  it('handles simultaneous duplicate subscriptions without duplicate email', async () => {
+    const { POST } = await import('@/app/api/subscribe/route');
+    mocks.prisma.subscriber.create.mockRejectedValueOnce({ code: 'P2002' });
+    expect((await POST(request('/api/subscribe', 'POST', { email: 'reader@example.test' }))).status).toBe(200);
+    expect(mocks.after).not.toHaveBeenCalled();
+  });
+
+  it.each([{ name: {} }, { novelId: [] }, { novelTitle: 'x'.repeat(201) }, { sourceChapter: -1 }, { sourceChapter: 1.2 }])('rejects malformed subscription details %j', async (details) => {
+    const { POST } = await import('@/app/api/subscribe/route');
+    expect((await POST(request('/api/subscribe', 'POST', { email: 'reader@example.test', ...details }))).status).toBe(400);
+    expect(mocks.prisma.subscriber.findUnique).not.toHaveBeenCalled();
   });
 
   it('rejects invalid subscription email before touching the database', async () => {

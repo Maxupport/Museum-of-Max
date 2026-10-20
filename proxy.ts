@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, NextFetchEvent } from 'next/server';
 import { detectAiBot } from '@/lib/ai-bots';
 import { validateAdminRequest } from '@/lib/auth';
+import { signCrawlerRequest } from '@/lib/crawler-auth';
 
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
@@ -14,18 +15,18 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || request.headers.get('x-real-ip');
     const referer = request.headers.get('referer');
 
-    event.waitUntil(
+    const body = JSON.stringify({
+      botFamily: aiBot.botFamily, botName: aiBot.botName,
+      userAgent: userAgent?.slice(0, 1000), path: pathname.slice(0, 500),
+      ip: ip?.slice(0, 100), referer: referer?.slice(0, 500),
+    });
+    const signedHeaders = signCrawlerRequest(body);
+    if (signedHeaders) event.waitUntil(
       fetch(`${origin}/api/internal/track-crawler`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          botFamily: aiBot.botFamily,
-          botName: aiBot.botName,
-          userAgent,
-          path: pathname,
-          ip,
-          referer,
-        }),
+        headers: { 'Content-Type': 'application/json', ...signedHeaders },
+        body,
+        signal: AbortSignal.timeout(5000),
       }).catch((err) => {
         console.error('Async AI crawl log error:', err);
       })

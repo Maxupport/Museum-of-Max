@@ -3,6 +3,8 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { validateAdminRequest } from '@/lib/auth';
 import { put } from '@vercel/blob';
+import { randomUUID } from 'crypto';
+import { prepareUploadImage } from '@/lib/upload-image';
 
 function getVercelBlobToken(): string | undefined {
   // 1. 標準與延伸名稱
@@ -31,29 +33,28 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    const file = formData.get('file');
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ ok: false, error: '未接收到圖片檔案' }, { status: 400 });
     }
 
-    // 檢查檔案類型
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ ok: false, error: '僅支援上傳圖片檔案 (PNG, JPG, WEBP, SVG)' }, { status: 400 });
+    let image;
+    try {
+      image = await prepareUploadImage(file);
+    } catch (error) {
+      return NextResponse.json({ ok: false, error: (error as Error).message }, { status: 400 });
     }
-
-    // 產生不重複檔名
-    const fileExt = path.extname(file.name) || '.png';
-    const cleanBaseName = path.basename(file.name, fileExt).replace(/[^a-zA-Z0-9]/g, '_');
-    const uniqueFileName = `${cleanBaseName}_${Date.now()}${fileExt}`;
+    const uniqueFileName = `${randomUUID()}.${image.extension}`;
 
     const blobToken = getVercelBlobToken();
 
     // 1. 若環境變數包含 Vercel Blob Token
     if (blobToken) {
-      const blob = await put(uniqueFileName, file, {
+      const blob = await put(uniqueFileName, image.buffer, {
         access: 'public',
         token: blobToken,
+        contentType: image.contentType,
       });
       return NextResponse.json({
         ok: true,
@@ -64,22 +65,17 @@ export async function POST(request: NextRequest) {
 
     // 若在 Vercel 生態系運作但未連結 Blob Store，給予明確提示
     if (process.env.VERCEL) {
-      const presentKeys = Object.keys(process.env).filter(
-        k => k.includes('BLOB') || k.includes('STORE') || k.includes('TOKEN') || k.startsWith('sec_')
-      );
       return NextResponse.json({
         ok: false,
-        error: `圖片上傳失敗：未找到有效的 Vercel Blob Token (以 vercel_blob_rw_ 開頭)。請確認 Settings -> Environment Variables 存有名為 BLOB_READ_WRITE_TOKEN 的變數。目前檢測到的相關變數名稱為: [${presentKeys.join(', ')}]`,
+        error: '圖片上傳尚未設定，請在 Vercel 設定 BLOB_READ_WRITE_TOKEN。',
       }, { status: 400 });
     }
 
     // 2. 本機開發降級方案：儲存於 public/uploads
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     await mkdir(uploadDir, { recursive: true });
     const filePath = path.join(uploadDir, uniqueFileName);
-    await writeFile(filePath, buffer);
+    await writeFile(filePath, image.buffer);
 
     return NextResponse.json({
       ok: true,
@@ -88,8 +84,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('File upload error:', error);
-    const errorMessage = error instanceof Error ? error.message : '圖片上傳失敗';
-    return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
+    return NextResponse.json({ ok: false, error: '圖片上傳失敗，請稍後再試' }, { status: 500 });
   }
 }
 

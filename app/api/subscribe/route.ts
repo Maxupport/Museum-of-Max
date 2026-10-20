@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 import { sendWelcomeEmail } from '@/lib/email';
@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
 
     // 1. 蜜罐防機器人 (Honeypot protection)
     if (website_url) {
-      console.warn('[Anti-Spam] Bot detected via honeypot field:', { email, website_url });
       return NextResponse.json({
         ok: true,
         message: '感謝訂閱！未來每當有最新連載或內容更新時，將自動寄送通知給您。',
@@ -38,18 +37,22 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanName = name ? String(name).trim() : null;
-    const cleanChapter = typeof sourceChapter === 'number' ? sourceChapter : null;
+    if ([name, novelId, novelTitle].some((value) => value != null &&
+      (typeof value !== 'string' || value.length > 200)) ||
+      (sourceChapter != null && (!Number.isSafeInteger(sourceChapter) || sourceChapter < 1))) {
+      return NextResponse.json({ ok: false, error: '訂閱欄位格式不正確' }, { status: 400 });
+    }
+    const cleanName = name?.trim() || null;
+    const cleanChapter = sourceChapter ?? null;
 
-    // 2. 寫入或更新訂閱者 (包含產生專屬退訂金鑰)
-    const subscriber = await prisma.subscriber.upsert({
-      where: { email: cleanEmail },
-      update: {
-        active: true,
-        ...(cleanName && { name: cleanName }),
-        ...(cleanChapter && { sourceChapter: cleanChapter }),
-      },
-      create: {
+    // Public requests cannot overwrite an existing reader or silently undo an opt-out.
+    // An identical response also avoids exposing whether an email is subscribed.
+    const existing = await prisma.subscriber.findUnique({ where: { email: cleanEmail }, select: { id: true } });
+    if (existing) return subscriptionResponse();
+
+    // 2. 建立新訂閱者 (包含產生專屬退訂金鑰)
+    const subscriber = await prisma.subscriber.create({
+      data: {
         email: cleanEmail,
         name: cleanName,
         novelId: novelId || 'all',
@@ -60,10 +63,12 @@ export async function POST(request: NextRequest) {
 
     // 3. 後端非同步同步至 Google 試算表 (保護 Webhook 網址不暴露於前端)
     const googleScriptUrl = process.env.GOOGLE_SCRIPT_URL || process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
-    if (googleScriptUrl) {
-      fetch(googleScriptUrl, {
+    after(async () => {
+      const jobs: Promise<unknown>[] = [];
+      if (googleScriptUrl) jobs.push(fetch(googleScriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(8000),
         body: JSON.stringify({
           email: cleanEmail,
           name: cleanName || '',
@@ -71,24 +76,36 @@ export async function POST(request: NextRequest) {
           sourceChapter: cleanChapter || 1,
           createdAt: new Date().toISOString(),
         }),
-      }).catch((err) => console.error('[Google Apps Script Sync Error]:', err));
-    }
+      }).then((response) => {
+        if (!response.ok) console.error('[Subscription] Spreadsheet sync was rejected');
+      }));
 
-    // 4. 非同步寄送歡迎確認信
-    sendWelcomeEmail({
-      email: cleanEmail,
-      name: cleanName,
-      novelTitle: novelTitle || '原創小說連載',
-      novelId: novelId || undefined,
-      unsubscribeToken: subscriber.unsubscribeToken,
-    }).catch((err) => console.error('[Welcome Email Trigger Error]:', err));
-
-    return NextResponse.json({
-      ok: true,
-      message: '感謝訂閱！未來每當有最新連載或內容更新時，將自動寄送通知給您。',
+      // 4. 非同步寄送歡迎信（不是雙重訂閱確認）
+      jobs.push(sendWelcomeEmail({
+        email: cleanEmail,
+        name: cleanName,
+        novelTitle: novelTitle || '原創小說連載',
+        novelId: novelId || undefined,
+        unsubscribeToken: subscriber.unsubscribeToken,
+      }).then((result) => {
+        if (!result.ok) console.error('[Subscription] Welcome email was not accepted');
+      }));
+      const results = await Promise.allSettled(jobs);
+      if (results.some((result) => result.status === 'rejected')) console.error('[Subscription] Background delivery failed');
     });
+
+    return subscriptionResponse();
   } catch (error) {
-    console.error('Subscribe Error:', error);
+    // Concurrent requests for the same unique email must not send duplicate welcomes.
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') return subscriptionResponse();
+    console.error('[Subscription] Subscription request failed');
     return NextResponse.json({ ok: false, error: '訂閱失敗，請稍後再試' }, { status: 500 });
   }
+}
+
+function subscriptionResponse() {
+  return NextResponse.json({
+    ok: true,
+    message: '感謝訂閱！未來每當有最新連載或內容更新時，將自動寄送通知給您。',
+  });
 }
