@@ -1708,7 +1708,7 @@ export default function AdminDashboardPage() {
                   <label style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', padding: '0.5rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Upload size={14} />
                     {uploadingAvatar ? '上傳中...' : '選擇照片'}
-                    <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={uploadingAvatar} />
+                    <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={uploadingAvatar} />
                   </label>
                 </div>
               </div>
@@ -1946,7 +1946,7 @@ export default function AdminDashboardPage() {
                   <input
                     type="file"
                     id="vlogo-file-input"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/webp"
                     onChange={handleFileUpload}
                     style={{ display: 'none' }}
                   />
@@ -2228,7 +2228,7 @@ export default function AdminDashboardPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/webp"
                     onChange={handleUploadCLogo}
                     id="career-logo-file-input"
                     style={{ display: 'none' }}
@@ -2285,7 +2285,7 @@ export default function AdminDashboardPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/webp"
                     onChange={handleUploadCPhoto}
                     id="career-photo-file-input"
                     style={{ display: 'none' }}
@@ -4109,7 +4109,7 @@ export default function AdminDashboardPage() {
                         }}>
                           <Upload size={15} />
                           {uploadingNoverCover ? '上傳中...' : '上傳封面圖'}
-                          <input type="file" accept="image/*" onChange={handleNovelCoverUpload} style={{ display: 'none' }} disabled={uploadingNoverCover} />
+                          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleNovelCoverUpload} style={{ display: 'none' }} disabled={uploadingNoverCover} />
                         </label>
                       </div>
                       {/* 封面預覽 */}
@@ -5591,7 +5591,7 @@ export default function AdminDashboardPage() {
                         <label className="museum-btn" style={{ cursor: 'pointer', background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.4)', color: '#f472b6', padding: '0.65rem 1.2rem', borderRadius: '4px', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                           <Upload size={14} />
                           {uploadingCoverImage ? '上傳中...' : '選擇電腦圖片上傳'}
-                          <input type="file" accept="image/*" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
+                          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleCoverImageUpload} style={{ display: 'none' }} disabled={uploadingCoverImage} />
                         </label>
                         {wCoverImage && (
                           <button

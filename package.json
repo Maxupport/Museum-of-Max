@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@notionhq/client": "^5.22.0",
-    "@prisma/adapter-better-sqlite3": "^7.9.1",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@vercel/blob": "^2.8.0",
@@ -26,10 +26,11 @@
     "next": "16.3.8",
     "next-auth": "^4.24.14",
     "pg": "^8.23.0",
-    "prisma": "^7.9.1",
+    "prisma": "7.10.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "resend": "^6.28.1"
+    "resend": "^6.28.1",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -48,8 +49,8 @@
     "vitest": "4.1.11"
   },
   "allowScripts": {
-    "prisma@7.9.1": true,
-    "@prisma/engines@7.9.1": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
     "better-sqlite3@13.0.3": true,
     "better-sqlite3@12.11.1": true
   }

@@ -6,6 +6,20 @@ export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://maxupport.com';
 const DEFAULT_FROM = process.env.EMAIL_FROM || 'Maxupport 小說連載 <onboarding@resend.dev>';
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]!);
+}
+
+function safeLink(value: string): string {
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:' || url.protocol === 'http:') return escapeHtml(url.href);
+  } catch { /* Invalid URLs must not become executable email links. */ }
+  return '#';
+}
+
 interface SendWelcomeEmailParams {
   email: string;
   name?: string | null;
@@ -28,9 +42,9 @@ interface SendChapterUpdateParams {
  * 產生信件共用底部 HTML (包含法規強制之取消訂閱連結)
  */
 function renderEmailFooter(unsubscribeToken?: string | null): string {
-  const unsubscribeUrl = unsubscribeToken
+  const unsubscribeUrl = safeLink(unsubscribeToken
     ? `${SITE_URL}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
-    : `${SITE_URL}/unsubscribe`;
+    : `${SITE_URL}/unsubscribe`);
 
   return `
     <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; font-size: 12px; color: #888888; line-height: 1.6;">
@@ -60,10 +74,12 @@ export async function sendWelcomeEmail({
     return { ok: false, error: 'RESEND_API_KEY 未設定' };
   }
 
-  const readerGreeting = name ? `${name} 您好` : '親愛的讀者 您好';
-  const targetNovelUrl = novelId
+  const readerGreeting = name ? `${escapeHtml(name)} 您好` : '親愛的讀者 您好';
+  const subject = `感謝訂閱《${novelTitle}》連載更新 | Maxupport 私人博物館`;
+  novelTitle = escapeHtml(novelTitle);
+  const targetNovelUrl = safeLink(novelId
     ? `${SITE_URL}/museum/creation_lab/novel/${encodeURIComponent(novelId)}`
-    : `${SITE_URL}/museum/creation_lab`;
+    : `${SITE_URL}/museum/creation_lab`);
 
   const html = `
     <!DOCTYPE html>
@@ -123,13 +139,14 @@ export async function sendWelcomeEmail({
     const data = await resend.emails.send({
       from: DEFAULT_FROM,
       to: email,
-      subject: `感謝訂閱《${novelTitle}》連載更新 | Maxupport 私人博物館`,
+      subject,
       html,
     });
-    return { ok: true, data };
-  } catch (error) {
-    console.error('[Resend Welcome Email Error]:', error);
-    return { ok: false, error };
+    if (data.error) return { ok: false, error: '寄信服務未接受此信件，請檢查寄件設定與額度' };
+    return { ok: true, data: data.data };
+  } catch {
+    console.error('[Resend] Welcome email request failed');
+    return { ok: false, error: '寄信服務暫時無法使用' };
   }
 }
 
@@ -150,7 +167,12 @@ export async function sendChapterUpdateEmail({
     return { ok: false, error: 'RESEND_API_KEY 未設定' };
   }
 
-  const readerGreeting = name ? `${name} 您好` : '親愛的讀者 您好';
+  const readerGreeting = name ? `${escapeHtml(name)} 您好` : '親愛的讀者 您好';
+  const subject = `【新章節發布】《${novelTitle}》${chapterTitle}`;
+  novelTitle = escapeHtml(novelTitle);
+  chapterTitle = escapeHtml(chapterTitle);
+  summary = summary ? escapeHtml(summary) : summary;
+  chapterUrl = safeLink(chapterUrl);
 
   const html = `
     <!DOCTYPE html>
@@ -213,12 +235,13 @@ export async function sendChapterUpdateEmail({
     const data = await resend.emails.send({
       from: DEFAULT_FROM,
       to: email,
-      subject: `【新章節發布】《${novelTitle}》${chapterTitle}`,
+      subject,
       html,
     });
-    return { ok: true, data };
-  } catch (error) {
-    console.error(`[Resend Dispatch Email Error to ${email}]:`, error);
-    return { ok: false, error };
+    if (data.error) return { ok: false, error: '寄信服務未接受此信件，請檢查寄件設定與額度' };
+    return { ok: true, data: data.data };
+  } catch {
+    console.error('[Resend] Chapter email request failed');
+    return { ok: false, error: '寄信服務暫時無法使用' };
   }
 }
