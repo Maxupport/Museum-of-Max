@@ -15,7 +15,7 @@ function getVercelBlobToken(): string | undefined {
   if (process.env.third_READ_WRITE_TOKEN) return process.env.third_READ_WRITE_TOKEN;
 
   // 2. 自動掃描 process.env 中值為 vercel_blob_rw_ 開頭的權杖
-  for (const [key, value] of Object.entries(process.env)) {
+  for (const value of Object.values(process.env)) {
     if (typeof value === 'string' && value.startsWith('vercel_blob_rw_')) {
       return value;
     }

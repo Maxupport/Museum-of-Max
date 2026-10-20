@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function GET(request: NextRequest) {
   if (!validateAdminRequest(request)) {
@@ -18,8 +19,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-import { sendWelcomeEmail } from '@/lib/email';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (typeof email !== 'string' || email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return NextResponse.json({ ok: false, error: '請輸入有效的 Email 電子郵件地址' }, { status: 400 });
     }
 
@@ -87,7 +86,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       message: '感謝訂閱！未來每當有最新連載或內容更新時，將自動寄送通知給您。',
-      data: subscriber,
     });
   } catch (error) {
     console.error('Subscribe Error:', error);

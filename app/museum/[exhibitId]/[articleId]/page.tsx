@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { getPageArticle } from '@/lib/articles';
 import { EXHIBITS } from '@/lib/constants';
 import ArticleDetailClient, { SerializedArticleData } from '@/components/ArticleDetailClient';
 
@@ -14,9 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const exhibit = EXHIBITS[exhibitId];
 
   try {
-    const article = await prisma.writingsItem.findUnique({
-      where: { id: articleId },
-    });
+    const article = await getPageArticle(exhibitId, articleId);
 
     if (article) {
       const excerpt = article.excerpt || article.content.slice(0, 180).replace(/[#>\n]/g, ' ').trim();
@@ -70,12 +68,12 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
   let dbArticle = null;
   try {
-    dbArticle = await prisma.writingsItem.findUnique({
-      where: { id: articleId },
-    });
+    dbArticle = await getPageArticle(exhibitId, articleId);
   } catch (err) {
     console.error('Error fetching article for SSR:', err);
   }
+
+  if (!dbArticle) notFound();
 
   // 序列化日期物件為 ISO 字串，符合 Client Component 規範
   const serializedArticle: SerializedArticleData | null = dbArticle ? {
@@ -121,7 +119,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       )}
       <ArticleDetailClient

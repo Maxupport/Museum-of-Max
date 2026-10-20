@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import NovelReaderClient, { NovelWithChapters } from '@/components/NovelReaderClient';
 
@@ -127,7 +126,7 @@ export default async function NovelReaderPage({ params }: PageProps) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       )}
       <NovelReaderClient

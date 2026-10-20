@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
-
-// 驗證是否為策展人 (管理員)
-async function isCuratorRequest(req: NextRequest): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('is_curator')?.value === 'true';
-}
+import { validateAdminRequest } from '@/lib/auth';
 
 /**
  * GET /api/novels
@@ -127,7 +121,7 @@ export async function GET() {
  * Body: { title, author, coverUrl, description, status, order }
  */
 export async function POST(req: NextRequest) {
-  if (!await isCuratorRequest(req)) {
+  if (!validateAdminRequest(req)) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 

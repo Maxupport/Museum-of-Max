@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
-
-async function isCuratorRequest(): Promise<boolean> {
-  const cookieStore = await cookies();
-  return cookieStore.get('is_curator')?.value === 'true';
-}
+import { validateAdminRequest } from '@/lib/auth';
 
 /**
  * GET /api/novels/[id]
@@ -63,7 +58,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await isCuratorRequest()) {
+  if (!validateAdminRequest(req)) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -98,10 +93,10 @@ export async function PUT(
  * 注意：不會刪除相關的 WritingsItem 章節。
  */
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!await isCuratorRequest()) {
+  if (!validateAdminRequest(req)) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parsePermissions, generateAdminToken } from '@/lib/auth';
-import { ALL_EXHIBIT_KEYS } from '@/lib/constants';
+import { ADMIN_SESSION_MAX_AGE, parsePermissions, generateAdminToken } from '@/lib/auth';
 
 const PRESET_PASSCODES: Record<string, { id: string; code: string; note: string; permissions: string[] }> = {
   vc2026: {
@@ -159,14 +158,14 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: ADMIN_SESSION_MAX_AGE,
         sameSite: 'lax',
       });
       response.cookies.set('is_curator', 'true', {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 60 * 24 * 30,
+        maxAge: ADMIN_SESSION_MAX_AGE,
         sameSite: 'lax',
       });
     } else {

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     const isAdmin = validateAdminRequest(request);
-    if (!isAdmin && !includeHidden) {
+    if (!isAdmin || !includeHidden) {
       whereClause.isHidden = false;
     }
 
