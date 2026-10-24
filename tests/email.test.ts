@@ -12,6 +12,21 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('email safety and provider responses', () => {
+  it('uses an announcement template instead of falsely claiming a new chapter was published', async () => {
+    const { sendChapterUpdateEmail } = await import('@/lib/email');
+    const result = await sendChapterUpdateEmail({ email: 'reader@example.test', novelTitle: '網站', chapterTitle: '活動消息', summary: '通告內容', chapterUrl: 'https://museum.test/novels', messageType: 'announcement', isTest: true }, true);
+    expect(result.message?.subject).toBe('【測試】【網站通告】《網站》活動消息');
+    expect(result.message?.html).not.toContain('已發布最新章節');
+    expect(result.message?.html).toContain('WEBSITE ANNOUNCEMENT');
+    expect(result.message?.html).toContain('通告內容');
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+  it('links all-work welcome readers to a public, passcode-free novel directory', async () => {
+    const { sendWelcomeEmail } = await import('@/lib/email');
+    const result = await sendWelcomeEmail({ email: 'reader@example.test', unsubscribeToken: 'test-token' }, true);
+    expect(result.message?.html).toContain('https://museum.test/novels');
+    expect(result.message?.html).toContain('token=test-token');
+  });
   it('escapes reader names and book titles without corrupting the plain-text subject', async () => {
     const { sendWelcomeEmail } = await import('@/lib/email');
     expect((await sendWelcomeEmail({ email: 'reader@example.test', name: '<img src=x>', novelTitle: '<script>bad</script>', novelId: 'book/1', unsubscribeToken: 'a&b' })).ok).toBe(true);

@@ -243,6 +243,7 @@ describe('visitor and subscription compatibility', () => {
     mocks.prisma.subscriber.create.mockResolvedValue({
       id: 'subscriber-1', email: 'reader@example.test', unsubscribeToken: 'private-token', active: true,
     });
+    mocks.prisma.novel.findUnique.mockResolvedValue({ id: 'novel-1', title: '正式作品名稱' });
     const response = await POST(request('/api/subscribe', 'POST', { email: ' Reader@Example.test ', novelId: 'novel-1' }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, message: expect.any(String) });

@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 import { getArticle } from '@/lib/articles';
 import { queuePublication } from '@/lib/newsletter-queue';
+import { kickNewsletterQueue } from '@/lib/newsletter-kick';
+
+export const maxDuration = 60;
 
 export async function GET(
   request: NextRequest,
@@ -61,6 +64,7 @@ export async function PUT(
       return item;
     });
 
+    if (updated.category === '小說' && !updated.isHidden && body.notifySubscribers !== false) kickNewsletterQueue();
     return NextResponse.json({ ok: true, data: updated });
   } catch (error) {
     console.error('Update Writing Error:', error);

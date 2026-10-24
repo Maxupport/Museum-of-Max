@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 import { queueSubscriber } from '@/lib/newsletter-queue';
+import { kickNewsletterQueue } from '@/lib/newsletter-kick';
+
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   if (!validateAdminRequest(request)) {
@@ -32,7 +35,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (typeof email !== 'string' || email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (typeof email !== 'string' || email.trim().length > 254 || !/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email.trim())) {
       return NextResponse.json({ ok: false, error: '請輸入有效的 Email 電子郵件地址' }, { status: 400 });
     }
 
@@ -50,6 +53,9 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.subscriber.findUnique({ where: { email: cleanEmail }, select: { id: true } });
     if (existing) return subscriptionResponse();
 
+    const selectedNovel = novelId && novelId !== 'all' ? await prisma.novel.findUnique({ where: { id: novelId }, select: { id: true, title: true } }) : null;
+    if (novelId && novelId !== 'all' && !selectedNovel) return NextResponse.json({ ok: false, error: '找不到指定作品，請重新選擇訂閱範圍。' }, { status: 400 });
+
     // 2. 建立新訂閱者 (包含產生專屬退訂金鑰)
     await prisma.$transaction(async (tx) => {
       const subscriber = await tx.subscriber.create({
@@ -61,8 +67,9 @@ export async function POST(request: NextRequest) {
         active: true,
       },
       });
-      await queueSubscriber(tx, subscriber.id, true, novelTitle || '原創小說連載');
+      await queueSubscriber(tx, subscriber.id, true, selectedNovel?.title || '網站創作與連載更新');
     });
+    kickNewsletterQueue();
 
     return subscriptionResponse();
   } catch (error) {
@@ -76,6 +83,6 @@ export async function POST(request: NextRequest) {
 function subscriptionResponse() {
   return NextResponse.json({
     ok: true,
-    message: '已收到訂閱登記。寄信服務啟用後，將依排程寄送歡迎信及後續更新通知。',
+    message: '已收到訂閱登記。歡迎信及後續通知會依寄送佇列與額度處理；先前已退訂的信箱不會因重複登記而自動恢復。',
   });
 }

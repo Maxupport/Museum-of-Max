@@ -26,6 +26,7 @@ interface SendWelcomeEmailParams {
   novelTitle?: string;
   novelId?: string;
   unsubscribeToken?: string | null;
+  isTest?: boolean;
 }
 
 interface SendChapterUpdateParams {
@@ -36,15 +37,16 @@ interface SendChapterUpdateParams {
   summary?: string | null;
   chapterUrl: string;
   unsubscribeToken?: string | null;
+  messageType?: 'update' | 'announcement';
+  isTest?: boolean;
 }
 
 /**
  * 產生信件共用底部 HTML (包含法規強制之取消訂閱連結)
  */
-function renderEmailFooter(unsubscribeToken?: string | null): string {
-  const unsubscribeUrl = safeLink(unsubscribeToken
-    ? `${SITE_URL}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`
-    : `${SITE_URL}/unsubscribe`);
+function renderEmailFooter(unsubscribeToken?: string | null, isTest = false): string {
+  if (!unsubscribeToken) return `<p style="margin-top:32px;color:#888;font-size:12px;text-align:center;">${isTest ? '此為管理者驗收測試信，不會新增訂閱；請由測試歡迎信驗證退訂流程。' : '若需協助取消通知，請聯絡策展人。'} <a href="mailto:maxupport@gmail.com">聯絡策展人</a></p>`;
+  const unsubscribeUrl = safeLink(`${SITE_URL}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`);
 
   return `
     <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; font-size: 12px; color: #888888; line-height: 1.6;">
@@ -68,6 +70,7 @@ export async function sendWelcomeEmail({
   novelTitle = '原創小說連載',
   novelId,
   unsubscribeToken,
+  isTest = false,
 }: SendWelcomeEmailParams, prepareOnly = false) {
   if (!resend && !prepareOnly) {
     console.warn('[Resend] RESEND_API_KEY 未設定，跳過寄送歡迎信');
@@ -75,11 +78,11 @@ export async function sendWelcomeEmail({
   }
 
   const readerGreeting = name ? `${escapeHtml(name)} 您好` : '親愛的讀者 您好';
-  const subject = `感謝訂閱《${novelTitle}》連載更新 | Maxupport 私人博物館`;
+  const subject = `${isTest ? '【測試】' : ''}感謝訂閱《${novelTitle}》連載更新 | Maxupport 私人博物館`;
   novelTitle = escapeHtml(novelTitle);
   const targetNovelUrl = safeLink(novelId
     ? `${SITE_URL}/museum/creation_lab/novel/${encodeURIComponent(novelId)}`
-    : `${SITE_URL}/museum/creation_lab`);
+    : `${SITE_URL}/novels`);
 
   const html = `
     <!DOCTYPE html>
@@ -108,6 +111,7 @@ export async function sendWelcomeEmail({
                     ${readerGreeting}：
                   </p>
                   <p style="font-size: 15px; color: #d1d5db; line-height: 1.7; margin: 0 0 20px 0;">
+                    ${isTest ? '這是僅寄給管理者的訂閱流程驗收測試。' : ''}
                     非常感謝您對《${novelTitle}》的關注與支持！作品更新後，將依寄送排程通知此信箱，信內會附上當次更新進度與閱讀連結。
                   </p>
 
@@ -124,7 +128,7 @@ export async function sendWelcomeEmail({
                   </p>
 
                   <!-- 退訂與法定聲明 -->
-                  ${renderEmailFooter(unsubscribeToken)}
+                  ${renderEmailFooter(unsubscribeToken, isTest)}
                 </td>
               </tr>
             </table>
@@ -162,6 +166,8 @@ export async function sendChapterUpdateEmail({
   summary,
   chapterUrl,
   unsubscribeToken,
+  messageType = 'update',
+  isTest = false,
 }: SendChapterUpdateParams, prepareOnly = false) {
   if (!resend && !prepareOnly) {
     console.warn('[Resend] RESEND_API_KEY 未設定，無法寄送更新廣播信');
@@ -169,7 +175,8 @@ export async function sendChapterUpdateEmail({
   }
 
   const readerGreeting = name ? `${escapeHtml(name)} 您好` : '親愛的讀者 您好';
-  const subject = `【新章節發布】《${novelTitle}》${chapterTitle}`;
+  const announcement = messageType === 'announcement';
+  const subject = `${isTest ? '【測試】' : ''}${announcement ? '【網站通告】' : '【連載更新】'}《${novelTitle}》${chapterTitle}`;
   novelTitle = escapeHtml(novelTitle);
   chapterTitle = escapeHtml(chapterTitle);
   summary = summary ? escapeHtml(summary) : summary;
@@ -180,7 +187,7 @@ export async function sendChapterUpdateEmail({
     <html lang="zh-TW">
     <head>
       <meta charset="utf-8">
-      <title>《${novelTitle}》新章節發布通知</title>
+      <title>《${novelTitle}》${announcement ? '網站通告' : '連載更新通知'}</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #0b0b0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif; color: #e5e5e5;">
       <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0b0b0e; padding: 40px 16px;">
@@ -190,7 +197,7 @@ export async function sendChapterUpdateEmail({
               <tr>
                 <td>
                   <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #60a5fa; font-weight: 600; margin-bottom: 8px;">
-                    NEW CHAPTER RELEASE • 《${novelTitle}》
+                    ${announcement ? 'WEBSITE ANNOUNCEMENT' : 'CHAPTER UPDATE'} • 《${novelTitle}》
                   </div>
                   <h1 style="margin: 0 0 20px 0; font-size: 22px; color: #ffffff; font-weight: 600; line-height: 1.4;">
                     ${chapterTitle}
@@ -200,7 +207,7 @@ export async function sendChapterUpdateEmail({
                     ${readerGreeting}：
                   </p>
                   <p style="font-size: 15px; color: #d1d5db; line-height: 1.7; margin: 0 0 16px 0;">
-                    您所訂閱的連載作品《${novelTitle}》已發布最新章節！
+                    ${isTest ? '這是經作者同意的驗收測試，並非新的公開連載公告。' : announcement ? '以下是 Maxupport 私人博物館的最新通告。' : `您所訂閱的連載作品《${novelTitle}》已發布更新，進度如下。`}
                   </p>
 
                   ${summary ? `
@@ -212,7 +219,7 @@ export async function sendChapterUpdateEmail({
                   <!-- 閱讀按鈕 -->
                   <div style="text-align: center; margin: 32px 0;">
                     <a href="${chapterUrl}" style="display: inline-block; background: #60a5fa; color: #0b0b0e; font-size: 14px; font-weight: 600; padding: 12px 28px; border-radius: 4px; text-decoration: none; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(96, 165, 250, 0.35);" target="_blank">
-                      立即閱讀最新章節 →
+                      ${announcement ? '查看相關內容' : '閱讀本次更新'} →
                     </a>
                   </div>
 
@@ -221,7 +228,7 @@ export async function sendChapterUpdateEmail({
                   </p>
 
                   <!-- 退訂與法定聲明 -->
-                  ${renderEmailFooter(unsubscribeToken)}
+                  ${renderEmailFooter(unsubscribeToken, isTest)}
                 </td>
               </tr>
             </table>
