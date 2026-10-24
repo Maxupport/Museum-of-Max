@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { chapterIllustrationUrl } from '@/lib/novel-illustration';
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, List, Calendar, User, Sparkles, Mail, X, AlignLeft } from 'lucide-react';
 
 export interface ChapterItem {
@@ -229,6 +231,7 @@ export default function NovelReaderClient({
   };
 
   const contentParagraphs = parseChapterContent(currentChapter.content);
+  const illustrationUrl = chapterIllustrationUrl(currentChapter.id, currentChapter.content);
 
   const handlePrevChapter = () => {
     if (currentChapterIdx > 0) {
@@ -609,6 +612,13 @@ export default function NovelReaderClient({
               {currentChapter.title}
             </h2>
 
+            {illustrationUrl && (
+              <figure style={{ margin: '0 0 2rem' }}>
+                <Image key={currentChapter.id} src={illustrationUrl} alt={`${currentChapter.title} 章節配圖`}
+                  width={1024} height={1536} unoptimized
+                  style={{ display: 'block', width: '100%', height: 'auto', borderRadius: '6px' }} />
+              </figure>
+            )}
             <article
               className="novel-article-body"
               style={{

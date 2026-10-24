@@ -231,6 +231,30 @@ describe('durable newsletter outbox', () => {
     await queue.processNewsletterQueue(15);
     expect(mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send')).toHaveLength(2);
   });
+  it.each([404, 503])('defers an illustrated update when its protected image returns %s, even with reader HTML 200', async (status) => {
+    readers(1); const queue = await import('@/lib/newsletter-queue');
+    mocks.db.writingsItem.findMany.mockResolvedValue([{ id: 'chapter-1', title: '第一章',
+      content: JSON.stringify({ textContent: '正文', illustration: true }) }]);
+    vi.stubGlobal('fetch', vi.fn(async (url) => String(url).includes('/api/novel-illustrations/')
+      ? new Response(null, { status }) : new Response('<html>chapter-1</html>', { headers: { 'Content-Type': 'text/html' } })));
+    await queue.queuePublishedUpdate('book-1', ['chapter-1'], 'image-not-ready');
+    await queue.processNewsletterQueue(15);
+    expect(mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send')).toHaveLength(0);
+    expect(jobs().find((job) => job.kind === 'update')).toMatchObject({ state: 'pending', notBefore: expect.any(Number) });
+  });
+  it('sends an illustrated update only after both public page and protected image are ready', async () => {
+    readers(1); const queue = await import('@/lib/newsletter-queue');
+    mocks.db.writingsItem.findMany.mockResolvedValue([{ id: 'chapter-1', title: '第一章',
+      content: JSON.stringify({ textContent: '正文', illustration: true }) }]);
+    const fetcher = vi.fn(async (url) => String(url).includes('/api/novel-illustrations/')
+      ? new Response(new Uint8Array([1, 2, 3]), { headers: { 'Content-Type': 'image/png' } })
+      : new Response('<html>chapter-1</html>', { headers: { 'Content-Type': 'text/html' } }));
+    vi.stubGlobal('fetch', fetcher);
+    await queue.queuePublishedUpdate('book-1', ['chapter-1'], 'image-ready');
+    await queue.processNewsletterQueue(15);
+    expect(mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send')).toHaveLength(1);
+    expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/api/novel-illustrations/chapter-1'))).toBe(true);
+  });
   it('does not announce a chapter hidden again before its publication event runs', async () => {
     readers(1); const queue = await import('@/lib/newsletter-queue');
     await mocks.db.$transaction(async (tx: Parameters<typeof queue.queuePublication>[0]) => queue.queuePublication(tx, 'chapter-1'));
@@ -238,6 +262,27 @@ describe('durable newsletter outbox', () => {
     vi.stubEnv('NEWSLETTER_AUTO_UPDATES', 'true');
     await queue.processNewsletterQueue(15); expect(mocks.bridge).not.toHaveBeenCalled();
     expect(jobs()[0].state).toBe('canceled');
+  });
+  it('delivers one progress email per reader for an atomic prologue/chapter release, without retry duplication', async () => {
+    readers(2); const queue = await import('@/lib/newsletter-queue');
+    await mocks.db.$transaction(async (tx: Parameters<typeof queue.queuePublication>[0]) => {
+      await queue.queuePublicationBatch(tx, 'book-1', ['chapter-1', 'chapter-2'], 'first-release');
+      await queue.queuePublicationBatch(tx, 'book-1', ['chapter-1', 'chapter-2'], 'first-release');
+    });
+    expect(jobs()).toHaveLength(1);
+    vi.stubEnv('NEWSLETTER_AUTO_UPDATES', 'true');
+    await queue.processNewsletterQueue(15); await queue.processNewsletterQueue(15);
+    expect(mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send')).toHaveLength(2);
+    const stored = [...mocks.records].find(([key]) => key.includes(':campaign:'))![1];
+    expect(stored).toContain('本次更新 2 章');
+  });
+  it('cancels a batch with missing or hidden content instead of sending an incomplete update', async () => {
+    readers(1); const queue = await import('@/lib/newsletter-queue');
+    await mocks.db.$transaction(async (tx: Parameters<typeof queue.queuePublication>[0]) =>
+      queue.queuePublicationBatch(tx, 'book-1', ['chapter-1', 'hidden-chapter'], 'invalid-release'));
+    vi.stubEnv('NEWSLETTER_AUTO_UPDATES', 'true');
+    await queue.processNewsletterQueue(15);
+    expect(jobs()[0].state).toBe('canceled'); expect(mocks.bridge).not.toHaveBeenCalled();
   });
 });
 

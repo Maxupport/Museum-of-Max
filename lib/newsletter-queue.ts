@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendChapterUpdateEmail, sendWelcomeEmail } from '@/lib/email';
 import { callGoogleBridge, newsletterConfig, isOwnerTestAddress, NEWSLETTER_LIMIT, NEWSLETTER_SENDER, NEWSLETTER_WINDOW_MS, SUBSCRIBER_SHEET_ID } from '@/lib/newsletter-config';
+import { chapterIllustrationUrl } from '@/lib/novel-illustration';
 
 // Transitional durable outbox in the existing private key/value table. No schema push is needed.
 const PREFIX = 'newsletter:v1:';
@@ -13,7 +14,7 @@ const QUOTA = `${PREFIX}quota:`;
 type Tx = Prisma.TransactionClient;
 export type Job = {
   id: string; kind: 'welcome' | 'update' | 'test' | 'sync' | 'publication'; subscriberId?: string; chapterId?: string;
-  campaignId?: string; novelTitle?: string; state: 'pending' | 'processing' | 'sent' | 'canceled' | 'uncertain';
+  campaignId?: string; novelTitle?: string; chapterIds?: string[]; novelId?: string; state: 'pending' | 'processing' | 'sent' | 'canceled' | 'uncertain';
   createdAt: number; reservedAt?: number; finishedAt?: number; leaseId?: string; notBefore?: number;
 };
 export type Campaign = {
@@ -50,6 +51,13 @@ export async function queueSubscriber(tx: Tx, subscriberId: string, welcome = fa
 
 export async function queuePublication(tx: Tx, chapterId: string) {
   const job: Job = { id: `publication:${chapterId}`, kind: 'publication', chapterId, state: 'pending', createdAt: Date.now() };
+  await tx.siteSetting.upsert({ where: { key: JOB + job.id }, create: { key: JOB + job.id, value: JSON.stringify(job) }, update: {} });
+}
+
+// One publication event for an atomic release batch (e.g. prologue + chapter 1).
+export async function queuePublicationBatch(tx: Tx, novelId: string, chapterIds: string[], eventId: string) {
+  const job: Job = { id: `publication-batch:${eventId}`, kind: 'publication', novelId, chapterIds,
+    state: 'pending', createdAt: Date.now() };
   await tx.siteSetting.upsert({ where: { key: JOB + job.id }, create: { key: JOB + job.id, value: JSON.stringify(job) }, update: {} });
 }
 
@@ -165,12 +173,21 @@ async function finish(job: Job, state: Job['state'], delayMs = 0) {
     data: { value: JSON.stringify({ ...job, state, finishedAt: Date.now(), ...(delayMs ? { notBefore: Date.now() + delayMs } : {}) }) } });
 }
 
-async function readingReady(url: string, chapterIds: string[] = []) {
+async function readingReady(url: string, chapterIds: string[] = [], illustrationPaths: string[] = []) {
   try {
     const response = await fetch(url, { redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(8000) });
     if (response.status !== 200 || !response.headers.get('content-type')?.includes('text/html')) return false;
     const html = await response.text();
-    return chapterIds.every((id) => html.includes(id));
+    if (!chapterIds.every((id) => html.includes(id))) return false;
+    // Check protected chapter images too: an HTML 200 alone does not mean the
+    // illustrated chapter is ready. Paths come only from our safe path builder.
+    const imageChecks = await Promise.all(illustrationPaths.map(async (path) => {
+      const image = await fetch(new URL(path, url), { redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(8000) });
+      const ready = image.status === 200 && ['image/png', 'image/jpeg', 'image/webp'].includes(image.headers.get('content-type') || '');
+      await image.body?.cancel();
+      return ready;
+    }));
+    return imageChecks.every(Boolean);
   } catch { return false; }
 }
 
@@ -182,6 +199,14 @@ export async function processNewsletterQueue(maxJobs = 3) {
     if (!job) break;
     try {
       if (job.kind === 'publication') {
+        if (job.chapterIds && job.novelId) {
+          try { await queuePublishedUpdate(job.novelId, job.chapterIds, job.id); }
+          catch (error) {
+            if (error instanceof Error && error.message === 'INVALID_PUBLICATION') { await finish(job, 'canceled'); continue; }
+            if (!(error instanceof Error && error.message === 'NO_SUBSCRIBERS')) throw error;
+          }
+          await finish(job, 'sent'); continue;
+        }
         const chapter = await prisma.writingsItem.findUnique({ where: { id: job.chapterId! } });
         if (!chapter || chapter.isHidden || chapter.category !== '小說' || !chapter.topic) { await finish(job, 'canceled'); continue; }
         const novel = await prisma.novel.upsert({ where: { title: chapter.topic }, create: { title: chapter.topic }, update: {} });
@@ -211,6 +236,7 @@ export async function processNewsletterQueue(maxJobs = 3) {
       let prepared;
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://museum-of-max.vercel.app';
       let readingUrl = `${siteUrl}/novels`;
+      const illustrationPaths: string[] = [];
       if (job.kind === 'welcome') {
         if (subscriber?.novelId && subscriber.novelId !== 'all') readingUrl = `${siteUrl}/museum/creation_lab/novel/${encodeURIComponent(subscriber.novelId)}`;
         prepared = await sendWelcomeEmail({ ...common, novelTitle: job.novelTitle, novelId: subscriber?.novelId === 'all' ? undefined : subscriber?.novelId, isTest: newsletterConfig().testOnly }, true);
@@ -220,8 +246,12 @@ export async function processNewsletterQueue(maxJobs = 3) {
         if (campaign.novelId && campaign.novelId !== 'all') readingUrl = `${siteUrl}/museum/creation_lab/novel/${encodeURIComponent(campaign.novelId)}`;
         if (campaign.chapterIds?.length) {
           const novel = await prisma.novel.findUnique({ where: { id: campaign.novelId! } });
-          const chapters = novel ? await prisma.writingsItem.findMany({ where: { category: '小說', topic: novel.title, isHidden: false }, select: { id: true, title: true } }) : [];
+          const chapters = novel ? await prisma.writingsItem.findMany({ where: { category: '小說', topic: novel.title, isHidden: false }, select: { id: true, title: true, content: true } }) : [];
           if (campaign.chapterIds.some((id) => !chapters.some((chapter) => chapter.id === id))) { await finish(job, 'canceled'); result.canceled++; continue; }
+          for (const chapter of chapters.filter((chapter) => campaign.chapterIds!.includes(chapter.id))) {
+            const path = chapterIllustrationUrl(chapter.id, chapter.content);
+            if (path) illustrationPaths.push(path);
+          }
           readingUrl += `?chapterId=${encodeURIComponent(campaign.chapterIds[0])}`;
         }
         prepared = await sendChapterUpdateEmail({ ...common, ...campaign,
@@ -230,7 +260,7 @@ export async function processNewsletterQueue(maxJobs = 3) {
       // A failed/redirected reader page must not result in a premature email.
       // No provider request is made; retry with backoff (the conservative quota
       // reservation is retained, as with other known non-deliveries).
-      if (!await readingReady(readingUrl, campaign?.chapterIds)) { await finish(job, 'pending', 1800000); continue; }
+      if (!await readingReady(readingUrl, campaign?.chapterIds, illustrationPaths)) { await finish(job, 'pending', 1800000); continue; }
       if (!prepared.message) throw new Error('Cannot prepare email');
       const reply = await callGoogleBridge({ operation: 'send', jobId: job.id, to: email, ...prepared.message });
       if (reply.status === 'deferred') { await finish(job, 'pending'); break; }
