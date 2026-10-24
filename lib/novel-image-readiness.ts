@@ -16,10 +16,10 @@ export async function preparedIllustrationReady(tx: Prisma.TransactionClient, ch
       !Number.isSafeInteger(image.size) || image.size < 1 || image.size > 4 * 1024 * 1024 ||
       !new RegExp(`^novel-illustrations/${chapterId}/${image.imageHash}\\.(png|jpg|webp)$`).test(image.pathname || '')) return false;
     const remote = await get(image.pathname, { access: 'private', ...store, useCache: false, abortSignal: AbortSignal.timeout(8000) });
-    if (!remote || remote.statusCode !== 200 || remote.blob.size !== image.size || remote.blob.contentType !== image.contentType ||
+    if (!remote || remote.statusCode !== 200 || (remote.blob.size !== 0 && remote.blob.size !== image.size) || remote.blob.contentType !== image.contentType ||
       !['image/png', 'image/jpeg', 'image/webp'].includes(remote.blob.contentType) ||
       !/^https:\/\/[a-z0-9-]+\.private\.blob\.vercel-storage\.com\//.test(remote.blob.url)) return false;
     const bytes = new Uint8Array(await new Response(remote.stream).arrayBuffer());
-    return createHash('sha256').update(bytes).digest('hex') === image.imageHash;
+    return bytes.length === image.size && createHash('sha256').update(bytes).digest('hex') === image.imageHash;
   } catch { return false; }
 }

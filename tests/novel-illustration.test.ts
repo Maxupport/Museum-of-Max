@@ -49,10 +49,15 @@ describe('protected chapter illustration', () => {
     expect((await request()).status).toBe(404); expect(mocks.get).not.toHaveBeenCalled();
   });
   it('uses the verified pre-existing private store connection without a new secret', async () => {
-    vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', ''); vi.stubEnv('sec_STORE_ID', 'store_vvbDqZjeyID4ikVr');
+    vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', ''); vi.stubEnv('sec_STORE_ID', 'store_vvbDqZjeyID4ikVr'); vi.stubEnv('VERCEL_OIDC_TOKEN', 'test-only-oidc');
     expect((await request()).status).toBe(200);
     expect(mocks.get).toHaveBeenCalledWith(pathname, expect.objectContaining({ access: 'private', storeId: 'store_vvbDqZjeyID4ikVr' }));
     expect(mocks.get.mock.calls[0][1]).not.toHaveProperty('token');
+  });
+  it('fails closed when OIDC is missing even if the known private store ID is present', async () => {
+    vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', ''); vi.stubEnv('sec_STORE_ID', 'store_vvbDqZjeyID4ikVr');
+    vi.stubEnv('VERCEL_OIDC_TOKEN', ''); vi.stubEnv('BLOB_READ_WRITE_TOKEN', 'public-token-must-not-be-used');
+    expect((await request()).status).toBe(404); expect(mocks.get).not.toHaveBeenCalled();
   });
   it('refuses an unverified store instead of guessing whether it is private', async () => {
     vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', ''); vi.stubEnv('sec_STORE_ID', 'store_unknown');

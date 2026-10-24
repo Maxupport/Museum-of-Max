@@ -36,9 +36,11 @@ export async function uploadNovelIllustration(chapterId: string, file: File, sou
   }
   if (!remote || remote.statusCode !== 200 ||
     !/^https:\/\/[a-z0-9-]+\.private\.blob\.vercel-storage\.com\//.test(remote.blob.url) ||
-    remote.blob.contentType !== image.contentType || remote.blob.size !== image.buffer.length) throw new Error('PRIVATE_IMAGE_VERIFICATION_FAILED');
+    remote.blob.contentType !== image.contentType || (remote.blob.size !== 0 && remote.blob.size !== image.buffer.length)) throw new Error('PRIVATE_IMAGE_VERIFICATION_FAILED');
   const bytes = new Uint8Array(await new Response(remote.stream).arrayBuffer());
-  if (hash(bytes) !== imageHash) throw new Error('PRIVATE_IMAGE_HASH_MISMATCH');
+  // The SDK reports size=0 when a streamed response omits Content-Length.
+  // Verify the actual complete bytes instead of treating an absent header as empty.
+  if (bytes.length !== image.buffer.length || hash(bytes) !== imageHash) throw new Error('PRIVATE_IMAGE_HASH_MISMATCH');
   const dimensions = await sharp(image.buffer).metadata();
   const mapping = { pathname, sourceHash, imageHash, width: dimensions.width, height: dimensions.height,
     contentType: image.contentType, size: image.buffer.length, verifiedAt: new Date().toISOString() };

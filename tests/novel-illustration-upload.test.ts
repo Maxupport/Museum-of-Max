@@ -20,7 +20,7 @@ let file: File;
 let sourceHash: string;
 beforeEach(async () => {
   vi.clearAllMocks(); mocks.records.clear();
-  vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', ''); vi.stubEnv('sec_STORE_ID', 'store_vvbDqZjeyID4ikVr');
+  vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', ''); vi.stubEnv('sec_STORE_ID', 'store_vvbDqZjeyID4ikVr'); vi.stubEnv('VERCEL_OIDC_TOKEN', 'test-only-oidc');
   const buffer = await sharp({ create: { width: 8, height: 12, channels: 3, background: '#808080' } }).png().toBuffer();
   file = new File([new Uint8Array(buffer)], 'fixture.png', { type: 'image/png' }); sourceHash = hash(buffer);
   mocks.db.writingsItem.findUnique.mockResolvedValue({ isHidden: true, category: '小說', content });
@@ -87,5 +87,18 @@ describe('approved private illustration upload', () => {
     await uploadNovelIllustration('chapter-1', file, sourceHash, hash(content));
     mocks.get.mockRejectedValueOnce(new Error('temporarily-unavailable'));
     expect(await preparedIllustrationReady(tx, 'chapter-1')).toBe(false);
+  });
+  it('verifies complete bytes even when private streaming has no Content-Length header', async () => {
+    await uploadNovelIllustration('chapter-1', file, sourceHash, hash(content));
+    const mapping = JSON.parse([...mocks.records.values()][0]);
+    const realGet = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation(async (...args) => {
+      const result = await realGet(...args); return result ? { ...result, blob: { ...result.blob, size: 0 } } : null;
+    });
+    expect((await uploadNovelIllustration('chapter-1', file, sourceHash, hash(content))).verified).toBe(true);
+    expect(await preparedIllustrationReady(mocks.db as unknown as Parameters<typeof preparedIllustrationReady>[0], 'chapter-1')).toBe(true);
+    mocks.get.mockResolvedValueOnce({ statusCode: 200, stream: new Response(new Uint8Array([1])).body,
+      blob: { url: `https://test.private.blob.vercel-storage.com/${mapping.pathname}`, size: 0, contentType: 'image/png' } });
+    expect(await preparedIllustrationReady(mocks.db as unknown as Parameters<typeof preparedIllustrationReady>[0], 'chapter-1')).toBe(false);
   });
 });
