@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   cookieValues: new Map<string, string>(),
   after: vi.fn(),
   prisma: {
+    $transaction: vi.fn(),
+    siteSetting: { upsert: vi.fn() },
     writingsItem: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     novel: { findMany: vi.fn(), findUnique: vi.fn(), upsert: vi.fn(), update: vi.fn(), delete: vi.fn() },
     subscriber: { findMany: vi.fn(), create: vi.fn(), upsert: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
@@ -47,6 +49,7 @@ beforeEach(() => {
   vi.stubEnv('ADMIN_SESSION_SECRET', 'test-only-session-secret');
   mocks.cookieValues.clear();
   mocks.prisma.subscriber.findUnique.mockResolvedValue(null);
+  mocks.prisma.$transaction.mockImplementation(async (operation) => operation(mocks.prisma));
 });
 
 afterEach(() => vi.unstubAllEnvs());
@@ -58,6 +61,9 @@ describe('protected API boundaries', () => {
     ['/api/subscribe', 'GET'], ['/api/subscribe/export', 'GET'], ['/api/subscribe/[id]', 'DELETE'],
     ['/api/stats', 'GET'], ['/api/stats/reset', 'POST'], ['/api/upload', 'POST'],
     ['/api/newsletter/dispatch', 'POST'], ['/api/novels', 'POST'],
+    ['/api/newsletter/status', 'GET'], ['/api/newsletter/sync', 'POST'],
+    ['/api/newsletter/verify', 'GET'],
+    ['/api/newsletter/cancel', 'POST'], ['/api/newsletter/published-update', 'POST'],
     ['/api/novels/[id]', 'PUT'], ['/api/novels/[id]', 'DELETE'],
     ['/api/writings', 'POST'], ['/api/writings/[id]', 'PUT'], ['/api/writings/[id]', 'DELETE'],
     ['/api/career', 'POST'], ['/api/career/[id]', 'PUT'], ['/api/career/[id]', 'DELETE'],
@@ -69,7 +75,8 @@ describe('protected API boundaries', () => {
       'admin_token=forged; is_curator=true; visitor_token=curator_admin'), { params: Promise.resolve({ id: 'test-id' }) });
     expect(response.status).toBe(401);
     for (const model of Object.values(mocks.prisma)) {
-      for (const query of Object.values(model)) expect(query).not.toHaveBeenCalled();
+      if (vi.isMockFunction(model)) expect(model).not.toHaveBeenCalled();
+      else for (const query of Object.values(model)) expect(query).not.toHaveBeenCalled();
     }
   });
 
@@ -240,8 +247,9 @@ describe('visitor and subscription compatibility', () => {
     expect(await response.json()).toEqual({ ok: true, message: expect.any(String) });
     expect(mocks.prisma.subscriber.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ email: 'reader@example.test' }) }));
     expect(mocks.sendWelcomeEmail).not.toHaveBeenCalled();
-    await mocks.after.mock.calls[0][0]();
-    expect(mocks.sendWelcomeEmail).toHaveBeenCalledWith(expect.objectContaining({ unsubscribeToken: 'private-token' }));
+    expect(mocks.after).not.toHaveBeenCalled();
+    expect(mocks.prisma.siteSetting.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { key: 'newsletter:v1:job:welcome:subscriber-1' } }));
+    expect(JSON.stringify(mocks.prisma.siteSetting.upsert.mock.calls)).not.toContain('private-token');
   });
 
   it('does not resend welcomes, overwrite a reader, or reactivate an opted-out email', async () => {

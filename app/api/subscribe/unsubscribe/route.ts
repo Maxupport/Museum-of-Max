@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { queueSubscriber } from '@/lib/newsletter-queue';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,9 +49,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 軟刪除：將 active 改為 false，保留法律紀錄避免日後誤發
-    const updated = await prisma.subscriber.update({
-      where: { id: subscriber.id },
-      data: { active: false },
+    const updated = await prisma.$transaction(async (tx) => {
+      const updated = await tx.subscriber.update({ where: { id: subscriber.id }, data: { active: false } });
+      await queueSubscriber(tx, subscriber.id);
+      return updated;
     });
 
     return NextResponse.json({

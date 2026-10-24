@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
+import { queueSubscriber } from '@/lib/newsletter-queue';
 
 export async function DELETE(
   request: NextRequest,
@@ -13,8 +14,9 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    await prisma.subscriber.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      await tx.subscriber.delete({ where: { id } });
+      await queueSubscriber(tx, id);
     });
     return NextResponse.json({ ok: true });
   } catch (error) {

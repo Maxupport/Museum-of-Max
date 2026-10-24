@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 const resendApiKey = process.env.RESEND_API_KEY;
 export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://maxupport.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://museum-of-max.vercel.app';
 const DEFAULT_FROM = process.env.EMAIL_FROM || 'Maxupport 小說連載 <onboarding@resend.dev>';
 
 function escapeHtml(value: string): string {
@@ -68,8 +68,8 @@ export async function sendWelcomeEmail({
   novelTitle = '原創小說連載',
   novelId,
   unsubscribeToken,
-}: SendWelcomeEmailParams) {
-  if (!resend) {
+}: SendWelcomeEmailParams, prepareOnly = false) {
+  if (!resend && !prepareOnly) {
     console.warn('[Resend] RESEND_API_KEY 未設定，跳過寄送歡迎信');
     return { ok: false, error: 'RESEND_API_KEY 未設定' };
   }
@@ -108,7 +108,7 @@ export async function sendWelcomeEmail({
                     ${readerGreeting}：
                   </p>
                   <p style="font-size: 15px; color: #d1d5db; line-height: 1.7; margin: 0 0 20px 0;">
-                    非常感謝您對《${novelTitle}》的關注與支持！每當新章節發布時，我們將在第一時間寄送通知至此信箱，讓您不錯過任何最新連載進度。
+                    非常感謝您對《${novelTitle}》的關注與支持！作品更新後，將依寄送排程通知此信箱，信內會附上當次更新進度與閱讀連結。
                   </p>
 
                   <!-- 傳送門按鈕 -->
@@ -135,8 +135,9 @@ export async function sendWelcomeEmail({
     </html>
   `;
 
+  if (prepareOnly) return { ok: true, message: { subject, html } };
   try {
-    const data = await resend.emails.send({
+    const data = await resend!.emails.send({
       from: DEFAULT_FROM,
       to: email,
       subject,
@@ -161,8 +162,8 @@ export async function sendChapterUpdateEmail({
   summary,
   chapterUrl,
   unsubscribeToken,
-}: SendChapterUpdateParams) {
-  if (!resend) {
+}: SendChapterUpdateParams, prepareOnly = false) {
+  if (!resend && !prepareOnly) {
     console.warn('[Resend] RESEND_API_KEY 未設定，無法寄送更新廣播信');
     return { ok: false, error: 'RESEND_API_KEY 未設定' };
   }
@@ -231,8 +232,9 @@ export async function sendChapterUpdateEmail({
     </html>
   `;
 
+  if (prepareOnly) return { ok: true, message: { subject, html } };
   try {
-    const data = await resend.emails.send({
+    const data = await resend!.emails.send({
       from: DEFAULT_FROM,
       to: email,
       subject,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 import { getArticle } from '@/lib/articles';
+import { queuePublication } from '@/lib/newsletter-queue';
 
 export async function GET(
   request: NextRequest,
@@ -34,7 +35,10 @@ export async function PUT(
     const body = await request.json();
     const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order, isPinned, isHidden, views } = body;
 
-    const updated = await prisma.writingsItem.update({
+    if (body.notifySubscribers != null && typeof body.notifySubscribers !== 'boolean') return NextResponse.json({ ok: false }, { status: 400 });
+    const updated = await prisma.$transaction(async (tx) => {
+      const before = await tx.writingsItem.findUnique({ where: { id }, select: { isHidden: true } });
+      const item = await tx.writingsItem.update({
       where: { id },
       data: {
         exhibitId: exhibitId || undefined,
@@ -51,6 +55,10 @@ export async function PUT(
         views: typeof views === 'number' ? views : undefined,
         order: typeof order === 'number' ? order : undefined,
       },
+      });
+      // Editing a typo is not a new release. Only first publication/unhiding captures this event.
+      if (before?.isHidden && !item.isHidden && item.category === '小說' && item.topic && body.notifySubscribers !== false) await queuePublication(tx, item.id);
+      return item;
     });
 
     return NextResponse.json({ ok: true, data: updated });

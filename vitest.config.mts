@@ -19,6 +19,12 @@ export default defineConfig({
       RESEND_API_KEY: '',
       GOOGLE_SCRIPT_URL: '',
       NEXT_PUBLIC_GOOGLE_SCRIPT_URL: '',
+      GOOGLE_NEWSLETTER_WEBHOOK_URL: '',
+      GOOGLE_NEWSLETTER_SECRET: '',
+      NEWSLETTER_ENABLED: 'false',
+      NEWSLETTER_SHEETS_SYNC_ENABLED: 'false',
+      NEWSLETTER_TEST_ONLY: 'true',
+      NEWSLETTER_AUTO_UPDATES: 'false',
     },
   },
 });
