@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { chapterIllustrationUrl } from '@/lib/novel-illustration';
+import { isPrivateBlobUrl } from '@/lib/novel-private-store';
 
 const mocks = vi.hoisted(() => ({ chapter: vi.fn(), setting: vi.fn(), get: vi.fn() }));
 vi.mock('@/lib/prisma', () => ({ prisma: { writingsItem: { findUnique: mocks.chapter }, siteSetting: { findUnique: mocks.setting } } }));
@@ -23,6 +24,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('protected chapter illustration', () => {
+  it('canonicalizes the SDK mixed-case store hostname without accepting public or forged hosts', () => {
+    expect(isPrivateBlobUrl('https://vvbDqZjeyID4ikVr.private.blob.vercel-storage.com/a.png')).toBe(true);
+    for (const value of ['http://test.private.blob.vercel-storage.com/a', 'https://test.public.blob.vercel-storage.com/a',
+      'https://test.private.blob.vercel-storage.com.attacker.test/a', 'https://user:password@test.private.blob.vercel-storage.com/a'])
+      expect(isPrivateBlobUrl(value)).toBe(false);
+  });
   it('only opts in for explicit structured content and safe chapter IDs', () => {
     expect(chapterIllustrationUrl('chapter-1', content)).toBe('/api/novel-illustrations/chapter-1');
     expect(chapterIllustrationUrl('chapter-1', '一般純文字')).toBeNull();

@@ -2,7 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { get } from '@vercel/blob';
 import type { Prisma } from '@prisma/client';
-import { novelPrivateStoreConfig } from '@/lib/novel-private-store';
+import { novelPrivateStoreConfig, isPrivateBlobUrl } from '@/lib/novel-private-store';
 
 export async function preparedIllustrationReady(tx: Prisma.TransactionClient, chapterId: string) {
   try {
@@ -18,7 +18,7 @@ export async function preparedIllustrationReady(tx: Prisma.TransactionClient, ch
     const remote = await get(image.pathname, { access: 'private', ...store, useCache: false, abortSignal: AbortSignal.timeout(8000) });
     if (!remote || remote.statusCode !== 200 || (remote.blob.size !== 0 && remote.blob.size !== image.size) || remote.blob.contentType !== image.contentType ||
       !['image/png', 'image/jpeg', 'image/webp'].includes(remote.blob.contentType) ||
-      !/^https:\/\/[a-z0-9-]+\.private\.blob\.vercel-storage\.com\//.test(remote.blob.url)) return false;
+      !isPrivateBlobUrl(remote.blob.url)) return false;
     const bytes = new Uint8Array(await new Response(remote.stream).arrayBuffer());
     return bytes.length === image.size && createHash('sha256').update(bytes).digest('hex') === image.imageHash;
   } catch { return false; }

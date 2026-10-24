@@ -1,6 +1,16 @@
 import 'server-only';
 import { getVercelOidcTokenSync } from '@vercel/oidc';
 
+export function isPrivateBlobUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    // DNS hostnames are case-insensitive. Blob SDK constructs URLs from the
+    // mixed-case store ID; URL.hostname supplies the canonical lowercase form.
+    return url.protocol === 'https:' && !url.username && !url.password && !url.port &&
+      /^[a-z0-9-]+\.private\.blob\.vercel-storage\.com$/.test(url.hostname);
+  } catch { return false; }
+}
+
 // Verified in Vercel: ForMaxMuseum is already PRIVATE and connected to this
 // project's Production/Preview with the sec_STORE_ID prefix. Do not scan tokens
 // or fall back to the public Museum3 upload store.

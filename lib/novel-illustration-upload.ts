@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { get, put } from '@vercel/blob';
 import sharp from 'sharp';
 import { prisma } from '@/lib/prisma';
-import { novelPrivateStoreConfig } from '@/lib/novel-private-store';
+import { novelPrivateStoreConfig, isPrivateBlobUrl } from '@/lib/novel-private-store';
 import { chapterIllustrationUrl } from '@/lib/novel-illustration';
 import { MAX_IMAGE_BYTES, prepareUploadImage } from '@/lib/upload-image';
 
@@ -35,7 +35,7 @@ export async function uploadNovelIllustration(chapterId: string, file: File, sou
     remote = await get(pathname, { access: 'private', ...store, useCache: false, abortSignal: AbortSignal.timeout(8000) });
   }
   if (!remote || remote.statusCode !== 200 ||
-    !/^https:\/\/[a-z0-9-]+\.private\.blob\.vercel-storage\.com\//.test(remote.blob.url) ||
+    !isPrivateBlobUrl(remote.blob.url) ||
     remote.blob.contentType !== image.contentType || (remote.blob.size !== 0 && remote.blob.size !== image.buffer.length)) throw new Error('PRIVATE_IMAGE_VERIFICATION_FAILED');
   const bytes = new Uint8Array(await new Response(remote.stream).arrayBuffer());
   // The SDK reports size=0 when a streamed response omits Content-Length.

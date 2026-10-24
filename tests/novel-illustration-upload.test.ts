@@ -33,7 +33,7 @@ beforeEach(async () => {
   let remote: { pathname: string; buffer: Uint8Array } | null = null;
   mocks.put.mockImplementation(async (pathname, bytes) => { remote = { pathname, buffer: new Uint8Array(bytes) }; return {}; });
   mocks.get.mockImplementation(async () => remote ? { statusCode: 200, stream: new Response(new Uint8Array(remote.buffer)).body,
-    blob: { url: `https://test.private.blob.vercel-storage.com/${remote.pathname}`, size: remote.buffer.length, contentType: 'image/png' } } : null);
+    blob: { url: `https://vvbDqZjeyID4ikVr.private.blob.vercel-storage.com/${remote.pathname}`, size: remote.buffer.length, contentType: 'image/png' } } : null);
 });
 afterEach(() => vi.unstubAllEnvs());
 
