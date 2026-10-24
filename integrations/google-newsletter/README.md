@@ -51,9 +51,19 @@ POST /api/newsletter/published-update
 5. 使用者核准權限後，把 Apps Script 部署為 Web App，以擁有者身分執行、允許網站伺服器呼叫。此步會公開一個服務入口，必須先確認應用程式內的 HMAC 已部署且驗證通過；沒有簽章者無法讀名單、同步或寄信。不要發布 Sheet 本身。取得 `/exec` URL，不用 `/dev`。
 6. Vercel 設定參考 `config/newsletter.env.example`。填入 Web App URL 與 secret，保留寄信及自動更新開關關閉，重新部署。
 7. 先只開名單同步：Google `SYNC_ENABLED=true`、網站 `NEWSLETTER_SHEETS_SYNC_ENABLED=true`。核對來源 Sheet、欄位、有效與退訂狀態；在後台明確按「排入完整名單同步」才同步既有名單。
-8. 安裝並驗證 `runWebsiteQueue` 的每 15 分鐘觸發器：由使用者手動執行 `installWorkerTrigger`。此安裝函式本身不寄信。觸發時間以 Google 實際排程為準，不保證精確到秒。
+8. 安裝並驗證 `runWebsiteQueue` 的每 5 分鐘觸發器：在 Apps Script「觸發條件」新增此函式的時間驅動／分鐘計時器，選每 5 分鐘，避免重複建立。舊的 `installWorkerTrigger` 仍會建立 15 分鐘版本，若已用介面設定 5 分鐘，請勿再執行它。觸發時間以 Google 實際排程為準，不保證精確到秒。新訂閱與手動通知另以 `after` 加速已持久化佇列；定時器負責補跑，不依賴背景請求一定存活。
 9. 寄信測試：保留兩端 `TEST_ONLY=true`，Google `SENDING_ENABLED=true`，網站 `NEWSLETTER_ENABLED=true`。由後台建立一封測試信，**只送 maxupport@gmail.com**，核對版面、閱讀連結、實際寄件人及結果紀錄。測試信同樣消耗 80 次額度。再用明確同意的測試信箱驗收完整訂閱／退訂，不能以現有讀者做實寄測試。
 10. 作者確認文稿、寄件設定與待寄批次後，才可把兩端 TEST_ONLY 改為 false；若要自動更新通知，再單獨開 `NEWSLETTER_AUTO_UPDATES=true`。本次準備不會開啟這些開關。
+
+## 正式開放前的驗收
+
+- 只用作者同意的 Gmail 別名新增測試訂閱。網站 TEST_ONLY 模式僅讓管理者信箱及 Gmail dot/plus 別名的歡迎信通過，寄送前統一導向 `maxupport@gmail.com`，不需要放寬 Google 端的 exact-owner 限制。
+- 全作品歡迎信指向 `/novels`；單一作品採資料庫的正式名稱，不信任公開請求自填的作品名稱。
+- `POST /api/newsletter/published-update` 可帶 `isTest:true`，仍核對作品／公開章節，但只建立一封管理者測試信；不建立任何實際新章。
+- 手動通知預設 `messageType:"announcement"`，不再沿用「已發布新章」措辭。測試通知另加【測試】標記。
+- 更新信保存當次公開進度與章節 ID，寄出前再檢查章節仍公開及匿名閱讀頁已呈現其 ID；不通過時延後 30 分鐘，不聯絡寄信服務。保守額度預留保留。
+- 驗證重複登記不多寄、退訂後不再寄、重填不自動恢復、Sheet 同步標記已退訂，以及觸發器確實更新後台的最近處理時間。
+- 正式啟用前核對 pending / processing / uncertain，不能把測試時或暫停期間累積的通知直接補發。讀者可能在檢查後新增，因此人數結果必須附檢查時間。
 
 ## 服務協定與故障處理
 

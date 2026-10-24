@@ -7,6 +7,7 @@ type Status = {
   dailyLimit: number; usedInLast24Hours: number; remaining: number; pending: number; uncertain: number;
   processing: number; syncPending: number; nextSlotAt: string | null; sheetUrl: string; missing: string[];
   autoUpdatesEnabled: boolean;
+  lastWorkerAt: string | null;
   campaigns: { id: string; title: string; createdAt: string; pending: number; sent: number; uncertain: number }[];
 };
 export default function NewsletterSettingsPanel() {
@@ -64,6 +65,7 @@ export default function NewsletterSettingsPanel() {
       <p>寄件人：{status.sender}　｜　{!status.enabled ? '寄信暫停' : status.testOnly ? '僅測試信模式' : '正式寄信模式'}　｜　Google 串接：{status.configured ? '設定已填入，仍需實寄驗收' : '尚未完成授權／設定'}</p>
       <p>每 24 小時上限 {status.dailyLimit} 封；已預留 {status.usedInLast24Hours} 封，剩餘 {status.remaining} 封。歡迎信、測試信與群發共用額度。</p>
       <p>待處理 {status.pending} 筆（含名單同步 {status.syncPending} 筆），處理中 {status.processing} 筆，結果不明 {status.uncertain} 筆。</p>
+      <p>最近一次處理：{status.lastWorkerAt ? new Date(status.lastWorkerAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚無紀錄，請先驗證排程觸發器'}。排入佇列不等於排程已運作。</p>
       {status.nextSlotAt && <p>下一個額度預計釋出：{new Date(status.nextSlotAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}（台灣時間）</p>}
       {status.uncertain > 0 && <p role="alert" style={{ color: '#fbbf24' }}>結果不明的信件不會自動重寄。請先檢查 Google 寄信紀錄與寄件備份。</p>}
       <p>名單同步：{status.syncEnabled ? '啟用' : '暫停'}；自動更新通知：{status.autoUpdatesEnabled ? '啟用' : '暫停'}。{status.missing.join('；')}</p>

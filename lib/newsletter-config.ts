@@ -5,6 +5,14 @@ export const NEWSLETTER_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const NEWSLETTER_SENDER = 'maxupport@gmail.com';
 export const SUBSCRIBER_SHEET_ID = '10MojPCfHzAyCuYeGEVB91pFFEm1ufFn8rhc5eafpebI';
 
+// Gmail dot/plus aliases belong to the same mailbox. In TEST_ONLY mode these
+// owner-only subscription tests are delivered to the canonical owner address.
+export function isOwnerTestAddress(email: string) {
+  const [local, domain, extra] = email.trim().toLowerCase().split('@');
+  return !extra && ['gmail.com', 'googlemail.com'].includes(domain) &&
+    local.split('+')[0].replaceAll('.', '') === 'maxupport';
+}
+
 export function newsletterConfig() {
   const bridgeUrl = process.env.GOOGLE_NEWSLETTER_WEBHOOK_URL || '';
   const secret = process.env.GOOGLE_NEWSLETTER_SECRET || '';

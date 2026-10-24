@@ -58,6 +58,11 @@ export default function NovelReaderClient({
   useEffect(() => {
     if (typeof window !== 'undefined' && novel?.chapters?.length) {
       const params = new URLSearchParams(window.location.search);
+      const chapterId = params.get('chapterId');
+      if (chapterId) {
+        const index = novel.chapters.findIndex((chapter) => chapter.id === chapterId);
+        if (index >= 0) { setCurrentChapterIdx(index); return; }
+      }
       const chParam = params.get('ch');
       if (chParam !== null) {
         const idx = parseInt(chParam, 10);

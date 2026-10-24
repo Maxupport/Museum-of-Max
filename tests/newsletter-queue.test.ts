@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { newsletterConfig, serviceSignature, verifyWorkerRequest } from '@/lib/newsletter-config';
+import { newsletterConfig, serviceSignature, verifyWorkerRequest, isOwnerTestAddress } from '@/lib/newsletter-config';
 import { generateAdminToken } from '@/lib/auth';
 
 const mocks = vi.hoisted(() => ({
@@ -28,6 +28,7 @@ beforeEach(() => {
   mocks.records.clear(); mocks.readers.clear();
   mocks.bridge.mockReset().mockImplementation(async (payload) => ({ ok: true, status: payload.operation === 'sync' ? 'synced' : 'sent' }));
   mocks.prepare.mockReset().mockResolvedValue({ ok: true, message: { subject: '更新進度', html: '<p>測試通知</p>' } });
+  vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response('<html>chapter-1 chapter-2</html>', { headers: { 'Content-Type': 'text/html' } })));
   mocks.db.siteSetting.findMany.mockImplementation(async ({ where }) => [...mocks.records].filter(([key]) => key.startsWith(where.key.startsWith)).map(([key, value]) => ({ key, value })));
   mocks.db.siteSetting.findUnique.mockImplementation(async ({ where }) => mocks.records.has(where.key) ? { key: where.key, value: mocks.records.get(where.key) } : null);
   mocks.db.siteSetting.create.mockImplementation(async ({ data }) => {
@@ -64,7 +65,7 @@ beforeEach(() => {
     finally { release(); }
   });
 });
-afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 function readers(count: number, novelId = 'all') {
   for (let index = 0; index < count; index++) {
@@ -131,6 +132,33 @@ describe('durable newsletter outbox', () => {
     await queue.processNewsletterQueue(10);
     expect(mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send')).toHaveLength(1);
     expect((await queue.newsletterStatus()).pending).toBe(2);
+  });
+  it('permits owner alias signup acceptance tests but canonicalizes delivery to the owner only', async () => {
+    readers(2); mocks.readers.get('reader-0')!.email = 'maxupport+newsletter-qa@gmail.com';
+    vi.stubEnv('NEWSLETTER_TEST_ONLY', 'true');
+    const queue = await import('@/lib/newsletter-queue');
+    await mocks.db.$transaction(async (tx: Parameters<typeof queue.queueSubscriber>[0]) => {
+      await queue.queueSubscriber(tx, 'reader-0', true); await queue.queueSubscriber(tx, 'reader-1', true);
+    });
+    await queue.processNewsletterQueue(10);
+    const mail = mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send');
+    expect(mail).toHaveLength(1); expect(mail[0][0].to).toBe('maxupport@gmail.com');
+    expect(jobs().find((job) => job.id === 'welcome:reader-1').state).toBe('pending');
+  });
+  it('defers mail when the public reading page redirects or is unavailable, without calling the mail provider', async () => {
+    readers(1); const queue = await import('@/lib/newsletter-queue');
+    await queue.queueCampaign(campaign, 'not-ready');
+    vi.mocked(fetch).mockResolvedValue(new Response('', { status: 307 }));
+    await queue.processNewsletterQueue(10); await queue.processNewsletterQueue(10);
+    expect(mocks.bridge).not.toHaveBeenCalled();
+    expect(jobs()[0]).toMatchObject({ state: 'pending', notBefore: expect.any(Number) });
+  });
+  it('links update notifications to the stable chapter id and checks that chapter is publicly rendered', async () => {
+    readers(1); const queue = await import('@/lib/newsletter-queue');
+    await queue.queuePublishedUpdate('book-1', ['chapter-2'], 'deep-link-test');
+    await queue.processNewsletterQueue(10);
+    expect(mocks.prepare).toHaveBeenCalledWith(expect.objectContaining({ chapterUrl: expect.stringContaining('?chapterId=chapter-2') }), true);
+    expect(mocks.bridge.mock.calls.filter(([payload]) => payload.operation === 'send')).toHaveLength(1);
   });
   it('rechecks opt-outs and deletions, does not send them mail, and keeps the mirror informed', async () => {
     readers(2); const queue = await import('@/lib/newsletter-queue');
@@ -214,6 +242,13 @@ describe('durable newsletter outbox', () => {
 });
 
 describe('newsletter configuration and service boundary', () => {
+  it('recognizes only genuine owner mailbox aliases in owner-only acceptance mode', () => {
+    expect(isOwnerTestAddress('Max.upport+qa@GMAIL.com')).toBe(true);
+    expect(isOwnerTestAddress('maxupport@googlemail.com')).toBe(true);
+    expect(isOwnerTestAddress('maxupport@gmail.com.attacker.test')).toBe(false);
+    expect(isOwnerTestAddress('maxupport@attacker.test')).toBe(false);
+    expect(isOwnerTestAddress('other+maxupport@gmail.com')).toBe(false);
+  });
   it('rejects arbitrary webhook hosts and short secrets', () => {
     vi.stubEnv('GOOGLE_NEWSLETTER_WEBHOOK_URL', 'https://attacker.test/macros/s/test/exec'); expect(newsletterConfig().configured).toBe(false);
     vi.stubEnv('GOOGLE_NEWSLETTER_WEBHOOK_URL', 'https://script.google.com/macros/s/test/exec?secret=bad'); expect(newsletterConfig().configured).toBe(false);

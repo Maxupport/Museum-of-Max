@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendChapterUpdateEmail, sendWelcomeEmail } from '@/lib/email';
-import { callGoogleBridge, newsletterConfig, NEWSLETTER_LIMIT, NEWSLETTER_SENDER, NEWSLETTER_WINDOW_MS, SUBSCRIBER_SHEET_ID } from '@/lib/newsletter-config';
+import { callGoogleBridge, newsletterConfig, isOwnerTestAddress, NEWSLETTER_LIMIT, NEWSLETTER_SENDER, NEWSLETTER_WINDOW_MS, SUBSCRIBER_SHEET_ID } from '@/lib/newsletter-config';
 
 // Transitional durable outbox in the existing private key/value table. No schema push is needed.
 const PREFIX = 'newsletter:v1:';
@@ -14,10 +14,11 @@ type Tx = Prisma.TransactionClient;
 export type Job = {
   id: string; kind: 'welcome' | 'update' | 'test' | 'sync' | 'publication'; subscriberId?: string; chapterId?: string;
   campaignId?: string; novelTitle?: string; state: 'pending' | 'processing' | 'sent' | 'canceled' | 'uncertain';
-  createdAt: number; reservedAt?: number; finishedAt?: number; leaseId?: string;
+  createdAt: number; reservedAt?: number; finishedAt?: number; leaseId?: string; notBefore?: number;
 };
 export type Campaign = {
   id: string; novelId?: string; novelTitle: string; chapterTitle: string; summary: string; createdAt: number;
+  messageType?: 'update' | 'announcement'; chapterIds?: string[];
 };
 
 function hash(value: string) { return createHash('sha256').update(value).digest('hex'); }
@@ -52,16 +53,16 @@ export async function queuePublication(tx: Tx, chapterId: string) {
   await tx.siteSetting.upsert({ where: { key: JOB + job.id }, create: { key: JOB + job.id, value: JSON.stringify(job) }, update: {} });
 }
 
-export async function queuePublishedUpdate(novelId: string, chapterIds: string[], eventId: string) {
+export async function queuePublishedUpdate(novelId: string, chapterIds: string[], eventId: string, isTest = false) {
   const novel = await prisma.novel.findUnique({ where: { id: novelId } });
   if (!novel) throw new Error('INVALID_PUBLICATION');
   const published = await prisma.writingsItem.findMany({ where: { category: '小說', topic: novel.title, isHidden: false },
     select: { id: true, title: true }, orderBy: { order: 'asc' } });
   const selected = published.filter((chapter) => chapterIds.includes(chapter.id));
   if (!selected.length || selected.length !== new Set(chapterIds).size) throw new Error('INVALID_PUBLICATION');
-  return queueCampaign({ novelId, novelTitle: novel.title,
+  return queueCampaign({ novelId, novelTitle: novel.title, messageType: 'update', chapterIds: selected.map((chapter) => chapter.id),
     chapterTitle: `本次更新 ${selected.length} 章（截至：${selected[selected.length - 1].title.slice(0, 100)}）`,
-    summary: `目前已公開 ${published.length} 章。本次更新：${selected.map((chapter) => chapter.title.slice(0, 100)).join('、')}。請由閱讀連結查看。` }, eventId);
+    summary: `目前已公開 ${published.length} 章。本次更新：${selected.map((chapter) => chapter.title.slice(0, 100)).join('、')}。請由閱讀連結查看。` }, eventId, isTest);
 }
 
 export async function queueCampaign(input: Omit<Campaign, 'id' | 'createdAt'>, eventId: string, isTest = false) {
@@ -70,8 +71,8 @@ export async function queueCampaign(input: Omit<Campaign, 'id' | 'createdAt'>, e
     const existing = await tx.siteSetting.findUnique({ where: { key: CAMPAIGN + campaignId } });
     if (existing) {
       const prior = JSON.parse(existing.value) as Campaign;
-      if (JSON.stringify([prior.novelId || null, prior.novelTitle, prior.chapterTitle, prior.summary]) !==
-          JSON.stringify([input.novelId || null, input.novelTitle, input.chapterTitle, input.summary])) throw new Error('EVENT_CONFLICT');
+      if (JSON.stringify([prior.novelId || null, prior.novelTitle, prior.chapterTitle, prior.summary, prior.messageType || 'update', prior.chapterIds || []]) !==
+          JSON.stringify([input.novelId || null, input.novelTitle, input.chapterTitle, input.summary, input.messageType || 'update', input.chapterIds || []])) throw new Error('EVENT_CONFLICT');
       return { campaignId, duplicate: true, queuedCount: 0 };
     }
     const campaign: Campaign = { ...input, id: campaignId, createdAt: Date.now() };
@@ -100,6 +101,7 @@ export async function newsletterStatus() {
   const config = newsletterConfig();
   const jobs = await allJobs();
   const reservations = await reservationTimes();
+  const heartbeat = await prisma.siteSetting.findUnique({ where: { key: 'newsletter:v1:worker:last-run' } });
   const counts = { pending: 0, processing: 0, sent: 0, canceled: 0, uncertain: 0, syncPending: 0 };
   for (const job of jobs) {
     counts[job.state]++;
@@ -115,6 +117,7 @@ export async function newsletterStatus() {
   });
   return {
     campaigns,
+    lastWorkerAt: heartbeat?.value || null,
     ...counts, configured: config.configured, enabled: config.enabled, syncEnabled: config.syncEnabled,
     testOnly: config.testOnly, sender: NEWSLETTER_SENDER, dailyLimit: NEWSLETTER_LIMIT,
     autoUpdatesEnabled: config.autoUpdatesEnabled,
@@ -135,12 +138,20 @@ async function claim() {
       job.state = job.kind === 'sync' || job.kind === 'publication' ? 'pending' : 'uncertain'; await save(tx, job);
     }
     const used = (await reservationTimes(tx)).length;
-    const candidates = jobs.filter((job) => job.state === 'pending' && (job.kind === 'sync'
+    const candidates = jobs.filter((job) => job.state === 'pending' && (!job.notBefore || job.notBefore <= Date.now()) && (job.kind === 'sync'
       ? config.syncEnabled : job.kind === 'publication' ? config.autoUpdatesEnabled
-        : config.enabled && (!config.testOnly || job.kind === 'test') && used < NEWSLETTER_LIMIT));
-    // Sync first so unsubscribes reach the mirror promptly. FIFO within each group.
-    candidates.sort((a, b) => Number(b.kind === 'sync') - Number(a.kind === 'sync') || a.createdAt - b.createdAt || a.id.localeCompare(b.id));
-    const job = candidates[0];
+        : config.enabled && used < NEWSLETTER_LIMIT));
+    // FIFO avoids starving every welcome behind a burst of new Sheet syncs.
+    // Delivery still rechecks the authoritative opt-out state before sending.
+    candidates.sort((a, b) => a.createdAt - b.createdAt || Number(b.kind === 'sync') - Number(a.kind === 'sync') || a.id.localeCompare(b.id));
+    let job: Job | undefined;
+    for (const candidate of candidates) {
+      if (config.testOnly && !['sync', 'publication', 'test'].includes(candidate.kind)) {
+        const reader = candidate.subscriberId ? await tx.subscriber.findUnique({ where: { id: candidate.subscriberId }, select: { email: true } }) : null;
+        if (!reader || !isOwnerTestAddress(reader.email)) continue;
+      }
+      job = candidate; break;
+    }
     if (!job) return null;
     job.state = 'processing'; job.reservedAt = Date.now(); job.leaseId = randomUUID();
     if (job.kind !== 'sync' && job.kind !== 'publication') await tx.siteSetting.create({ data: { key: QUOTA + job.leaseId, value: String(job.reservedAt) } });
@@ -148,10 +159,19 @@ async function claim() {
   });
 }
 
-async function finish(job: Job, state: Job['state']) {
+async function finish(job: Job, state: Job['state'], delayMs = 0) {
   // If an unsubscribe rescheduled a sync job while the worker was running, leave the newer job intact.
   await prisma.siteSetting.updateMany({ where: { key: JOB + job.id, value: JSON.stringify(job) },
-    data: { value: JSON.stringify({ ...job, state, finishedAt: Date.now() }) } });
+    data: { value: JSON.stringify({ ...job, state, finishedAt: Date.now(), ...(delayMs ? { notBefore: Date.now() + delayMs } : {}) }) } });
+}
+
+async function readingReady(url: string, chapterIds: string[] = []) {
+  try {
+    const response = await fetch(url, { redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    if (response.status !== 200 || !response.headers.get('content-type')?.includes('text/html')) return false;
+    const html = await response.text();
+    return chapterIds.every((id) => html.includes(id));
+  } catch { return false; }
 }
 
 export async function processNewsletterQueue(maxJobs = 3) {
@@ -186,16 +206,31 @@ export async function processNewsletterQueue(maxJobs = 3) {
       }
       const campaignRow = job.campaignId ? await prisma.siteSetting.findUnique({ where: { key: CAMPAIGN + job.campaignId } }) : null;
       const campaign = campaignRow ? JSON.parse(campaignRow.value) as Campaign : null;
-      const email = job.kind === 'test' ? NEWSLETTER_SENDER : subscriber!.email;
+      const email = job.kind === 'test' || (newsletterConfig().testOnly && isOwnerTestAddress(subscriber!.email)) ? NEWSLETTER_SENDER : subscriber!.email;
       const common = { email, name: subscriber?.name, unsubscribeToken: subscriber?.unsubscribeToken };
       let prepared;
-      if (job.kind === 'welcome') prepared = await sendWelcomeEmail({ ...common, novelTitle: job.novelTitle, novelId: subscriber?.novelId === 'all' ? undefined : subscriber?.novelId }, true);
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://museum-of-max.vercel.app';
+      let readingUrl = `${siteUrl}/novels`;
+      if (job.kind === 'welcome') {
+        if (subscriber?.novelId && subscriber.novelId !== 'all') readingUrl = `${siteUrl}/museum/creation_lab/novel/${encodeURIComponent(subscriber.novelId)}`;
+        prepared = await sendWelcomeEmail({ ...common, novelTitle: job.novelTitle, novelId: subscriber?.novelId === 'all' ? undefined : subscriber?.novelId, isTest: newsletterConfig().testOnly }, true);
+      }
       else {
         if (!campaign) throw new Error('Campaign is missing');
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://museum-of-max.vercel.app';
+        if (campaign.novelId && campaign.novelId !== 'all') readingUrl = `${siteUrl}/museum/creation_lab/novel/${encodeURIComponent(campaign.novelId)}`;
+        if (campaign.chapterIds?.length) {
+          const novel = await prisma.novel.findUnique({ where: { id: campaign.novelId! } });
+          const chapters = novel ? await prisma.writingsItem.findMany({ where: { category: '小說', topic: novel.title, isHidden: false }, select: { id: true, title: true } }) : [];
+          if (campaign.chapterIds.some((id) => !chapters.some((chapter) => chapter.id === id))) { await finish(job, 'canceled'); result.canceled++; continue; }
+          readingUrl += `?chapterId=${encodeURIComponent(campaign.chapterIds[0])}`;
+        }
         prepared = await sendChapterUpdateEmail({ ...common, ...campaign,
-          chapterUrl: campaign.novelId && campaign.novelId !== 'all' ? `${siteUrl}/museum/creation_lab/novel/${encodeURIComponent(campaign.novelId)}` : `${siteUrl}/museum/creation_lab` }, true);
+          chapterUrl: readingUrl, isTest: job.kind === 'test' }, true);
       }
+      // A failed/redirected reader page must not result in a premature email.
+      // No provider request is made; retry with backoff (the conservative quota
+      // reservation is retained, as with other known non-deliveries).
+      if (!await readingReady(readingUrl, campaign?.chapterIds)) { await finish(job, 'pending', 1800000); continue; }
       if (!prepared.message) throw new Error('Cannot prepare email');
       const reply = await callGoogleBridge({ operation: 'send', jobId: job.id, to: email, ...prepared.message });
       if (reply.status === 'deferred') { await finish(job, 'pending'); break; }

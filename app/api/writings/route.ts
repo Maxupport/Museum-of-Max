@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 import { queuePublication } from '@/lib/newsletter-queue';
+import { kickNewsletterQueue } from '@/lib/newsletter-kick';
+
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   try {
@@ -79,6 +82,7 @@ export async function POST(request: NextRequest) {
       return item;
     });
 
+    if (newItem.category === '小說' && !newItem.isHidden && body.notifySubscribers !== false) kickNewsletterQueue();
     return NextResponse.json({ ok: true, data: newItem });
   } catch (error) {
     console.error('Create Writing Error:', error);

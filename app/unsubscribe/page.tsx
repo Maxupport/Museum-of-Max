@@ -109,7 +109,7 @@ function UnsubscribeContent() {
             </div>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            若未來想重新接收通知，您隨時可以在小說閱讀頁面重新輸入信箱訂閱。
+            若未來想重新接收通知，請聯絡策展人協助確認；重新填寫相同信箱不會自動恢復已取消的訂閱。
           </p>
           <Link href="/museum/creation_lab" className="museum-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', textDecoration: 'none' }}>
             <ArrowLeft size={15} /> 返回創作 LAB
