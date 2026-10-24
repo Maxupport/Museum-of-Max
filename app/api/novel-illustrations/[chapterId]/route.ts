@@ -45,5 +45,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ ok: false }, { status: 400, headers });
     const data = await uploadNovelIllustration(chapterId, file, form.get('sourceHash') as string, form.get('contentHash') as string);
     return NextResponse.json({ ok: true, data }, { headers });
-  } catch { return NextResponse.json({ ok: false, error: '私密章圖驗證或上傳失敗；請確認隱藏章節及核准來源。' }, { status: 409, headers }); }
+  } catch (error) {
+    const known = ['INVALID_IMAGE_INPUT', 'PRIVATE_STORE_UNAVAILABLE', 'INVALID_HIDDEN_CHAPTER', 'SOURCE_HASH_MISMATCH',
+      'IMAGE_MAPPING_CONFLICT', 'PRIVATE_IMAGE_VERIFICATION_FAILED', 'PRIVATE_IMAGE_HASH_MISMATCH', 'CHAPTER_CHANGED'];
+    const code = error instanceof Error && known.includes(error.message) ? error.message : 'PRIVATE_STORAGE_REQUEST_FAILED';
+    return NextResponse.json({ ok: false, code, error: '私密章圖驗證或上傳失敗；請確認隱藏章節及核准來源。' }, { status: 409, headers });
+  }
 }
