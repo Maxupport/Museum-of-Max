@@ -59,17 +59,19 @@ export async function publishDueNovelChapters(now = new Date()) {
     // Same lock as the mail outbox: public content + durable event commit together.
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(726340821)`;
     const rows = await tx.siteSetting.findMany({ where: { key: { startsWith: PREFIX } } });
-    const slots = rows.map((row) => {
+    const allSlots = rows.map((row) => {
       const slot = validatePublicationSlot(JSON.parse(row.value) as PublicationSlot);
       if (row.key !== PREFIX + slot.id) throw new Error('INVALID_PUBLICATION_SLOT_KEY');
       return slot;
-    })
+    });
+    const slots = allSlots
       .filter((slot) => slot.state === 'scheduled' && Date.parse(slot.publishAt) <= now.getTime())
       .sort((a, b) => a.publishAt.localeCompare(b.publishAt) || a.id.localeCompare(b.id));
     const result = { enabled: true, published: 0, blocked: 0, deferred: 0 };
     // At most one batch per novel, two novels per tick: a missing image must not
     // stall the other novel, nor may a later chapter jump ahead in the same novel.
-    const firstPerNovel = slots.filter((slot, index) => slots.findIndex((candidate) => candidate.novelId === slot.novelId) === index);
+    const firstPerNovel = slots.filter((slot, index) => slots.findIndex((candidate) => candidate.novelId === slot.novelId) === index &&
+      !allSlots.some((prior) => prior.novelId === slot.novelId && prior.state === 'blocked' && prior.publishAt <= slot.publishAt));
     for (const slot of firstPerNovel.slice(0, 2)) {
       const novel = await tx.novel.findUnique({ where: { id: slot.novelId } });
       const chapters = await tx.writingsItem.findMany({ where: { id: { in: slot.chapterIds } } });

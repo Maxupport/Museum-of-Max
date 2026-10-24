@@ -106,6 +106,15 @@ describe('opt-in atomic chapter publication', () => {
     expect(() => validatePublicationSlot({ ...slot, chapterIds: ['chapter-1', 'chapter-1'] })).toThrow('INVALID_PUBLICATION_SLOT');
     expect(() => validatePublicationSlot({ ...slot, publishAt: 'tomorrow' })).toThrow('INVALID_PUBLICATION_SLOT');
   });
+  it('never jumps over an earlier blocked chapter in the same novel', async () => {
+    const slot = seed(); slot.state = 'blocked'; mocks.records.set(prefix + slot.id, JSON.stringify(slot));
+    mocks.chapters.set('chapter-2', { id: 'chapter-2', category: '小說', topic: '測試小說', content: '正文 chapter-2', isHidden: true });
+    const later: PublicationSlot = { ...slot, id: 'release-2', state: 'scheduled', chapterIds: ['chapter-2'],
+      contentHashes: { 'chapter-2': chapterHash('正文 chapter-2') } };
+    mocks.records.set(prefix + later.id, JSON.stringify(later));
+    expect((await publishDueNovelChapters(now)).published).toBe(0);
+    expect(mocks.chapters.get('chapter-2')?.isHidden).toBe(true); expect(mocks.queue).not.toHaveBeenCalled();
+  });
   it('reports pending, overdue and invalid records without exposing hashes or credentials', async () => {
     seed(); mocks.records.set(prefix + 'broken', 'not-json');
     vi.stubEnv('NOVEL_PRIVATE_BLOB_READ_WRITE_TOKEN', 'private-do-not-expose');
