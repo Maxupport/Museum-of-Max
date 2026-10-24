@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyWorkerRequest } from '@/lib/newsletter-config';
 import { processNewsletterQueue } from '@/lib/newsletter-queue';
 import { prisma } from '@/lib/prisma';
+import { publishDueNovelChapters } from '@/lib/novel-publication';
 
 export const maxDuration = 60;
 export async function POST(request: NextRequest) {
@@ -9,6 +10,7 @@ export async function POST(request: NextRequest) {
   const body = await request.text();
   if (body !== '{}' || !verifyWorkerRequest(body, request.headers)) return NextResponse.json({ ok: false }, { status: 401 });
   try {
+    await publishDueNovelChapters();
     const data = await processNewsletterQueue(8);
     const timestamp = new Date().toISOString();
     await prisma.siteSetting.upsert({ where: { key: 'newsletter:v1:worker:last-run' },

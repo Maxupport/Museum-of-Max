@@ -1,0 +1,243 @@
+{
+  "status": "draft-not-active",
+  "timezone": "Asia/Taipei",
+  "publicationTime": "08:30",
+  "deliveryPolicy": {
+    "target": "08:30 batch start; inbox arrival is not guaranteed",
+    "maxRecipientsPerRolling24Hours": 80,
+    "overflow": "queue for a later quota window",
+    "publishBeforeEmail": true
+  },
+  "novels": [
+    {
+      "title": "她沒有說好的那一夜",
+      "author": "生涯擺渡人 Max",
+      "chapters": [
+        {
+          "chapter": 1,
+          "publishAt": "2026-11-03T00:30:00.000Z"
+        },
+        {
+          "chapter": 2,
+          "publishAt": "2026-11-10T00:30:00.000Z"
+        },
+        {
+          "chapter": 3,
+          "publishAt": "2026-11-17T00:30:00.000Z"
+        },
+        {
+          "chapter": 4,
+          "publishAt": "2026-11-24T00:30:00.000Z"
+        },
+        {
+          "chapter": 5,
+          "publishAt": "2026-12-01T00:30:00.000Z"
+        },
+        {
+          "chapter": 6,
+          "publishAt": "2026-12-08T00:30:00.000Z"
+        },
+        {
+          "chapter": 7,
+          "publishAt": "2026-12-15T00:30:00.000Z"
+        },
+        {
+          "chapter": 8,
+          "publishAt": "2026-12-22T00:30:00.000Z"
+        },
+        {
+          "chapter": 9,
+          "publishAt": "2026-12-29T00:30:00.000Z"
+        },
+        {
+          "chapter": 10,
+          "publishAt": "2027-01-05T00:30:00.000Z"
+        },
+        {
+          "chapter": 11,
+          "publishAt": "2027-01-12T00:30:00.000Z"
+        },
+        {
+          "chapter": 12,
+          "publishAt": "2027-01-19T00:30:00.000Z"
+        },
+        {
+          "chapter": 13,
+          "publishAt": "2027-01-26T00:30:00.000Z"
+        },
+        {
+          "chapter": 14,
+          "publishAt": "2027-02-02T00:30:00.000Z"
+        }
+      ],
+      "chaptersPerWeek": 1,
+      "publicationWeekdays": [
+        2
+      ]
+    },
+    {
+      "title": "越界之前",
+      "author": "生涯擺渡人 Max",
+      "firstPublicationDate": "2026-11-04",
+      "status": "author-approved-replacement-not-executed",
+      "existingChapterPolicy": "Back up the 8 existing public chapters, replace with the approved final manuscript, restart at chapter 1, and keep unreleased chapters private.",
+      "firstNumberedChapter": 1,
+      "chapters": [
+        {
+          "chapter": 1,
+          "publishAt": "2026-11-04T00:30:00.000Z"
+        },
+        {
+          "chapter": 2,
+          "publishAt": "2026-11-05T00:30:00.000Z"
+        },
+        {
+          "chapter": 3,
+          "publishAt": "2026-11-06T00:30:00.000Z"
+        },
+        {
+          "chapter": 4,
+          "publishAt": "2026-11-11T00:30:00.000Z"
+        },
+        {
+          "chapter": 5,
+          "publishAt": "2026-11-12T00:30:00.000Z"
+        },
+        {
+          "chapter": 6,
+          "publishAt": "2026-11-13T00:30:00.000Z"
+        },
+        {
+          "chapter": 7,
+          "publishAt": "2026-11-18T00:30:00.000Z"
+        },
+        {
+          "chapter": 8,
+          "publishAt": "2026-11-19T00:30:00.000Z"
+        },
+        {
+          "chapter": 9,
+          "publishAt": "2026-11-20T00:30:00.000Z"
+        },
+        {
+          "chapter": 10,
+          "publishAt": "2026-11-25T00:30:00.000Z"
+        },
+        {
+          "chapter": 11,
+          "publishAt": "2026-11-26T00:30:00.000Z"
+        },
+        {
+          "chapter": 12,
+          "publishAt": "2026-11-27T00:30:00.000Z"
+        },
+        {
+          "chapter": 13,
+          "publishAt": "2026-12-02T00:30:00.000Z"
+        },
+        {
+          "chapter": 14,
+          "publishAt": "2026-12-03T00:30:00.000Z"
+        },
+        {
+          "chapter": 15,
+          "publishAt": "2026-12-04T00:30:00.000Z"
+        },
+        {
+          "chapter": 16,
+          "publishAt": "2026-12-09T00:30:00.000Z"
+        },
+        {
+          "chapter": 17,
+          "publishAt": "2026-12-10T00:30:00.000Z"
+        },
+        {
+          "chapter": 18,
+          "publishAt": "2026-12-11T00:30:00.000Z"
+        },
+        {
+          "chapter": 19,
+          "publishAt": "2026-12-16T00:30:00.000Z"
+        },
+        {
+          "chapter": 20,
+          "publishAt": "2026-12-17T00:30:00.000Z"
+        },
+        {
+          "chapter": 21,
+          "publishAt": "2026-12-18T00:30:00.000Z"
+        },
+        {
+          "chapter": 22,
+          "publishAt": "2026-12-23T00:30:00.000Z"
+        },
+        {
+          "chapter": 23,
+          "publishAt": "2026-12-24T00:30:00.000Z"
+        },
+        {
+          "chapter": 24,
+          "publishAt": "2026-12-25T00:30:00.000Z"
+        },
+        {
+          "chapter": 25,
+          "publishAt": "2026-12-30T00:30:00.000Z"
+        },
+        {
+          "chapter": 26,
+          "publishAt": "2026-12-31T00:30:00.000Z"
+        },
+        {
+          "chapter": 27,
+          "publishAt": "2027-01-01T00:30:00.000Z"
+        },
+        {
+          "chapter": 28,
+          "publishAt": "2027-01-06T00:30:00.000Z"
+        },
+        {
+          "chapter": 29,
+          "publishAt": "2027-01-07T00:30:00.000Z"
+        },
+        {
+          "chapter": 30,
+          "publishAt": "2027-01-08T00:30:00.000Z"
+        },
+        {
+          "chapter": 31,
+          "publishAt": "2027-01-13T00:30:00.000Z"
+        },
+        {
+          "chapter": 32,
+          "publishAt": "2027-01-14T00:30:00.000Z"
+        },
+        {
+          "chapter": 33,
+          "publishAt": "2027-01-15T00:30:00.000Z"
+        }
+      ],
+      "prologuePolicy": "Publish the prologue together with chapter 1, with a single update email.",
+      "chaptersPerWeek": 3,
+      "publicationWeekdays": [
+        3,
+        4,
+        5
+      ]
+    }
+  ],
+  "notes": [
+    "Planning artifact only; not a running scheduler.",
+    "Tuesday through Friday each have one release while both novels have unpublished chapters.",
+    "November 1 is Sunday; the first eligible release day is November 3.",
+    "Newsletter Google authorization and delivery-worker acceptance passed on 2026-10-24; novel source import and automatic publication scheduling are still not activated.",
+    "Do not promise November 1 chapter publication: it is Sunday and the approved release weekdays are Tuesday through Friday."
+  ],
+  "requestedStartDate": "2026-11-01",
+  "firstPublicationDate": "2026-11-03",
+  "publicationWeekdays": [
+    2,
+    3,
+    4,
+    5
+  ]
+}
