@@ -63,6 +63,7 @@ describe('protected API boundaries', () => {
     ['/api/newsletter/dispatch', 'POST'], ['/api/novels', 'POST'],
     ['/api/newsletter/status', 'GET'], ['/api/newsletter/sync', 'POST'],
     ['/api/newsletter/verify', 'GET'],
+    ['/api/subscribe/summary', 'GET'],
     ['/api/newsletter/cancel', 'POST'], ['/api/newsletter/published-update', 'POST'],
     ['/api/novels/[id]', 'PUT'], ['/api/novels/[id]', 'DELETE'],
     ['/api/writings', 'POST'], ['/api/writings/[id]', 'PUT'], ['/api/writings/[id]', 'DELETE'],
