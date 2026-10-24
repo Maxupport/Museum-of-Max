@@ -6,13 +6,13 @@ const mocks = vi.hoisted(() => ({
   records: new Map<string, string>(),
   chapters: new Map<string, { id: string; category: string; topic: string; content: string; isHidden: boolean }>(),
   queue: vi.fn(), imageReady: vi.fn(),
-  db: { $transaction: vi.fn(), $queryRaw: vi.fn(), siteSetting: { findMany: vi.fn(), update: vi.fn() },
+  db: { $transaction: vi.fn(), $queryRaw: vi.fn(), siteSetting: { findMany: vi.fn(), update: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
     novel: { findUnique: vi.fn() }, writingsItem: { findMany: vi.fn(), updateMany: vi.fn() } },
 }));
 vi.mock('@/lib/prisma', () => ({ prisma: mocks.db }));
 vi.mock('@/lib/newsletter-queue', () => ({ queuePublicationBatch: mocks.queue }));
 vi.mock('@/lib/novel-image-readiness', () => ({ preparedIllustrationReady: mocks.imageReady }));
-import { chapterHash, publishDueNovelChapters, validatePublicationSlot, novelPublicationStatus, type PublicationSlot } from '@/lib/novel-publication';
+import { chapterHash, publishDueNovelChapters, validatePublicationSlot, novelPublicationStatus, installPublicationSlots, type PublicationSlot } from '@/lib/novel-publication';
 
 const prefix = 'novel-publication:v1:slot:';
 const now = new Date('2026-11-04T00:30:00.000Z');
@@ -32,6 +32,8 @@ beforeEach(() => {
   mocks.db.siteSetting.findMany.mockImplementation(async ({ where }) => [...mocks.records]
     .filter(([key]) => key.startsWith(where.key.startsWith)).map(([key, value]) => ({ key, value })));
   mocks.db.siteSetting.update.mockImplementation(async ({ where, data }) => { mocks.records.set(where.key, data.value); return data; });
+  mocks.db.siteSetting.findUnique.mockImplementation(async ({ where }) => mocks.records.has(where.key) ? { key: where.key, value: mocks.records.get(where.key) } : null);
+  mocks.db.siteSetting.create.mockImplementation(async ({ data }) => { mocks.records.set(data.key, data.value); return data; });
   mocks.db.novel.findUnique.mockResolvedValue({ id: 'novel-1', title: '測試小說' });
   mocks.db.writingsItem.findMany.mockImplementation(async ({ where }) => [...mocks.chapters.values()]
     .filter((chapter) => where.id.in.includes(chapter.id)).map((chapter) => ({ ...chapter })));
@@ -55,6 +57,34 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('opt-in atomic chapter publication', () => {
+  it('rejects anonymous schedule installation before accessing the database', async () => {
+    const { POST } = await import('@/app/api/novel-publication/schedule/route');
+    const response = await POST(new NextRequest('https://museum.test/api/novel-publication/schedule', { method: 'POST' }));
+    expect(response.status).toBe(401);
+    expect(mocks.db.$transaction).not.toHaveBeenCalled();
+  });
+  it('rolls back the entire installation if a later chapter no longer matches', async () => {
+    const slot = seed(); mocks.records.clear(); vi.stubEnv('NOVEL_PUBLICATION_ENABLED', 'false');
+    const second = { ...slot, id: 'release-2', chapterIds: ['missing-chapter'], publishAt: '2026-11-05T00:30:00.000Z',
+      contentHashes: { 'missing-chapter': chapterHash('missing') } };
+    await expect(installPublicationSlots([slot, second], new Date('2026-11-03'))).rejects.toThrow('SLOT_CONTENT_MISMATCH');
+    expect(mocks.records.size).toBe(0); expect(mocks.queue).not.toHaveBeenCalled();
+  });
+  it('installs future hidden slots without publishing or notifying, and deduplicates replay', async () => {
+    const slot = seed(); mocks.records.clear(); vi.stubEnv('NOVEL_PUBLICATION_ENABLED', 'false');
+    const earlier = new Date('2026-11-03T00:30:00.000Z');
+    expect(await installPublicationSlots([slot], earlier)).toEqual({ installed: 1, duplicate: 0, publicationEnabled: false });
+    expect(await installPublicationSlots([slot], earlier)).toMatchObject({ installed: 0, duplicate: 1 });
+    expect(mocks.queue).not.toHaveBeenCalled(); expect(mocks.chapters.get('chapter-1')?.isHidden).toBe(true);
+  });
+  it('rejects active publication, past dates and conflicting duplicate chapters', async () => {
+    const slot = seed(); mocks.records.clear();
+    await expect(installPublicationSlots([slot], now)).rejects.toThrow('PAUSE_PUBLICATION_FIRST');
+    vi.stubEnv('NOVEL_PUBLICATION_ENABLED', 'false');
+    await expect(installPublicationSlots([slot], now)).rejects.toThrow('INVALID_FUTURE_SLOT');
+    await expect(installPublicationSlots([slot, { ...slot, id: 'other' }], new Date('2026-11-03'))).rejects.toThrow('DUPLICATE_SLOT_BATCH');
+    expect(mocks.records.size).toBe(0);
+  });
   it('does nothing unless separately enabled', async () => {
     seed(); vi.stubEnv('NOVEL_PUBLICATION_ENABLED', 'false');
     expect(await publishDueNovelChapters(now)).toEqual({ enabled: false, published: 0, blocked: 0 });
