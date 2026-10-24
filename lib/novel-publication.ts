@@ -51,6 +51,53 @@ export async function novelPublicationStatus(now = new Date()) {
     checkedAt: now.toISOString(), ...counts, slots };
 }
 
+export async function installPublicationSlots(input: PublicationSlot[], now = new Date()) {
+  if (process.env.NOVEL_PUBLICATION_ENABLED === 'true') throw new Error('PAUSE_PUBLICATION_FIRST');
+  if (!Array.isArray(input) || !input.length || input.length > 50) throw new Error('INVALID_SLOT_BATCH');
+  const slots = input.map((value) => {
+    const slot = validatePublicationSlot(value);
+    if (slot.state !== 'scheduled' || Date.parse(slot.publishAt) <= now.getTime()) throw new Error('INVALID_FUTURE_SLOT');
+    return { id: slot.id, novelId: slot.novelId, chapterIds: slot.chapterIds, publishAt: slot.publishAt,
+      state: 'scheduled' as const, contentHashes: Object.fromEntries(slot.chapterIds.map((id) => [id, slot.contentHashes[id]])) };
+  });
+  const ids = slots.flatMap((slot) => slot.chapterIds);
+  if (new Set(ids).size !== ids.length || new Set(slots.map((slot) => slot.id)).size !== slots.length ||
+    new Set(slots.map((slot) => slot.publishAt)).size !== slots.length) throw new Error('DUPLICATE_SLOT_BATCH');
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(726340821)`;
+    const existing = (await tx.siteSetting.findMany({ where: { key: { startsWith: PREFIX } } }))
+      .map((row) => {
+        const slot = validatePublicationSlot(JSON.parse(row.value) as PublicationSlot);
+        if (row.key !== PREFIX + slot.id) throw new Error('INVALID_PUBLICATION_SLOT_KEY');
+        return slot;
+      });
+    let installed = 0;
+    for (const slot of slots) {
+      const prior = existing.find((item) => item.id === slot.id);
+      if (prior) {
+        if (JSON.stringify(prior) !== JSON.stringify(slot)) throw new Error('SLOT_CONFLICT');
+        continue;
+      }
+      if (existing.some((item) => item.publishAt === slot.publishAt || item.chapterIds.some((id) => slot.chapterIds.includes(id))))
+        throw new Error('SLOT_CONFLICT');
+      const novel = await tx.novel.findUnique({ where: { id: slot.novelId } });
+      const chapters = await tx.writingsItem.findMany({ where: { id: { in: slot.chapterIds } } });
+      if (!novel || chapters.length !== slot.chapterIds.length || chapters.some((chapter) => !chapter.isHidden ||
+        chapter.category !== '小說' || chapter.topic !== novel.title || !chapter.content.trim() ||
+        chapterHash(chapter.content) !== slot.contentHashes[chapter.id])) throw new Error('SLOT_CONTENT_MISMATCH');
+      for (const chapter of chapters.filter((chapter) => chapterIllustrationUrl(chapter.id, chapter.content))) {
+        const row = await tx.siteSetting.findUnique({ where: { key: `novel-illustration:v1:${chapter.id}` } });
+        const image = row ? JSON.parse(row.value) : null;
+        if (!novelPrivateStoreConfig() || !image?.verifiedAt || !/^[a-f0-9]{64}$/.test(image.imageHash || ''))
+          throw new Error('SLOT_IMAGE_NOT_VERIFIED');
+      }
+      await tx.siteSetting.create({ data: { key: PREFIX + slot.id, value: JSON.stringify(slot) } });
+      installed++;
+    }
+    return { installed, duplicate: slots.length - installed, publicationEnabled: false };
+  }, { timeout: 25000 });
+}
+
 // Separate opt-in: deploying this code cannot accidentally activate a draft calendar.
 // The existing signed five-minute worker is the only execution entry point.
 export async function publishDueNovelChapters(now = new Date()) {
