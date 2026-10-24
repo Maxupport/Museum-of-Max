@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
+import { queuePublication } from '@/lib/newsletter-queue';
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,7 +57,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: '請輸入文章內文' }, { status: 400 });
     }
 
-    const newItem = await prisma.writingsItem.create({
+    if (body.notifySubscribers != null && typeof body.notifySubscribers !== 'boolean') return NextResponse.json({ ok: false }, { status: 400 });
+    const newItem = await prisma.$transaction(async (tx) => {
+      const item = await tx.writingsItem.create({
       data: {
         exhibitId: exhibitId || 'creation_lab',
         title: title.trim(),
@@ -71,6 +74,9 @@ export async function POST(request: NextRequest) {
         isHidden: Boolean(isHidden),
         order: typeof order === 'number' ? order : 0,
       },
+      });
+      if (item.category === '小說' && item.topic && !item.isHidden && body.notifySubscribers !== false) await queuePublication(tx, item.id);
+      return item;
     });
 
     return NextResponse.json({ ok: true, data: newItem });

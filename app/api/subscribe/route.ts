@@ -1,7 +1,7 @@
-import { after, NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
-import { sendWelcomeEmail } from '@/lib/email';
+import { queueSubscriber } from '@/lib/newsletter-queue';
 
 export async function GET(request: NextRequest) {
   if (!validateAdminRequest(request)) {
@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
     if (existing) return subscriptionResponse();
 
     // 2. 建立新訂閱者 (包含產生專屬退訂金鑰)
-    const subscriber = await prisma.subscriber.create({
+    await prisma.$transaction(async (tx) => {
+      const subscriber = await tx.subscriber.create({
       data: {
         email: cleanEmail,
         name: cleanName,
@@ -59,39 +60,8 @@ export async function POST(request: NextRequest) {
         sourceChapter: cleanChapter,
         active: true,
       },
-    });
-
-    // 3. 後端非同步同步至 Google 試算表 (保護 Webhook 網址不暴露於前端)
-    const googleScriptUrl = process.env.GOOGLE_SCRIPT_URL || process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
-    after(async () => {
-      const jobs: Promise<unknown>[] = [];
-      if (googleScriptUrl) jobs.push(fetch(googleScriptUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(8000),
-        body: JSON.stringify({
-          email: cleanEmail,
-          name: cleanName || '',
-          novelTitle: novelTitle || novelId || '全本連載',
-          sourceChapter: cleanChapter || 1,
-          createdAt: new Date().toISOString(),
-        }),
-      }).then((response) => {
-        if (!response.ok) console.error('[Subscription] Spreadsheet sync was rejected');
-      }));
-
-      // 4. 非同步寄送歡迎信（不是雙重訂閱確認）
-      jobs.push(sendWelcomeEmail({
-        email: cleanEmail,
-        name: cleanName,
-        novelTitle: novelTitle || '原創小說連載',
-        novelId: novelId || undefined,
-        unsubscribeToken: subscriber.unsubscribeToken,
-      }).then((result) => {
-        if (!result.ok) console.error('[Subscription] Welcome email was not accepted');
-      }));
-      const results = await Promise.allSettled(jobs);
-      if (results.some((result) => result.status === 'rejected')) console.error('[Subscription] Background delivery failed');
+      });
+      await queueSubscriber(tx, subscriber.id, true, novelTitle || '原創小說連載');
     });
 
     return subscriptionResponse();
@@ -106,6 +76,6 @@ export async function POST(request: NextRequest) {
 function subscriptionResponse() {
   return NextResponse.json({
     ok: true,
-    message: '感謝訂閱！未來每當有最新連載或內容更新時，將自動寄送通知給您。',
+    message: '已收到訂閱登記。寄信服務啟用後，將依排程寄送歡迎信及後續更新通知。',
   });
 }

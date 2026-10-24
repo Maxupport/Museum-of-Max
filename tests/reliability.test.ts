@@ -13,10 +13,12 @@ const mocks = vi.hoisted(() => ({
     novelUpdate: { create: vi.fn(), update: vi.fn() },
   },
   sendChapterUpdateEmail: vi.fn(),
+  queueCampaign: vi.fn(),
   put: vi.fn(), mkdir: vi.fn(), writeFile: vi.fn(),
 }));
 vi.mock('@/lib/prisma', () => ({ prisma: mocks.prisma }));
 vi.mock('@/lib/email', () => ({ sendChapterUpdateEmail: mocks.sendChapterUpdateEmail }));
+vi.mock('@/lib/newsletter-queue', () => ({ queueCampaign: mocks.queueCampaign }));
 vi.mock('@vercel/blob', () => ({ put: mocks.put }));
 vi.mock('fs/promises', () => ({ mkdir: mocks.mkdir, writeFile: mocks.writeFile }));
 
@@ -150,35 +152,38 @@ describe('internal crawler authentication', () => {
   });
 });
 
-describe('newsletter delivery accounting', () => {
+describe('newsletter queue API', () => {
   const subscribers = ['one', 'two', 'three'].map((id) => ({ id, email: `${id}@example.test`, name: id, unsubscribeToken: 'test-token' }));
   beforeEach(() => {
+    mocks.queueCampaign.mockResolvedValue({ campaignId: 'update-1', duplicate: false, queuedCount: 3 });
     mocks.prisma.subscriber.findMany.mockResolvedValue(subscribers);
     mocks.prisma.novelUpdate.create.mockResolvedValue({ id: 'update-1', sent: false });
     mocks.prisma.novelUpdate.update.mockResolvedValue({ id: 'update-1' });
   });
-  it('includes all-book readers and marks only accepted recipients as notified', async () => {
+  it('acknowledges queueing without claiming delivery or updating notified timestamps', async () => {
     mocks.sendChapterUpdateEmail.mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false }).mockRejectedValueOnce(new Error('network'));
     const { POST } = await import('@/app/api/newsletter/dispatch/route');
-    const response = await POST(adminRequest('/api/newsletter/dispatch', { novelId: 'book-1', chapterTitle: '測試章節' }));
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ successCount: 1, failedCount: 2 });
-    expect(mocks.prisma.subscriber.findMany).toHaveBeenCalledWith({ where: { active: true, novelId: { in: ['book-1', 'all'] } } });
-    expect(mocks.prisma.subscriber.updateMany).toHaveBeenCalledWith({ where: { id: { in: ['one'] } }, data: { lastNotifiedAt: expect.any(Date) } });
-    expect(mocks.prisma.novelUpdate.update).toHaveBeenCalledWith({ where: { id: 'update-1' }, data: { sent: false, sentAt: null } });
+    const response = await POST(adminRequest('/api/newsletter/dispatch', { eventId: 'event-test-1', novelId: 'book-1', chapterTitle: '測試章節' }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({ queuedCount: 3 });
+    expect(mocks.queueCampaign).toHaveBeenCalledWith(expect.objectContaining({ novelId: 'book-1', chapterTitle: '測試章節' }), 'event-test-1', false);
+    expect(mocks.sendChapterUpdateEmail).not.toHaveBeenCalled();
+    expect(mocks.prisma.subscriber.updateMany).not.toHaveBeenCalled();
   });
-  it('does not report success or update recipients when all deliveries fail', async () => {
+  it('rejects requests missing a title and stable event id', async () => {
     mocks.sendChapterUpdateEmail.mockResolvedValue({ ok: false, error: 'rejected' });
     const { POST } = await import('@/app/api/newsletter/dispatch/route');
     const response = await POST(adminRequest('/api/newsletter/dispatch', {}));
-    expect(response.status).toBe(502);
-    expect(await response.json()).toMatchObject({ ok: false, successCount: 0, failedCount: 3 });
+    expect(response.status).toBe(400);
+    expect(mocks.queueCampaign).not.toHaveBeenCalled();
     expect(mocks.prisma.subscriber.updateMany).not.toHaveBeenCalled();
   });
-  it('marks a fully accepted broadcast complete', async () => {
+  it('rejects arbitrary test recipients and only queues owner tests', async () => {
     mocks.sendChapterUpdateEmail.mockResolvedValue({ ok: true });
     const { POST } = await import('@/app/api/newsletter/dispatch/route');
-    expect((await POST(adminRequest('/api/newsletter/dispatch', {}))).status).toBe(200);
-    expect(mocks.prisma.novelUpdate.update).toHaveBeenCalledWith({ where: { id: 'update-1' }, data: { sent: true, sentAt: expect.any(Date) } });
+    const payload = { eventId: 'test-event-1', chapterTitle: '測試', isTest: true };
+    expect((await POST(adminRequest('/api/newsletter/dispatch', { ...payload, testEmail: 'other@example.test' }))).status).toBe(400);
+    expect((await POST(adminRequest('/api/newsletter/dispatch', { ...payload, testEmail: 'maxupport@gmail.com' }))).status).toBe(202);
+    expect(mocks.queueCampaign).toHaveBeenCalledWith(expect.any(Object), 'test-event-1', true);
   });
 });

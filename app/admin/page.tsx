@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor, Download, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
+import NewsletterSettingsPanel from '@/components/NewsletterSettingsPanel';
 
 interface PasscodeItem {
   id: string;
@@ -303,6 +304,11 @@ export default function AdminDashboardPage() {
 
   // Dispatch Newsletter state
   const [dispatchNovelTitle, setDispatchNovelTitle] = useState('');
+  const [dispatchNovelId, setDispatchNovelId] = useState('all');
+  const dispatchEvent = useRef<string | null>(null);
+  const testEvent = useRef<string | null>(null);
+  const dispatchPayload = useRef('');
+  const testPayload = useRef('');
   const [dispatchChapterTitle, setDispatchChapterTitle] = useState('');
   const [dispatchSummary, setDispatchSummary] = useState('');
   const [dispatching, setDispatching] = useState(false);
@@ -314,8 +320,10 @@ export default function AdminDashboardPage() {
       alert('請先填寫新更新章節名稱');
       return;
     }
-    const emailToTest = window.prompt('請輸入接收測試信的信箱：', 'maxupport@gmail.com');
-    if (!emailToTest || !emailToTest.includes('@')) return;
+    const emailToTest = 'maxupport@gmail.com';
+    const payloadKey = JSON.stringify([dispatchNovelTitle, dispatchChapterTitle, dispatchSummary, dispatchNovelId]);
+    if (testPayload.current !== payloadKey) { testEvent.current = null; testPayload.current = payloadKey; }
+    testEvent.current ||= crypto.randomUUID();
 
     setSendingTestEmail(true);
     try {
@@ -324,6 +332,8 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           novelTitle: dispatchNovelTitle || '原創小說連載',
+          eventId: testEvent.current,
+          novelId: dispatchNovelId,
           chapterTitle: dispatchChapterTitle,
           summary: dispatchSummary,
           isTest: true,
@@ -333,6 +343,7 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.ok) {
         alert('🎉 ' + data.message);
+        testEvent.current = null;
       } else {
         alert('發送測試信失敗：' + (data.error || '未知錯誤'));
       }
@@ -378,6 +389,10 @@ export default function AdminDashboardPage() {
       alert('請輸入更新章節名稱');
       return;
     }
+    if (!window.confirm('將為所選範圍的有效訂閱者建立一批通知。服務啟用後依額度寄送，是否加入佇列？')) return;
+    const payloadKey = JSON.stringify([dispatchNovelTitle, dispatchChapterTitle, dispatchSummary, dispatchNovelId]);
+    if (dispatchPayload.current !== payloadKey) { dispatchEvent.current = null; dispatchPayload.current = payloadKey; }
+    dispatchEvent.current ||= crypto.randomUUID();
     setDispatching(true);
     setDispatchMessage('');
     try {
@@ -386,12 +401,15 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           novelTitle: dispatchNovelTitle,
+          eventId: dispatchEvent.current,
+          novelId: dispatchNovelId,
           chapterTitle: dispatchChapterTitle,
           summary: dispatchSummary,
         }),
       });
       const data = await res.json();
       if (data.ok) {
+        dispatchEvent.current = null;
         setDispatchMessage(data.message);
         setDispatchChapterTitle('');
         setDispatchSummary('');
@@ -1019,7 +1037,7 @@ export default function AdminDashboardPage() {
       if (activeTab === 'venture') fetchVentureItems();
       if (activeTab === 'career') fetchCareerItems();
       if (activeTab === 'stats') fetchStats();
-      if (activeTab === 'subscribers') fetchSubscribers();
+      if (activeTab === 'subscribers') { fetchSubscribers(); fetchNovelItems(); }
       if (activeTab === 'sound' || activeTab === 'creation_lab' || activeTab === 'articles') {
         fetchMusicItems();
         fetchWritingsItems();
@@ -3112,14 +3130,15 @@ export default function AdminDashboardPage() {
       {/* Tab 5: Subscribers & Newsletter */}
       {activeTab === 'subscribers' && (
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
-          {/* 左欄：隔日廣播信件排程表單 */}
+          <NewsletterSettingsPanel />
+          {/* 左欄：通知佇列表單 */}
           <div className="glass-panel" style={{ padding: '2rem', height: 'fit-content' }}>
             <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-noto-serif)' }}>
               <Send size={20} style={{ color: '#60a5fa' }} />
-              隔日連載更新廣播
+              更新通知與主動群發
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-              當您在 Notion 上更新了小說新章節，可在此安排電子報排程。系統將於隔日固定時間為 {subscribersCount} 位訂閱者寄送連載更新通知信件。
+              每次更新建立一批通知，每位有效訂閱者最多收到該次更新的一封信，內含更新進度與閱讀連結。每 24 小時最多 80 封，超額依序排隊；服務未啟用時只保存、不寄信。
             </p>
 
             {dispatchMessage && (
@@ -3129,9 +3148,19 @@ export default function AdminDashboardPage() {
             )}
 
             <form onSubmit={handleDispatchNewsletter} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              <label>收件範圍
+                <select className="museum-input" value={dispatchNovelId} onChange={(event) => {
+                  setDispatchNovelId(event.target.value);
+                  const selected = novelItems.find((novel) => novel.id === event.target.value);
+                  if (selected) setDispatchNovelTitle(selected.title);
+                }}>
+                  <option value="all">全部有效訂閱者</option>
+                  {novelItems.map((novel) => <option key={novel.id} value={novel.id}>{novel.title}（含訂閱全部作品者）</option>)}
+                </select>
+              </label>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  小說名稱 *
+                  作品／通知分類 *
                 </label>
                 <input
                   type="text"
@@ -3146,7 +3175,7 @@ export default function AdminDashboardPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '1px', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
-                  新更新章節名稱 *
+                  通知主旨／當次更新進度 *
                 </label>
                 <input
                   type="text"
@@ -3181,7 +3210,7 @@ export default function AdminDashboardPage() {
                   style={{ flex: 1, minWidth: '150px', background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc', fontSize: '0.82rem' }}
                 >
                   <Send size={13} style={{ marginRight: '4px' }} />
-                  {sendingTestEmail ? '發送測試信中...' : '寄送測試信至我的信箱'}
+                  {sendingTestEmail ? '加入測試佇列中...' : '測試信排入我的信箱（同樣計入額度）'}
                 </button>
                 <button
                   type="submit"
@@ -3189,7 +3218,7 @@ export default function AdminDashboardPage() {
                   disabled={dispatching}
                   style={{ flex: 2, minWidth: '180px', background: 'rgba(96, 165, 250, 0.15)', borderColor: 'rgba(96, 165, 250, 0.3)', fontSize: '0.82rem' }}
                 >
-                  {dispatching ? '安排排程中...' : '向所有訂閱者發送更新廣播'}
+                  {dispatching ? '加入佇列中...' : '將本次通知加入待寄佇列'}
                 </button>
               </div>
             </form>
