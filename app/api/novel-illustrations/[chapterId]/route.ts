@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { get } from '@vercel/blob';
 import { prisma } from '@/lib/prisma';
 import { chapterIllustrationUrl } from '@/lib/novel-illustration';
-import { novelPrivateStoreConfig } from '@/lib/novel-private-store';
+import { novelPrivateStoreConfig, isPrivateBlobUrl } from '@/lib/novel-private-store';
 import { validateAdminRequest } from '@/lib/auth';
 import { uploadNovelIllustration } from '@/lib/novel-illustration-upload';
 
@@ -29,7 +29,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const result = await get(image.pathname, { access: 'private', ...store, useCache: false,
       abortSignal: AbortSignal.timeout(8000) });
     if (!result || result.statusCode !== 200 ||
-      !/^https:\/\/[a-z0-9-]+\.private\.blob\.vercel-storage\.com\//.test(result.blob.url) ||
+      !isPrivateBlobUrl(result.blob.url) ||
       !['image/png', 'image/jpeg', 'image/webp'].includes(result.blob.contentType)) return unavailable();
     return new NextResponse(result.stream, { headers: { ...headers, 'Content-Type': result.blob.contentType } });
   } catch { return unavailable(); }
