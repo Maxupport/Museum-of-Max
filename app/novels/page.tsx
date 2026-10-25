@@ -5,7 +5,17 @@ import NewsletterSignup from '@/components/NewsletterSignup';
 import styles from './novels.module.css';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: '小說閱讀與訂閱 | Maxupport 私人博物館', description: '免通行碼閱讀小說並訂閱創作更新。' };
+export const metadata = {
+  title: '想請你，先讀一章｜Maxupport 小說閱讀與訂閱',
+  description: '免費試讀《越界之前》與《她沒有說好的那一夜》，也邀請你幫忙測試小說訂閱與更新通知。',
+  openGraph: {
+    title: '想請你，先讀一章。',
+    description: 'Maxupport 的小說訂閱測試｜兩部小說免費試讀，歡迎幫忙試用。',
+    url: 'https://museum-of-max.vercel.app/novels', type: 'website', locale: 'zh_TW',
+    images: [{ url: 'https://museum-of-max.vercel.app/images/social/novel-subscription-test-20261025.png', width: 1733, height: 908, alt: 'Maxupport 邀請你試讀與測試兩部小說訂閱' }],
+  },
+  twitter: { card: 'summary_large_image', title: '想請你，先讀一章。', images: ['https://museum-of-max.vercel.app/images/social/novel-subscription-test-20261025.png'] },
+};
 
 export default async function NovelsPage() {
   const [novels, chapters] = await Promise.all([

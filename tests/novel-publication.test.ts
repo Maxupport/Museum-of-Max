@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/prisma', () => ({ prisma: mocks.db }));
 vi.mock('@/lib/newsletter-queue', () => ({ queuePublicationBatch: mocks.queue }));
 vi.mock('@/lib/novel-image-readiness', () => ({ preparedIllustrationReady: mocks.imageReady }));
-import { chapterHash, publishDueNovelChapters, validatePublicationSlot, novelPublicationStatus, installPublicationSlots, publishNovelPreview, type PublicationSlot } from '@/lib/novel-publication';
+import { chapterHash, publishDueNovelChapters, validatePublicationSlot, novelPublicationStatus, installPublicationSlots, publishNovelPreview, rescheduleNovelDates, type PublicationSlot } from '@/lib/novel-publication';
 
 const prefix = 'novel-publication:v1:slot:';
 const now = new Date('2026-11-04T00:30:00.000Z');
@@ -57,6 +57,27 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('opt-in atomic chapter publication', () => {
+  it('rejects anonymous calendar changes', async () => {
+    const { PATCH } = await import('@/app/api/novel-publication/schedule/route');
+    expect((await PATCH(new NextRequest('https://museum.test/api/novel-publication/schedule', { method: 'PATCH' }))).status).toBe(401);
+  });
+  it('moves dates atomically without changing content or notifying and deduplicates replay', async () => {
+    const slot = seed(['chapter-2'], '2026-11-10T00:30:00.000Z');
+    const changes = [{ id: slot.id, from: slot.publishAt, to: '2026-11-03T00:30:00.000Z' }];
+    expect(await rescheduleNovelDates(changes, new Date('2026-10-25'))).toEqual({ updated: 1, scheduled: 1, notified: false });
+    expect(await rescheduleNovelDates(changes, new Date('2026-10-25'))).toMatchObject({ updated: 0 });
+    expect(mocks.chapters.get('chapter-2')?.isHidden).toBe(true); expect(mocks.queue).not.toHaveBeenCalled();
+  });
+  it('rejects calendar collisions, order reversal, drift and published slots without changes', async () => {
+    const slot = seed(['chapter-2'], '2026-11-10T00:30:00.000Z');
+    mocks.records.set(prefix + 'later', JSON.stringify({ ...slot, id: 'later', publishAt: '2026-11-17T00:30:00.000Z' }));
+    await expect(rescheduleNovelDates([{ id: slot.id, from: slot.publishAt, to: '2026-11-17T00:30:00.000Z' }], new Date('2026-10-25'))).rejects.toThrow('CALENDAR_COLLISION');
+    await expect(rescheduleNovelDates([{ id: slot.id, from: slot.publishAt, to: '2026-11-24T00:30:00.000Z' }], new Date('2026-10-25'))).rejects.toThrow('CALENDAR_ORDER_CHANGED');
+    await expect(rescheduleNovelDates([{ id: slot.id, from: '2026-11-01T00:30:00.000Z', to: '2026-11-03T00:30:00.000Z' }], new Date('2026-10-25'))).rejects.toThrow('CALENDAR_CHANGED');
+    mocks.records.set(prefix + slot.id, JSON.stringify({ ...slot, state: 'published' }));
+    await expect(rescheduleNovelDates([{ id: slot.id, from: slot.publishAt, to: '2026-11-03T00:30:00.000Z' }], new Date('2026-10-25'))).rejects.toThrow('CALENDAR_CHANGED');
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
   it('rejects anonymous preview publication', async () => {
     const { POST } = await import('@/app/api/novel-publication/preview/route');
     expect((await POST(new NextRequest('https://museum.test/api/novel-publication/preview', { method: 'POST' }))).status).toBe(401);

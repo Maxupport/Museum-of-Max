@@ -54,6 +54,34 @@ export async function publishNovelPreview(slotId: string, expectedHashes: Record
   }, { timeout: 25000 });
 }
 
+export async function rescheduleNovelDates(input: { id: string; from: string; to: string }[], now = new Date()) {
+  if (!Array.isArray(input) || !input.length || input.length > 50 || new Set(input.map((x) => x.id)).size !== input.length ||
+    input.some((x) => !x || !/^[\w-]{1,128}$/.test(x.id) || ![x.from, x.to].every((date) => typeof date === 'string' && Number.isFinite(Date.parse(date)) && new Date(date).toISOString() === date) || Date.parse(x.to) <= now.getTime())) throw new Error('INVALID_CALENDAR_CHANGE');
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(726340821)`;
+    const rows = await tx.siteSetting.findMany({ where: { key: { startsWith: PREFIX } } });
+    const slots = rows.map((row) => { const s = validatePublicationSlot(JSON.parse(row.value) as PublicationSlot); if (row.key !== PREFIX + s.id) throw new Error('INVALID_KEY'); return s; });
+    const changed = input.map((change) => {
+      const slot = slots.find((s) => s.id === change.id);
+      if (!slot || slot.state !== 'scheduled' || ![change.from, change.to].includes(slot.publishAt)) throw new Error('CALENDAR_CHANGED');
+      return { ...slot, publishAt: change.to };
+    });
+    const scheduled = slots.filter((s) => s.state === 'scheduled').map((s) => changed.find((c) => c.id === s.id) || s);
+    if (new Set(scheduled.map((s) => s.publishAt)).size !== scheduled.length) throw new Error('CALENDAR_COLLISION');
+    for (const novelId of new Set(changed.map((s) => s.novelId))) {
+      const before = slots.filter((s) => s.novelId === novelId && s.state === 'scheduled').sort((a, b) => a.publishAt.localeCompare(b.publishAt));
+      const after = scheduled.filter((s) => s.novelId === novelId).sort((a, b) => a.publishAt.localeCompare(b.publishAt));
+      if (before.some((s, index) => s.id !== after[index].id)) throw new Error('CALENDAR_ORDER_CHANGED');
+    }
+    let updated = 0;
+    for (const slot of changed) {
+      if (slots.find((s) => s.id === slot.id)!.publishAt === slot.publishAt) continue;
+      await tx.siteSetting.update({ where: { key: PREFIX + slot.id }, data: { value: JSON.stringify(slot) } }); updated++;
+    }
+    return { updated, scheduled: scheduled.length, notified: false };
+  }, { timeout: 25000 });
+}
+
 export function validatePublicationSlot(input: PublicationSlot) {
   if (!input || !/^[\w-]{1,128}$/.test(input.id) || !/^[\w-]{1,128}$/.test(input.novelId) ||
     !Array.isArray(input.chapterIds) || input.chapterIds.length < 1 || input.chapterIds.length > 2 ||
