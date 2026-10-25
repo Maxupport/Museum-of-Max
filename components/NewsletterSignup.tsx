@@ -19,7 +19,7 @@ export default function NewsletterSignup() {
     } catch (error) { setMessage(error instanceof Error ? error.message : '連線失敗，請稍後再試。'); }
     finally { setBusy(false); }
   }
-  return <section className={styles.panel} aria-labelledby="newsletter-heading">
+  return <section id="newsletter" className={styles.panel} aria-labelledby="newsletter-heading">
     <div className={styles.copy}><p className={styles.eyebrow}>LET THE STORY CONTINUE</p><h2 id="newsletter-heading">下一章，寄給你。</h2>
     <p>訂閱生涯擺渡人 Max 的創作，接收歡迎信、小說更新進度與偶爾的網站通告。</p><p className={styles.note}>免費訂閱・隨時可由信內連結取消</p></div>
     <div><form onSubmit={(event) => void submit(event)} className={styles.form}>

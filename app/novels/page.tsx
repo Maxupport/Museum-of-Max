@@ -17,7 +17,7 @@ export default async function NovelsPage() {
       <p className={styles.eyebrow}>MAX&apos;S PRIVATE MUSEUM / FICTION</p>
       <h1>故事，留給願意停下來的你。</h1>
       <p className={styles.intro}>生涯擺渡人 Max 的小說與創作。先讀一章，再決定是否讓下一段故事，走進你的信箱。</p>
-      <a className={styles.textLink} href="#newsletter-heading">訂閱連載更新 <span aria-hidden="true">↗</span></a>
+      <a className={styles.textLink} href="#newsletter">訂閱連載更新 <span aria-hidden="true">↗</span></a>
     </header>
     <section aria-labelledby="novels-heading">
     <div className={styles.sectionHeading}><h2 id="novels-heading">小說作品</h2><span>免費試讀・不需通行碼</span></div>
