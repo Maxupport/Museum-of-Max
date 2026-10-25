@@ -3,3 +3,4 @@
 @media(min-width:1000px){.cover{height:400px}}
 @media(max-width:650px){.page{padding:35px 20px}.hero{padding-bottom:35px}.hero h1{font-size:31px}.intro{font-size:14px}.books{grid-template-columns:1fr;gap:24px}.cover{height:390px}.bookBody{padding:23px}.sectionHeading{align-items:flex-end}.sectionHeading>span{font-size:10px}.bookBody h3{font-size:24px}.footer{flex-direction:column;gap:12px}}
 @media(prefers-reduced-motion:reduce){.coverImage{transition:none}}
+.coverImage{object-fit:contain;background:radial-gradient(ellipse at center,#303b37,#131a19)}
