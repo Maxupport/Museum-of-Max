@@ -1,30 +1,53 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import styles from './novels.module.css';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '小說閱讀與訂閱 | Maxupport 私人博物館', description: '免通行碼閱讀小說並訂閱創作更新。' };
 
 export default async function NovelsPage() {
   const [novels, chapters] = await Promise.all([
-    prisma.novel.findMany({ orderBy: { order: 'asc' }, select: { id: true, title: true } }),
-    prisma.writingsItem.findMany({ where: { category: '小說', isHidden: false }, select: { topic: true } }),
+    prisma.novel.findMany({ orderBy: { order: 'asc' }, select: { id: true, title: true, author: true, description: true, coverUrl: true } }),
+    prisma.writingsItem.findMany({ where: { category: '小說', isHidden: false }, orderBy: { order: 'asc' }, select: { id: true, topic: true, order: true, content: true } }),
   ]);
-  return <main style={{ maxWidth: '800px', margin: '0 auto', padding: '6rem 1.25rem 3rem', color: '#e5e5e5' }}>
-    <h1>小說閱讀與創作訂閱</h1>
-    <p>生涯擺渡人 Max 的創作更新。此頁與公開小說章節不需要通行碼。</p>
-    <NewsletterSignup />
-    <h2>小說作品</h2>
-    <div style={{ display: 'grid', gap: '1rem' }}>
+  return <main className={styles.page}>
+    <header className={styles.hero}>
+      <p className={styles.eyebrow}>MAX&apos;S PRIVATE MUSEUM / FICTION</p>
+      <h1>故事，留給願意停下來的你。</h1>
+      <p className={styles.intro}>生涯擺渡人 Max 的小說與創作。先讀一章，再決定是否讓下一段故事，走進你的信箱。</p>
+      <a className={styles.textLink} href="#newsletter">訂閱連載更新 <span aria-hidden="true">↗</span></a>
+    </header>
+    <section aria-labelledby="novels-heading">
+    <div className={styles.sectionHeading}><h2 id="novels-heading">小說作品</h2><span>免費試讀・不需通行碼</span></div>
+    <div className={styles.books}>
       {novels.map((novel) => {
-        const count = chapters.filter((chapter) => chapter.topic === novel.title).length;
-        return <article key={novel.id} className="glass-panel" style={{ padding: '1.5rem' }}>
+        const published = chapters.filter((chapter) => chapter.topic === novel.title);
+        const first = published.find((chapter) => chapter.order === 1) || published[0];
+        let illustrated = false;
+        try { illustrated = Boolean(first && JSON.parse(first.content).illustration === true); } catch { /* Existing plain-text chapters have no illustration. */ }
+        const cover = novel.coverUrl || (first && illustrated ? `/api/novel-illustrations/${first.id}` : null);
+        const count = published.length;
+        const href = `/museum/creation_lab/novel/${encodeURIComponent(novel.id)}${first ? `?chapterId=${encodeURIComponent(first.id)}` : ''}`;
+        const cadence = novel.title === '越界之前' ? '每週三・四・五更新' : novel.title === '她沒有說好的那一夜' ? '每週二更新' : '創作連載';
+        return <article key={novel.id} className={styles.book}>
+          <Link href={href} className={styles.cover} aria-label={`查看作品：${novel.title}`}>
+            {cover ? <Image src={cover} alt={`《${novel.title}》封面`} width={600} height={900} unoptimized className={styles.coverImage} /> : <div className={styles.coverPlaceholder}>{novel.title}</div>}
+            <span className={styles.coverLabel}>生涯擺渡人 Max · 小說</span>
+          </Link>
+          <div className={styles.bookBody}>
+          <p className={styles.cadence}>{cadence}</p>
           <h3>{novel.title}</h3>
-          <p>{count ? `目前公開 ${count} 章` : '尚未公開章節，敬請期待連載。'}</p>
-          <Link className="museum-btn" href={`/museum/creation_lab/novel/${encodeURIComponent(novel.id)}`}>{count ? '閱讀與訂閱這部作品' : '查看作品'}</Link>
+          <p className={styles.author}>{novel.author || '生涯擺渡人 Max'}</p>
+          <p className={styles.description}>{novel.description || '關於選擇、關係，以及那些未曾說出口的心事。從第一章開始，慢慢走進故事。'}</p>
+          <div className={styles.bookFooter}><span>{count ? '第一章已開放試讀' : '即將開放試讀'}</span><Link className={styles.readButton} href={href}>查看作品 <span aria-hidden="true">→</span></Link></div>
+          </div>
         </article>;
       })}
     </div>
-    <p><Link href="/">返回網站首頁</Link></p>
+    </section>
+    <NewsletterSignup />
+    <footer className={styles.footer}><span>故事持續生長，謝謝你願意同行。</span><Link href="/">返回博物館首頁 ↗</Link></footer>
   </main>;
 }

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import plan from '../config/novel-release-plan.json';
 
 describe('author-approved novel release calendar (not an active scheduler)', () => {
-  it('keeps the unactivated plan explicit', () => {
-    expect(plan.status).toBe('draft-not-active');
+  it('records the installed calendar without replacing the database scheduler', () => {
+    expect(plan.status).toBe('installed-and-enabled');
     expect(plan.timezone).toBe('Asia/Taipei');
     expect(plan.deliveryPolicy.publishBeforeEmail).toBe(true);
     expect(plan.deliveryPolicy.maxRecipientsPerRolling24Hours).toBe(80);
