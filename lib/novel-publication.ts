@@ -11,12 +11,47 @@ export type PublicationSlot = {
   id: string; novelId: string; chapterIds: string[]; publishAt: string;
   state: 'scheduled' | 'published' | 'blocked';
   publishedAt?: string; error?: 'CONTENT_CHANGED';
+  publicationKind?: 'preview';
   // Hash approved text before scheduling; an unexpected later edit must not auto-publish.
   contentHashes: Record<string, string>;
 };
 
 export function chapterHash(content: string) {
   return createHash('sha256').update(content).digest('hex');
+}
+
+// Author-approved first-batch previews: atomically consume the future slot,
+// preserve every later date, and deliberately never create a mail event.
+export async function publishNovelPreview(slotId: string, expectedHashes: Record<string, string>, now = new Date()) {
+  if (!/^[\w-]{1,128}$/.test(slotId) || !expectedHashes || typeof expectedHashes !== 'object') throw new Error('INVALID_PREVIEW');
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(726340821)`;
+    const rows = await tx.siteSetting.findMany({ where: { key: { startsWith: PREFIX } } });
+    const slots = rows.map((row) => {
+      const slot = validatePublicationSlot(JSON.parse(row.value) as PublicationSlot);
+      if (row.key !== PREFIX + slot.id) throw new Error('INVALID_PUBLICATION_SLOT_KEY');
+      return slot;
+    });
+    const slot = slots.find((item) => item.id === slotId);
+    if (!slot || slots.some((other) => other.novelId === slot.novelId && other.publishAt < slot.publishAt) ||
+      Object.keys(expectedHashes).length !== slot.chapterIds.length || slot.chapterIds.some((id) => expectedHashes[id] !== slot.contentHashes[id])) throw new Error('PREVIEW_MISMATCH');
+    const novel = await tx.novel.findUnique({ where: { id: slot.novelId } });
+    const chapters = await tx.writingsItem.findMany({ where: { id: { in: slot.chapterIds } } });
+    const duplicate = slot.state === 'published' && slot.publicationKind === 'preview';
+    if ((!duplicate && (slot.state !== 'scheduled' || Date.parse(slot.publishAt) <= now.getTime())) || !novel ||
+      chapters.length !== slot.chapterIds.length || chapters.some((chapter) => chapter.category !== '小說' || chapter.topic !== novel.title ||
+        chapterHash(chapter.content) !== slot.contentHashes[chapter.id] || chapter.isHidden !== !duplicate)) throw new Error('PREVIEW_CONTENT_MISMATCH');
+    if (duplicate) return { published: 0, duplicate: true, notified: false };
+    for (const chapter of chapters.filter((item) => chapterIllustrationUrl(item.id, item.content))) {
+      if (!await preparedIllustrationReady(tx, chapter.id)) throw new Error('PREVIEW_IMAGE_NOT_READY');
+    }
+    for (const chapter of chapters) {
+      const changed = await tx.writingsItem.updateMany({ where: { id: chapter.id, isHidden: true, category: '小說', topic: novel.title, content: chapter.content }, data: { isHidden: false } });
+      if (changed.count !== 1) throw new Error('PREVIEW_CHANGED_CONCURRENTLY');
+    }
+    await tx.siteSetting.update({ where: { key: PREFIX + slot.id }, data: { value: JSON.stringify({ ...slot, state: 'published', publicationKind: 'preview', publishedAt: now.toISOString() }) } });
+    return { published: chapters.length, duplicate: false, notified: false };
+  }, { timeout: 25000 });
 }
 
 export function validatePublicationSlot(input: PublicationSlot) {

@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/prisma', () => ({ prisma: mocks.db }));
 vi.mock('@/lib/newsletter-queue', () => ({ queuePublicationBatch: mocks.queue }));
 vi.mock('@/lib/novel-image-readiness', () => ({ preparedIllustrationReady: mocks.imageReady }));
-import { chapterHash, publishDueNovelChapters, validatePublicationSlot, novelPublicationStatus, installPublicationSlots, type PublicationSlot } from '@/lib/novel-publication';
+import { chapterHash, publishDueNovelChapters, validatePublicationSlot, novelPublicationStatus, installPublicationSlots, publishNovelPreview, type PublicationSlot } from '@/lib/novel-publication';
 
 const prefix = 'novel-publication:v1:slot:';
 const now = new Date('2026-11-04T00:30:00.000Z');
@@ -57,6 +57,35 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('opt-in atomic chapter publication', () => {
+  it('rejects anonymous preview publication', async () => {
+    const { POST } = await import('@/app/api/novel-publication/preview/route');
+    expect((await POST(new NextRequest('https://museum.test/api/novel-publication/preview', { method: 'POST' }))).status).toBe(401);
+    expect(mocks.db.$transaction).not.toHaveBeenCalled();
+  });
+  it('publishes the approved first batch as a preview with no mail, and safely deduplicates', async () => {
+    const slot = seed(['prologue', 'chapter-1']);
+    const early = new Date('2026-10-25');
+    expect(await publishNovelPreview(slot.id, slot.contentHashes, early)).toEqual({ published: 2, duplicate: false, notified: false });
+    expect(mocks.chapters.get('chapter-1')?.isHidden).toBe(false);
+    expect(await publishNovelPreview(slot.id, slot.contentHashes, early)).toEqual({ published: 0, duplicate: true, notified: false });
+    expect((await publishDueNovelChapters(now)).published).toBe(0);
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
+  it('rejects a later preview batch, unapproved hashes and unavailable illustrations', async () => {
+    const first = seed(['chapter-1']);
+    const later = { ...first, id: 'later', publishAt: '2026-11-05T00:30:00.000Z' };
+    mocks.records.set(prefix + later.id, JSON.stringify(later));
+    await expect(publishNovelPreview(later.id, later.contentHashes, new Date('2026-10-25'))).rejects.toThrow('PREVIEW_MISMATCH');
+    await expect(publishNovelPreview(first.id, {}, new Date('2026-10-25'))).rejects.toThrow('PREVIEW_MISMATCH');
+    const chapter = mocks.chapters.get('chapter-1')!;
+    chapter.content = JSON.stringify({ textContent: 'text', illustration: true });
+    first.contentHashes[chapter.id] = chapterHash(chapter.content);
+    mocks.records.set(prefix + first.id, JSON.stringify(first));
+    mocks.imageReady.mockResolvedValue(false);
+    await expect(publishNovelPreview(first.id, first.contentHashes, new Date('2026-10-25'))).rejects.toThrow('PREVIEW_IMAGE_NOT_READY');
+    expect(mocks.chapters.get(chapter.id)?.isHidden).toBe(true);
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
   it('rejects anonymous schedule installation before accessing the database', async () => {
     const { POST } = await import('@/app/api/novel-publication/schedule/route');
     const response = await POST(new NextRequest('https://museum.test/api/novel-publication/schedule', { method: 'POST' }));

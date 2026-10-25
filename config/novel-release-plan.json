@@ -1,5 +1,5 @@
 {
-  "status": "draft-not-active",
+  "status": "installed-and-enabled",
   "timezone": "Asia/Taipei",
   "publicationTime": "08:30",
   "deliveryPolicy": {
@@ -79,7 +79,7 @@
       "title": "越界之前",
       "author": "生涯擺渡人 Max",
       "firstPublicationDate": "2026-11-04",
-      "status": "author-approved-replacement-not-executed",
+      "status": "approved-final-imported-hidden-schedule-enabled",
       "existingChapterPolicy": "Back up the 8 existing public chapters, replace with the approved final manuscript, restart at chapter 1, and keep unreleased chapters private.",
       "firstNumberedChapter": 1,
       "chapters": [
@@ -226,10 +226,10 @@
     }
   ],
   "notes": [
-    "Planning artifact only; not a running scheduler.",
+    "Calendar mirror: 47 production slots installed and publication enabled on 2026-10-25; execution is handled by the signed Google worker, not this file.",
     "Tuesday through Friday each have one release while both novels have unpublished chapters.",
     "November 1 is Sunday; the first eligible release day is November 3.",
-    "Newsletter Google authorization and delivery-worker acceptance passed on 2026-10-24; novel source import and automatic publication scheduling are still not activated.",
+    "Newsletter acceptance passed on 2026-10-24. Both final manuscripts and private chapter illustrations were imported and verified; all future slots are enabled as of 2026-10-25.",
     "Do not promise November 1 chapter publication: it is Sunday and the approved release weekdays are Tuesday through Friday."
   ],
   "requestedStartDate": "2026-11-01",
