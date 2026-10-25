@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { sendChapterUpdateEmail, sendWelcomeEmail } from '@/lib/email';
 import { callGoogleBridge, newsletterConfig, isOwnerTestAddress, NEWSLETTER_LIMIT, NEWSLETTER_SENDER, NEWSLETTER_WINDOW_MS, SUBSCRIBER_SHEET_ID } from '@/lib/newsletter-config';
 import { chapterIllustrationUrl } from '@/lib/novel-illustration';
+import { completedSubscriptionDay, ownerSubscriptionDigestMessage, taipeiDate, type OwnerSubscriptionDigest } from '@/lib/owner-subscription-digest';
 
 // Transitional durable outbox in the existing private key/value table. No schema push is needed.
 const PREFIX = 'newsletter:v1:';
@@ -13,7 +14,8 @@ const CAMPAIGN = `${PREFIX}campaign:`;
 const QUOTA = `${PREFIX}quota:`;
 type Tx = Prisma.TransactionClient;
 export type Job = {
-  id: string; kind: 'welcome' | 'update' | 'test' | 'sync' | 'publication'; subscriberId?: string; chapterId?: string;
+  id: string; kind: 'welcome' | 'update' | 'test' | 'sync' | 'publication' | 'owner-digest'; subscriberId?: string; chapterId?: string;
+  digest?: OwnerSubscriptionDigest;
   campaignId?: string; novelTitle?: string; chapterIds?: string[]; novelId?: string; state: 'pending' | 'processing' | 'sent' | 'canceled' | 'uncertain';
   createdAt: number; reservedAt?: number; finishedAt?: number; leaseId?: string; notBefore?: number;
 };
@@ -36,6 +38,31 @@ async function locked<T>(operation: (tx: Tx) => Promise<T>) {
 async function allJobs(tx: Tx = prisma) {
   const rows = await tx.siteSetting.findMany({ where: { key: { startsWith: JOB } } });
   return rows.map((row) => JSON.parse(row.value) as Job);
+}
+
+export async function queueDailyOwnerDigest(now = new Date()) {
+  const config = newsletterConfig();
+  if (!config.configured || !config.enabled) return { queued: false, reason: 'disabled' };
+  return locked(async (tx) => {
+    const baselineKey = 'owner-subscription-digest:v1:starts-on';
+    const baseline = await tx.siteSetting.findUnique({ where: { key: baselineKey } });
+    if (!baseline) {
+      await tx.siteSetting.create({ data: { key: baselineKey, value: taipeiDate(now) } });
+      return { queued: false, reason: 'initialized-no-backfill' };
+    }
+    const day = completedSubscriptionDay(now);
+    if (!day || day.date < baseline.value) return { queued: false, reason: 'not-due' };
+    const markerKey = `owner-subscription-digest:v1:checked:${day.date}`;
+    if (await tx.siteSetting.findUnique({ where: { key: markerKey } })) return { queued: false, reason: 'already-checked' };
+    const [newSubscribers, activeSubscribers, totalSubscribers] = await Promise.all([
+      tx.subscriber.count({ where: { createdAt: { gte: day.start, lt: day.end } } }),
+      tx.subscriber.count({ where: { active: true } }), tx.subscriber.count(),
+    ]);
+    const digest = { date: day.date, newSubscribers, activeSubscribers, totalSubscribers };
+    if (newSubscribers > 0) await save(tx, { id: hash(`owner-digest:${day.date}`), kind: 'owner-digest', digest, state: 'pending', createdAt: now.getTime() });
+    await tx.siteSetting.create({ data: { key: markerKey, value: JSON.stringify({ checkedAt: now.toISOString(), newSubscribers, queued: newSubscribers > 0 }) } });
+    return { queued: newSubscribers > 0, reason: newSubscribers > 0 ? 'queued' : 'no-new-subscribers' };
+  });
 }
 
 export async function queueSubscriber(tx: Tx, subscriberId: string, welcome = false, novelTitle?: string) {
@@ -110,6 +137,7 @@ export async function newsletterStatus() {
   const jobs = await allJobs();
   const reservations = await reservationTimes();
   const heartbeat = await prisma.siteSetting.findUnique({ where: { key: 'newsletter:v1:worker:last-run' } });
+  const digestBaseline = await prisma.siteSetting.findUnique({ where: { key: 'owner-subscription-digest:v1:starts-on' } });
   const counts = { pending: 0, processing: 0, sent: 0, canceled: 0, uncertain: 0, syncPending: 0 };
   for (const job of jobs) {
     counts[job.state]++;
@@ -129,6 +157,7 @@ export async function newsletterStatus() {
     ...counts, configured: config.configured, enabled: config.enabled, syncEnabled: config.syncEnabled,
     testOnly: config.testOnly, sender: NEWSLETTER_SENDER, dailyLimit: NEWSLETTER_LIMIT,
     autoUpdatesEnabled: config.autoUpdatesEnabled,
+    ownerDigest: { enabled: config.configured && config.enabled, startsOn: digestBaseline?.value || null, schedule: '00:05 Asia/Taipei', onlyWhenNewSubscribers: true },
     usedInLast24Hours: reservations.length, remaining: Math.max(0, NEWSLETTER_LIMIT - reservations.length),
     nextSlotAt: reservations.length >= NEWSLETTER_LIMIT ? new Date(reservations[0] + NEWSLETTER_WINDOW_MS).toISOString() : null,
     sheetUrl: `https://docs.google.com/spreadsheets/d/${SUBSCRIBER_SHEET_ID}/edit`,
@@ -154,7 +183,7 @@ async function claim() {
     candidates.sort((a, b) => a.createdAt - b.createdAt || Number(b.kind === 'sync') - Number(a.kind === 'sync') || a.id.localeCompare(b.id));
     let job: Job | undefined;
     for (const candidate of candidates) {
-      if (config.testOnly && !['sync', 'publication', 'test'].includes(candidate.kind)) {
+      if (config.testOnly && !['sync', 'publication', 'test', 'owner-digest'].includes(candidate.kind)) {
         const reader = candidate.subscriberId ? await tx.subscriber.findUnique({ where: { id: candidate.subscriberId }, select: { email: true } }) : null;
         if (!reader || !isOwnerTestAddress(reader.email)) continue;
       }
@@ -213,6 +242,14 @@ export async function processNewsletterQueue(maxJobs = 3) {
         try { await queuePublishedUpdate(novel.id, [chapter.id], job.id); }
         catch (error) { if (!(error instanceof Error && error.message === 'NO_SUBSCRIBERS')) throw error; }
         await finish(job, 'sent'); continue;
+      }
+      if (job.kind === 'owner-digest') {
+        if (!job.digest || job.id !== hash(`owner-digest:${job.digest.date}`)) throw new Error('Invalid owner digest');
+        const message = ownerSubscriptionDigestMessage(job.digest);
+        const reply = await callGoogleBridge({ operation: 'send', jobId: job.id, to: NEWSLETTER_SENDER, ...message });
+        if (reply.status === 'deferred') { await finish(job, 'pending', 300000); break; }
+        if (reply.status !== 'sent') throw new Error('Owner digest result uncertain');
+        await finish(job, 'sent'); result.sent++; continue;
       }
       // Always re-read the authoritative subscriber state immediately before sending.
       const subscriber = job.subscriberId ? await prisma.subscriber.findUnique({ where: { id: job.subscriberId } }) : null;

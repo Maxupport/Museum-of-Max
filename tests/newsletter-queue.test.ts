@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   db: {
     $transaction: vi.fn(), $queryRaw: vi.fn(),
     siteSetting: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), upsert: vi.fn(), updateMany: vi.fn() },
-    subscriber: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    subscriber: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
     novel: { findUnique: vi.fn(), upsert: vi.fn() },
     writingsItem: { findUnique: vi.fn(), findMany: vi.fn() },
   },
@@ -46,6 +46,8 @@ beforeEach(() => {
   mocks.db.subscriber.findMany.mockImplementation(async ({ where }) => [...mocks.readers.values()].filter((reader) =>
     (!where?.active || reader.active) && (!where?.novelId || where.novelId.in.includes(reader.novelId))));
   mocks.db.subscriber.findUnique.mockImplementation(async ({ where }) => mocks.readers.get(where.id) || null);
+  mocks.db.subscriber.count.mockImplementation(async (args) => [...mocks.readers.values()].filter((reader) =>
+    (!args?.where?.active || reader.active) && (!args?.where?.createdAt || (reader.createdAt >= args.where.createdAt.gte && reader.createdAt < args.where.createdAt.lt))).length);
   mocks.db.subscriber.update.mockImplementation(async ({ where, data }) => {
     const reader = mocks.readers.get(where.id); if (!reader) throw new Error('Missing reader');
     Object.assign(reader, data); return reader;
@@ -77,6 +79,53 @@ const campaign = { novelTitle: '測試作品', chapterTitle: '本次更新至第
 function jobs() { return [...mocks.records].filter(([key]) => key.startsWith('newsletter:v1:job:')).map(([, value]) => JSON.parse(value)); }
 
 describe('durable newsletter outbox', () => {
+  it('initializes owner reports without backfilling or sending an old report', async () => {
+    readers(2); const { queueDailyOwnerDigest } = await import('@/lib/newsletter-queue');
+    expect(await queueDailyOwnerDigest()).toMatchObject({ reason: 'initialized-no-backfill' });
+    expect(await queueDailyOwnerDigest()).toMatchObject({ reason: 'not-due' });
+    expect(jobs()).toHaveLength(0); expect(mocks.bridge).not.toHaveBeenCalled();
+  });
+  it('queues one prior-day report after Taipei 00:05 and sends only to the owner with the Sheet link', async () => {
+    readers(2); const { queueDailyOwnerDigest, processNewsletterQueue } = await import('@/lib/newsletter-queue');
+    await queueDailyOwnerDigest();
+    vi.setSystemTime(new Date('2026-10-23T16:04:59Z'));
+    expect((await queueDailyOwnerDigest()).queued).toBe(false);
+    vi.setSystemTime(new Date('2026-10-23T16:05:00Z'));
+    await Promise.all([queueDailyOwnerDigest(), queueDailyOwnerDigest()]);
+    expect(jobs()).toHaveLength(1); expect(jobs()[0].digest).toEqual({ date: '2026-10-23', newSubscribers: 2, activeSubscribers: 2, totalSubscribers: 2 });
+    expect(await processNewsletterQueue()).toMatchObject({ sent: 1 });
+    const message = mocks.bridge.mock.calls[0][0];
+    expect(message.to).toBe('maxupport@gmail.com'); expect(message.subject).toContain('2026-10-23 新增 2 人');
+    expect(message.html).toContain('https://docs.google.com/spreadsheets/d/'); expect(message.html).not.toContain('reader-0@example.test');
+    await queueDailyOwnerDigest(); await processNewsletterQueue(); expect(mocks.bridge).toHaveBeenCalledTimes(1);
+  });
+  it('does not send an owner report when yesterday had no new registrations', async () => {
+    const { queueDailyOwnerDigest, processNewsletterQueue } = await import('@/lib/newsletter-queue');
+    await queueDailyOwnerDigest(); vi.setSystemTime(new Date('2026-10-23T16:05:00Z'));
+    expect(await queueDailyOwnerDigest()).toMatchObject({ reason: 'no-new-subscribers' });
+    expect(jobs()).toHaveLength(0); await processNewsletterQueue(); expect(mocks.bridge).not.toHaveBeenCalled();
+  });
+  it('counts the complete prior day with an inclusive start and exclusive end', async () => {
+    readers(3); const { queueDailyOwnerDigest } = await import('@/lib/newsletter-queue');
+    mocks.readers.get('reader-0')!.createdAt = new Date('2026-10-22T16:00:00Z');
+    mocks.readers.get('reader-1')!.createdAt = new Date('2026-10-23T15:59:59Z');
+    mocks.readers.get('reader-2')!.createdAt = new Date('2026-10-23T16:00:00Z');
+    await queueDailyOwnerDigest(); vi.setSystemTime(new Date('2026-10-23T16:05:00Z')); await queueDailyOwnerDigest();
+    expect(jobs()[0].digest).toEqual({ date: '2026-10-23', newSubscribers: 2, activeSubscribers: 3, totalSubscribers: 3 });
+  });
+  it('keeps the owner report pending when the shared rolling 80-attempt quota is full', async () => {
+    readers(1); const { queueDailyOwnerDigest, processNewsletterQueue } = await import('@/lib/newsletter-queue');
+    await queueDailyOwnerDigest(); vi.setSystemTime(new Date('2026-10-23T16:05:00Z')); await queueDailyOwnerDigest();
+    for (let i = 0; i < 80; i++) mocks.records.set(`newsletter:v1:quota:${i}`, String(Date.now()));
+    await processNewsletterQueue(); expect(mocks.bridge).not.toHaveBeenCalled(); expect(jobs()[0].state).toBe('pending');
+  });
+  it('never automatically resends an ambiguous owner report', async () => {
+    readers(1); const { queueDailyOwnerDigest, processNewsletterQueue } = await import('@/lib/newsletter-queue');
+    await queueDailyOwnerDigest(); vi.setSystemTime(new Date('2026-10-23T16:05:00Z')); await queueDailyOwnerDigest();
+    mocks.bridge.mockRejectedValue(new Error('timeout'));
+    expect(await processNewsletterQueue()).toMatchObject({ uncertain: 1 });
+    await queueDailyOwnerDigest(); await processNewsletterQueue(); expect(mocks.bridge).toHaveBeenCalledTimes(1);
+  });
   it('queues one recipient per update, deduplicates retries and rejects changed content under the same id', async () => {
     readers(3); const { queueCampaign } = await import('@/lib/newsletter-queue');
     expect(await queueCampaign(campaign, 'update-1')).toMatchObject({ queuedCount: 3, duplicate: false });

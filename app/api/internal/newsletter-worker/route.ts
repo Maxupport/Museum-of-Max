@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyWorkerRequest } from '@/lib/newsletter-config';
-import { processNewsletterQueue } from '@/lib/newsletter-queue';
+import { processNewsletterQueue, queueDailyOwnerDigest } from '@/lib/newsletter-queue';
 import { prisma } from '@/lib/prisma';
 import { publishDueNovelChapters } from '@/lib/novel-publication';
 
@@ -11,6 +11,8 @@ export async function POST(request: NextRequest) {
   if (body !== '{}' || !verifyWorkerRequest(body, request.headers)) return NextResponse.json({ ok: false }, { status: 401 });
   try {
     await publishDueNovelChapters();
+    try { await queueDailyOwnerDigest(); }
+    catch { console.error('[Newsletter] Owner digest scheduling unavailable'); }
     const data = await processNewsletterQueue(8);
     const timestamp = new Date().toISOString();
     await prisma.siteSetting.upsert({ where: { key: 'newsletter:v1:worker:last-run' },
