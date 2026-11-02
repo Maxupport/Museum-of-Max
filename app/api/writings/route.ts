@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { validateAdminRequest } from '@/lib/auth';
 import { queuePublication } from '@/lib/newsletter-queue';
 import { kickNewsletterQueue } from '@/lib/newsletter-kick';
+import { articlePublicationTimes } from '@/lib/article-publication-times';
 
 export const maxDuration = 60;
 
@@ -36,7 +37,14 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       orderBy: [{ isPinned: 'desc' }, { order: 'asc' }, { createdAt: 'desc' }],
     });
-    return NextResponse.json({ ok: true, data: writings });
+    if (!isAdmin) return NextResponse.json({ ok: true, data: writings });
+    try {
+      const times = await articlePublicationTimes();
+      return NextResponse.json({ ok: true, data: writings.map((item) => ({ ...item, publication: times[item.id] || null })), publicationTimingAvailable: true }, { headers: { 'Cache-Control': 'private, no-store' } });
+    } catch {
+      // Keep editing available on a timing read failure, but never call it "unscheduled".
+      return NextResponse.json({ ok: true, data: writings, publicationTimingAvailable: false }, { headers: { 'Cache-Control': 'private, no-store' } });
+    }
   } catch (error) {
     console.error('Fetch Writings Error:', error);
     return NextResponse.json({ ok: false, error: '讀取文章失敗' }, { status: 500 });
