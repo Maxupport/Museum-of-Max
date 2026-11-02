@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Key, BarChart3, LogOut, Plus, Trash2, Shield, Eye, RefreshCw, CheckSquare, Square, Briefcase, TrendingUp, Edit3, X, Upload, Mail, Send, Music, Sparkles, BookOpen, Bot, Users, Globe, Cpu, Radio, Activity, Compass, Smartphone, Monitor, Download, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { EXHIBIT_MAP, ALL_EXHIBIT_KEYS, PASSCODE_PERM_KEYS } from '@/lib/constants';
 import NewsletterSettingsPanel from '@/components/NewsletterSettingsPanel';
+import { articlePublicationLabel, type ArticlePublicationTiming } from '@/lib/article-publication-display';
 
 interface PasscodeItem {
   id: string;
@@ -140,6 +141,7 @@ interface WritingsItemData {
   views?: number;
   order: number;
   createdAt?: string;
+  publication?: ArticlePublicationTiming | null;
 }
 
 interface NovelItemData {
@@ -642,6 +644,7 @@ export default function AdminDashboardPage() {
 
   // Writings / Universal Articles state
   const [writingsItems, setWritingsItems] = useState<WritingsItemData[]>([]);
+  const [publicationTimingAvailable, setPublicationTimingAvailable] = useState(false);
   const [wExhibitId, setWExhibitId] = useState('finance_insurance');
   const [wCategory, setWCategory] = useState('投資');
   const [wTitle, setWTitle] = useState('');
@@ -757,8 +760,10 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.ok) {
         setWritingsItems(data.data.map((item: WritingsItemData) => item.category === 'FB文章備份' ? { ...item, category: '社群隨筆' } : item));
+        setPublicationTimingAvailable(data.publicationTimingAvailable === true);
       }
     } catch (e) {
+      setPublicationTimingAvailable(false);
       console.error(e);
     }
   }, []);
@@ -5017,7 +5022,7 @@ export default function AdminDashboardPage() {
                     }}>
                       <span style={{ flex: 1 }}>文章 / 音樂作品主題與標題</span>
                       <span style={{ width: '130px', textAlign: 'center' }}>點擊率 / 類型</span>
-                      <span style={{ width: '110px', textAlign: 'center' }}>建立日期</span>
+                      <span style={{ width: '190px', textAlign: 'center' }}>預定／實際上線（台灣）</span>
                       <span style={{ width: '230px', textAlign: 'center' }}>管理操作</span>
                     </div>
 
@@ -5094,10 +5099,13 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
 
-                        {/* 中間：建立時間 */}
-                        <div style={{ flexShrink: 0, width: '110px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>
-                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW') : '近期'}
+                        {/* 唯讀上線時間；不使用建立／編輯時間冒充發布時間。 */}
+                        <div style={{ flexShrink: 0, width: '190px', textAlign: 'center', fontSize: '0.78rem', lineHeight: 1.7 }}>
+                          <span style={{ display: 'block', color: item.type === 'writing' && item.rawWritingItem.publication?.state === 'scheduled' ? '#e4c58d' : 'var(--text-secondary)' }}>
+                            {articlePublicationLabel(item.type === 'writing' ? item.rawWritingItem.publication || undefined : undefined, Boolean(item.isHidden), item.type === 'music' || publicationTimingAvailable)}
+                          </span>
+                          <span style={{ display: 'block', color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>
+                            建立：{item.createdAt ? new Date(item.createdAt).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' }) : '未記錄'}
                           </span>
                         </div>
 
