@@ -863,6 +863,7 @@ export default function AdminDashboardPage() {
           fbDate: isVocalCategory ? '' : wFbDate,
           excerpt: wExcerpt,
           content: finalContent,
+          approveScheduledRevision: Boolean(editingWritingId && wCategory === '小說'),
           youtubeUrl: isVocalCategory ? (wVocalVersions[0]?.youtubeUrl || wYoutubeUrl) : wYoutubeUrl,
           order: wOrder,
         }),
@@ -5992,6 +5993,11 @@ export default function AdminDashboardPage() {
                   </>
                 )}
 
+                {editingWritingId && wCategory === '小說' && (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    儲存會保留原配圖，並將這次內文設為排程使用的版本；原定上線時間不變，尚未到期的章節會繼續隱藏。
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                   <button
                     type="submit"
