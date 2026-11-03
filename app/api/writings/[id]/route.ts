@@ -4,6 +4,7 @@ import { validateAdminRequest } from '@/lib/auth';
 import { getArticle } from '@/lib/articles';
 import { queuePublication } from '@/lib/newsletter-queue';
 import { kickNewsletterQueue } from '@/lib/newsletter-kick';
+import { approveScheduledRevision, preserveChapterIllustration } from '@/lib/novel-publication-edit';
 
 export const maxDuration = 60;
 
@@ -39,8 +40,12 @@ export async function PUT(
     const { exhibitId, title, category, topic, fbUrl, fbDate, excerpt, content, youtubeUrl, order, isPinned, isHidden, views } = body;
 
     if (body.notifySubscribers != null && typeof body.notifySubscribers !== 'boolean') return NextResponse.json({ ok: false }, { status: 400 });
+    if (body.approveScheduledRevision != null && typeof body.approveScheduledRevision !== 'boolean') return NextResponse.json({ ok: false }, { status: 400 });
     const updated = await prisma.$transaction(async (tx) => {
-      const before = await tx.writingsItem.findUnique({ where: { id }, select: { isHidden: true } });
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(726340821)`;
+      const before = await tx.writingsItem.findUnique({ where: { id } });
+      const savedContent = before && typeof content === 'string' && content.trim()
+        ? await preserveChapterIllustration(tx, before, content.trim()) : undefined;
       const item = await tx.writingsItem.update({
       where: { id },
       data: {
@@ -51,7 +56,7 @@ export async function PUT(
         fbUrl: fbUrl !== undefined ? (fbUrl ? fbUrl.trim() : null) : undefined,
         fbDate: fbDate !== undefined ? (fbDate ? fbDate.trim() : null) : undefined,
         excerpt: excerpt !== undefined ? (excerpt ? excerpt.trim() : null) : undefined,
-        content: content ? content.trim() : undefined,
+        content: savedContent,
         youtubeUrl: youtubeUrl !== undefined ? (youtubeUrl ? youtubeUrl.trim() : null) : undefined,
         isPinned: typeof isPinned === 'boolean' ? isPinned : undefined,
         isHidden: typeof isHidden === 'boolean' ? isHidden : undefined,
@@ -59,10 +64,11 @@ export async function PUT(
         order: typeof order === 'number' ? order : undefined,
       },
       });
+      if (before && savedContent && body.approveScheduledRevision === true) await approveScheduledRevision(tx, before, item);
       // Editing a typo is not a new release. Only first publication/unhiding captures this event.
       if (before?.isHidden && !item.isHidden && item.category === '小說' && item.topic && body.notifySubscribers !== false) await queuePublication(tx, item.id);
       return item;
-    });
+    }, { timeout: 25000 });
 
     if (updated.category === '小說' && !updated.isHidden && body.notifySubscribers !== false) kickNewsletterQueue();
     return NextResponse.json({ ok: true, data: updated });
