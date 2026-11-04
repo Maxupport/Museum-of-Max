@@ -88,6 +88,7 @@ export default function NovelReaderClient({
   const [subHoneypot, setSubHoneypot] = useState('');
   const [subscribing, setSubscribing] = useState(false);
   const [subMessage, setSubMessage] = useState('');
+  const [subMessageType, setSubMessageType] = useState<'success' | 'error'>('success');
   const [originUrl, setOriginUrl] = useState('');
 
   // 權限驗證：開放公開閱讀連載小說，僅記錄策展人身分供進階操作
@@ -140,6 +141,11 @@ export default function NovelReaderClient({
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subEmail || !subEmail.includes('@')) return;
+    if (!novel?.id) {
+      setSubMessageType('error');
+      setSubMessage('作品尚未載入完成，請稍後再試。');
+      return;
+    }
 
     setSubscribing(true);
     setSubMessage('');
@@ -150,7 +156,7 @@ export default function NovelReaderClient({
         body: JSON.stringify({
           email: subEmail,
           name: subName || null,
-          novelId,
+          novelId: novel.id,
           novelTitle: novel?.title || '連載作品',
           sourceChapter: currentChapterIdx + 1,
           website_url: subHoneypot, // 蜜罐欄位
@@ -159,13 +165,16 @@ export default function NovelReaderClient({
       const data = await res.json();
 
       if (data.ok) {
+        setSubMessageType('success');
         setSubMessage('🎉 ' + (data.message || '感謝訂閱！新章節發布時將寄信通知您。'));
         setSubEmail('');
         setSubName('');
       } else {
+        setSubMessageType('error');
         setSubMessage(data.error || '訂閱失敗');
       }
     } catch {
+      setSubMessageType('error');
       setSubMessage('連線錯誤，請稍後再試');
     } finally {
       setSubscribing(false);
@@ -810,7 +819,7 @@ export default function NovelReaderClient({
               </div>
             </form>
             {subMessage && (
-              <div style={{ color: '#4ade80', fontSize: '0.85rem', marginTop: '1rem', background: 'rgba(74, 222, 128, 0.1)', padding: '0.6rem 1rem', borderRadius: '4px', border: '1px solid rgba(74, 222, 128, 0.2)' }}>
+              <div role={subMessageType === 'error' ? 'alert' : 'status'} style={{ color: subMessageType === 'error' ? '#fca5a5' : '#4ade80', fontSize: '0.85rem', marginTop: '1rem', background: subMessageType === 'error' ? 'rgba(248, 113, 113, 0.1)' : 'rgba(74, 222, 128, 0.1)', padding: '0.6rem 1rem', borderRadius: '4px', border: `1px solid ${subMessageType === 'error' ? 'rgba(248, 113, 113, 0.2)' : 'rgba(74, 222, 128, 0.2)'}` }}>
                 {subMessage}
               </div>
             )}

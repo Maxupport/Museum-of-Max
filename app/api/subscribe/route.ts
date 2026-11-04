@@ -53,7 +53,14 @@ export async function POST(request: NextRequest) {
     const existing = await prisma.subscriber.findUnique({ where: { email: cleanEmail }, select: { id: true } });
     if (existing) return subscriptionResponse();
 
-    const selectedNovel = novelId && novelId !== 'all' ? await prisma.novel.findUnique({ where: { id: novelId }, select: { id: true, title: true } }) : null;
+    let selectedNovel = novelId && novelId !== 'all' ? await prisma.novel.findUnique({ where: { id: novelId }, select: { id: true, title: true } }) : null;
+    if (novelId && novelId !== 'all' && !selectedNovel) {
+      // Older reader URLs use a title (sometimes URL-encoded) instead of the
+      // database ID. Resolve it to a real novel; never store the URL alias.
+      let title = novelId;
+      try { title = decodeURIComponent(novelId); } catch { /* 無效編碼無法匹配作品，依下方驗證拒絕。 */ }
+      selectedNovel = await prisma.novel.findUnique({ where: { title }, select: { id: true, title: true } });
+    }
     if (novelId && novelId !== 'all' && !selectedNovel) return NextResponse.json({ ok: false, error: '找不到指定作品，請重新選擇訂閱範圍。' }, { status: 400 });
 
     // 2. 建立新訂閱者 (包含產生專屬退訂金鑰)
@@ -62,7 +69,7 @@ export async function POST(request: NextRequest) {
       data: {
         email: cleanEmail,
         name: cleanName,
-        novelId: novelId || 'all',
+        novelId: selectedNovel?.id || 'all',
         sourceChapter: cleanChapter,
         active: true,
       },
