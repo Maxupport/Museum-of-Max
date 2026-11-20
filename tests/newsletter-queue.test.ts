@@ -79,6 +79,17 @@ const campaign = { novelTitle: '測試作品', chapterTitle: '本次更新至第
 function jobs() { return [...mocks.records].filter(([key]) => key.startsWith('newsletter:v1:job:')).map(([, value]) => JSON.parse(value)); }
 
 describe('durable newsletter outbox', () => {
+  it('整輪剩餘時間不足時不領取新工作，也不呼叫寄信服務', async () => {
+    readers(1);const queue=await import('@/lib/newsletter-queue');await queue.queueCampaign(campaign,'deadline-test',true);
+    expect(await queue.processNewsletterQueue(3,{deadlineAt:Date.now()+10000,requestId:'deadline-test'})).toMatchObject({sent:0});
+    expect(jobs()[0].state).toBe('pending');expect(mocks.bridge).not.toHaveBeenCalled();
+  });
+  it('閱讀頁檢查後剩餘時間不足，已領取工作回到待處理，不誤標寄送不明', async () => {
+    readers(1);const queue=await import('@/lib/newsletter-queue');await queue.queueCampaign(campaign,'late-test',true);const started=Date.now();
+    vi.mocked(fetch).mockImplementationOnce(async()=>{vi.setSystemTime(started+20000);return new Response('<html>ready</html>',{headers:{'content-type':'text/html'}});});
+    expect(await queue.processNewsletterQueue(3,{deadlineAt:started+30000,requestId:'late-test'})).toMatchObject({sent:0,uncertain:0});
+    expect(jobs()[0].state).toBe('pending');expect(mocks.bridge).not.toHaveBeenCalled();
+  });
   it('initializes owner reports without backfilling or sending an old report', async () => {
     readers(2); const { queueDailyOwnerDigest } = await import('@/lib/newsletter-queue');
     expect(await queueDailyOwnerDigest()).toMatchObject({ reason: 'initialized-no-backfill' });

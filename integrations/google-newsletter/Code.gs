@@ -114,19 +114,67 @@ function deliver(book, properties, payload) {
   }
 }
 
+function acquireWebsiteWorkerLease(properties, requestId) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return false;
+  try {
+    let previous = null;
+    try { previous = JSON.parse(properties.getProperty('WEBSITE_WORKER_LEASE_V1') || 'null'); } catch (_) {}
+    if (previous && previous.expiresAt > Date.now()) return false;
+    properties.setProperty('WEBSITE_WORKER_LEASE_V1', JSON.stringify({ requestId: requestId, expiresAt: Date.now() + 600000 }));
+    return true;
+  } finally { lock.releaseLock(); }
+}
+
+function releaseWebsiteWorkerLease(properties, requestId) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try {
+    const previous = JSON.parse(properties.getProperty('WEBSITE_WORKER_LEASE_V1') || 'null');
+    if (previous && previous.requestId === requestId) properties.deleteProperty('WEBSITE_WORKER_LEASE_V1');
+  } finally { lock.releaseLock(); }
+}
+
 function runWebsiteQueue() {
   ownerCheck();
   const properties = PropertiesService.getScriptProperties();
   const secret = properties.getProperty('GOOGLE_NEWSLETTER_SECRET') || '';
   if (secret.length < 32) throw new Error('Configure the shared secret first');
-  const body = '{}';
-  const timestamp = String(Math.floor(Date.now() / 1000));
-  const response = UrlFetchApp.fetch('https://museum-of-max.vercel.app/api/internal/newsletter-worker', {
-    method: 'post', contentType: 'application/json', payload: body, muteHttpExceptions: true,
-    headers: { 'x-newsletter-time': timestamp,
-      'x-newsletter-signature': hexHmac('museum-newsletter-worker-v1\n' + timestamp + '\n' + body, secret) },
-  });
-  if (response.getResponseCode() !== 200) throw new Error('Website worker unavailable');
+  const requestId = Utilities.getUuid();
+  if (!acquireWebsiteWorkerLease(properties, requestId)) {
+    console.info(JSON.stringify({ requestId: requestId, outcome: 'busy' }));
+    return;
+  }
+  const started = Date.now();
+  try {
+    // 租約已登記即釋放 ScriptLock，網站回呼 doPost 才不會被自己鎖住。
+    const body = '{}';
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    let response;
+    try {
+      response = UrlFetchApp.fetch('https://museum-of-max.vercel.app/api/internal/newsletter-worker', {
+        method: 'post', contentType: 'application/json', payload: body, muteHttpExceptions: true,
+        headers: { 'x-newsletter-time': timestamp, 'x-newsletter-request-id': requestId,
+          'x-newsletter-signature': hexHmac('museum-newsletter-worker-v1\n' + timestamp + '\n' + body, secret) },
+      });
+    } catch (_) {
+      // 不輸出可能含請求資料或憑證的原始例外，也不立即重跑寄信工作。
+      throw new Error('Website worker transport failure; request=' + requestId + '; elapsedMs=' + (Date.now() - started));
+    }
+    const code = response.getResponseCode();
+    let stage = 'unknown';
+    if (code !== 200) {
+      try {
+        const detail = JSON.parse(response.getContentText());
+        if (['lease', 'publication', 'owner-digest', 'queue', 'heartbeat'].indexOf(detail.stage) >= 0) stage = detail.stage;
+      } catch (_) {}
+    }
+    console.info(JSON.stringify({ requestId: requestId, httpStatus: code, stage: stage, elapsedMs: Date.now() - started }));
+    if (code !== 200) throw new Error('Website worker HTTP ' + code + '; stage=' + stage + '; request=' + requestId + '; elapsedMs=' + (Date.now() - started));
+  } finally {
+    try { releaseWebsiteWorkerLease(properties, requestId); }
+    catch (_) { console.warn(JSON.stringify({ requestId: requestId, code: 'LEASE_RELEASE_FAILED' })); }
+  }
 }
 
 // Run manually only after reviewing and approving Google authorization. Does NOT send mail.
@@ -136,5 +184,5 @@ function installWorkerTrigger() {
   if ((properties.getProperty('GOOGLE_NEWSLETTER_SECRET') || '').length < 32) throw new Error('Configure the shared secret first');
   ScriptApp.getProjectTriggers().filter(function(trigger) { return trigger.getHandlerFunction() === 'runWebsiteQueue'; })
     .forEach(function(trigger) { ScriptApp.deleteTrigger(trigger); });
-  ScriptApp.newTrigger('runWebsiteQueue').timeBased().everyMinutes(15).create();
+  ScriptApp.newTrigger('runWebsiteQueue').timeBased().everyMinutes(5).create();
 }
