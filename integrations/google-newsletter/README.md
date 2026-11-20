@@ -51,7 +51,7 @@ POST /api/newsletter/published-update
 5. 使用者核准權限後，把 Apps Script 部署為 Web App，以擁有者身分執行、允許網站伺服器呼叫。此步會公開一個服務入口，必須先確認應用程式內的 HMAC 已部署且驗證通過；沒有簽章者無法讀名單、同步或寄信。不要發布 Sheet 本身。取得 `/exec` URL，不用 `/dev`。
 6. Vercel 設定參考 `config/newsletter.env.example`。填入 Web App URL 與 secret，保留寄信及自動更新開關關閉，重新部署。
 7. 先只開名單同步：Google `SYNC_ENABLED=true`、網站 `NEWSLETTER_SHEETS_SYNC_ENABLED=true`。核對來源 Sheet、欄位、有效與退訂狀態；在後台明確按「排入完整名單同步」才同步既有名單。
-8. 安裝並驗證 `runWebsiteQueue` 的每 5 分鐘觸發器：在 Apps Script「觸發條件」新增此函式的時間驅動／分鐘計時器，選每 5 分鐘，避免重複建立。舊的 `installWorkerTrigger` 仍會建立 15 分鐘版本，若已用介面設定 5 分鐘，請勿再執行它。觸發時間以 Google 實際排程為準，不保證精確到秒。新訂閱與手動通知另以 `after` 加速已持久化佇列；定時器負責補跑，不依賴背景請求一定存活。
+8. 安裝並驗證 `runWebsiteQueue` 的每 5 分鐘觸發器：在 Apps Script「觸發條件」新增此函式的時間驅動／分鐘計時器，選每 5 分鐘，避免重複建立。新版 `installWorkerTrigger` 同樣建立 5 分鐘版本；已有正確觸發器時不必重跑安裝。觸發時間以 Google 實際排程為準，不保證精確到秒。新訂閱與手動通知另以 `after` 加速已持久化佇列；定時器負責補跑，不依賴背景請求一定存活。
 9. 寄信測試：保留兩端 `TEST_ONLY=true`，Google `SENDING_ENABLED=true`，網站 `NEWSLETTER_ENABLED=true`。由後台建立一封測試信，**只送 maxupport@gmail.com**，核對版面、閱讀連結、實際寄件人及結果紀錄。測試信同樣消耗 80 次額度。再用明確同意的測試信箱驗收完整訂閱／退訂，不能以現有讀者做實寄測試。
 10. 作者確認文稿、寄件設定與待寄批次後，才可把兩端 TEST_ONLY 改為 false；若要自動更新通知，再單獨開 `NEWSLETTER_AUTO_UPDATES=true`。本次準備不會開啟這些開關。
 

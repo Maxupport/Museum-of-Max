@@ -6,6 +6,7 @@ import { sendChapterUpdateEmail, sendWelcomeEmail } from '@/lib/email';
 import { callGoogleBridge, newsletterConfig, isOwnerTestAddress, NEWSLETTER_LIMIT, NEWSLETTER_SENDER, NEWSLETTER_WINDOW_MS, SUBSCRIBER_SHEET_ID } from '@/lib/newsletter-config';
 import { chapterIllustrationUrl } from '@/lib/novel-illustration';
 import { completedSubscriptionDay, ownerSubscriptionDigestMessage, taipeiDate, type OwnerSubscriptionDigest } from '@/lib/owner-subscription-digest';
+import { logNewsletterWorker, newsletterErrorCode } from '@/lib/newsletter-diagnostics';
 
 // Transitional durable outbox in the existing private key/value table. No schema push is needed.
 const PREFIX = 'newsletter:v1:';
@@ -137,6 +138,8 @@ export async function newsletterStatus() {
   const jobs = await allJobs();
   const reservations = await reservationTimes();
   const heartbeat = await prisma.siteSetting.findUnique({ where: { key: 'newsletter:v1:worker:last-run' } });
+  const attempt = await prisma.siteSetting.findUnique({ where: { key: 'newsletter:v1:worker:last-attempt' } });
+  const failure = await prisma.siteSetting.findUnique({ where: { key: 'newsletter:v1:worker:last-failure' } });
   const digestBaseline = await prisma.siteSetting.findUnique({ where: { key: 'owner-subscription-digest:v1:starts-on' } });
   const counts = { pending: 0, processing: 0, sent: 0, canceled: 0, uncertain: 0, syncPending: 0 };
   for (const job of jobs) {
@@ -154,6 +157,8 @@ export async function newsletterStatus() {
   return {
     campaigns,
     lastWorkerAt: heartbeat?.value || null,
+    lastWorkerAttempt: attempt?.value ? JSON.parse(attempt.value) : null,
+    lastWorkerFailure: failure?.value ? JSON.parse(failure.value) : null,
     ...counts, configured: config.configured, enabled: config.enabled, syncEnabled: config.syncEnabled,
     testOnly: config.testOnly, sender: NEWSLETTER_SENDER, dailyLimit: NEWSLETTER_LIMIT,
     autoUpdatesEnabled: config.autoUpdatesEnabled,
@@ -220,12 +225,15 @@ async function readingReady(url: string, chapterIds: string[] = [], illustration
   } catch { return false; }
 }
 
-export async function processNewsletterQueue(maxJobs = 3) {
+export async function processNewsletterQueue(maxJobs = 3, options: { deadlineAt?: number; requestId?: string } = {}) {
   const result = { sent: 0, synced: 0, canceled: 0, uncertain: 0 };
   const started = Date.now();
-  for (let index = 0; index < maxJobs && Date.now() - started < 30000; index++) {
+  const deadline = Math.min(started + 30000, options.deadlineAt ?? Infinity);
+  const hasTime = () => Date.now() + (options.deadlineAt === undefined ? 0 : 15000) < deadline;
+  for (let index = 0; index < maxJobs && hasTime(); index++) {
     const job = await claim();
     if (!job) break;
+    if (!hasTime()) { await finish(job, 'pending'); break; }
     try {
       if (job.kind === 'publication') {
         if (job.chapterIds && job.novelId) {
@@ -246,6 +254,7 @@ export async function processNewsletterQueue(maxJobs = 3) {
       if (job.kind === 'owner-digest') {
         if (!job.digest || job.id !== hash(`owner-digest:${job.digest.date}`)) throw new Error('Invalid owner digest');
         const message = ownerSubscriptionDigestMessage(job.digest);
+        if (!hasTime()) { await finish(job, 'pending'); break; }
         const reply = await callGoogleBridge({ operation: 'send', jobId: job.id, to: NEWSLETTER_SENDER, ...message });
         if (reply.status === 'deferred') { await finish(job, 'pending', 300000); break; }
         if (reply.status !== 'sent') throw new Error('Owner digest result uncertain');
@@ -255,6 +264,7 @@ export async function processNewsletterQueue(maxJobs = 3) {
       const subscriber = job.subscriberId ? await prisma.subscriber.findUnique({ where: { id: job.subscriberId } }) : null;
       if (job.kind === 'sync') {
         const novel = subscriber?.novelId && subscriber.novelId !== 'all' ? await prisma.novel.findUnique({ where: { id: subscriber.novelId }, select: { title: true } }) : null;
+        if (!hasTime()) { await finish(job, 'pending'); break; }
         const reply = await callGoogleBridge({ operation: 'sync', revision: job.createdAt, subscriber: subscriber ? {
           id: subscriber.id, email: subscriber.email, name: subscriber.name, novelId: subscriber.novelId,
           active: subscriber.active, novelTitle: novel?.title || '全部作品', sourceChapter: subscriber.sourceChapter, createdAt: subscriber.createdAt.toISOString(),
@@ -299,6 +309,7 @@ export async function processNewsletterQueue(maxJobs = 3) {
       // reservation is retained, as with other known non-deliveries).
       if (!await readingReady(readingUrl, campaign?.chapterIds, illustrationPaths)) { await finish(job, 'pending', 1800000); continue; }
       if (!prepared.message) throw new Error('Cannot prepare email');
+      if (!hasTime()) { await finish(job, 'pending'); break; }
       const reply = await callGoogleBridge({ operation: 'send', jobId: job.id, to: email, ...prepared.message });
       if (reply.status === 'deferred') { await finish(job, 'pending'); break; }
       if (reply.status !== 'sent') throw new Error('Email result is uncertain');
@@ -312,7 +323,8 @@ export async function processNewsletterQueue(maxJobs = 3) {
           });
         } catch { console.error('[Newsletter] Delivery accepted; notification timestamp needs reconciliation'); }
       }
-    } catch {
+    } catch (error) {
+      logNewsletterWorker({ requestId: options.requestId || 'background', stage: 'queue-' + job.kind, outcome: 'failed', code: newsletterErrorCode(error), elapsedMs: Date.now() - started });
       if (job.kind === 'sync' || job.kind === 'publication') await finish(job, 'pending');
       else {
         // Do not overwrite an already recorded success if only status reporting failed.

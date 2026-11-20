@@ -56,10 +56,10 @@ export async function callGoogleBridge(payload: Record<string, unknown>) {
     body: JSON.stringify({ timestamp, payload: body, signature: serviceSignature(body, timestamp, 'bridge') }),
     signal: AbortSignal.timeout(12000),
   });
-  if (!response.ok) throw new Error('Google newsletter bridge unavailable');
+  if (!response.ok) throw Object.assign(new Error('Google newsletter bridge unavailable'), { code: `BRIDGE_HTTP_${response.status}` });
   const result: unknown = await response.json();
   if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true ||
-      !('status' in result) || typeof result.status !== 'string') throw new Error('Invalid Google bridge response');
+      !('status' in result) || typeof result.status !== 'string') throw Object.assign(new Error('Invalid Google bridge response'), { code: 'BRIDGE_RESPONSE_INVALID' });
   return result as { ok: true; status: string };
 }
 

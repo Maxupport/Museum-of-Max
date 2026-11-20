@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { createHmac } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import vm from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -33,11 +33,12 @@ function setup() {
   const book = { getSheetByName: (name: string) => sheets.get(name) || null, insertSheet: (name: string) => { const sheet = new Sheet(); sheets.set(name, sheet); return sheet; } };
   const send = vi.fn(); const fetch = vi.fn().mockReturnValue({ getResponseCode: () => 200 });
   const open = vi.fn().mockReturnValue(book); const flush = vi.fn();
+  let scriptLocked = false;
   const context = vm.createContext({
     Date, console, Session: { getEffectiveUser: () => ({ getEmail: () => 'maxupport@gmail.com' }) },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: (key: string) => properties.get(key), setProperty: (key: string, value: string) => properties.set(key, value) }) },
-    LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: vi.fn() }) },
-    Utilities: { Charset: { UTF_8: 'UTF-8' }, computeHmacSha256Signature: (value: string, key: string) => [...createHmac('sha256', key).update(value).digest()].map((byte) => byte > 127 ? byte - 256 : byte) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (key: string) => properties.get(key), setProperty: (key: string, value: string) => properties.set(key, value), deleteProperty: (key: string) => properties.delete(key) }) },
+    LockService: { getScriptLock: () => ({ tryLock: () => { if(scriptLocked)return false;scriptLocked=true;return true; }, releaseLock: () => {scriptLocked=false;} }) },
+    Utilities: { getUuid: randomUUID, Charset: { UTF_8: 'UTF-8' }, computeHmacSha256Signature: (value: string, key: string) => [...createHmac('sha256', key).update(value).digest()].map((byte) => byte > 127 ? byte - 256 : byte) },
     SpreadsheetApp: { openById: open, flush },
     MailApp: { sendEmail: send, getRemainingDailyQuota: () => 100 },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: (text: string) => ({ setMimeType: () => JSON.parse(text) }) },
@@ -124,5 +125,33 @@ describe('Google Apps Script bridge contract (isolated simulation)', () => {
     expect(request.payload).toBe('{}');
     expect(request.headers['x-newsletter-signature']).toBe(createHmac('sha256', secret).update(`museum-newsletter-worker-v1\n${request.headers['x-newsletter-time']}\n{}`).digest('hex'));
     expect(app.send).not.toHaveBeenCalled();
+  });
+  it('prevents overlapping timer calls while permitting doPost callbacks', () => {
+    const app = setup();
+    app.fetch.mockImplementationOnce(() => {
+      app.context.runWebsiteQueue();
+      expect(app.post(message)).toMatchObject({ status: 'sent' });
+      return { getResponseCode: () => 200 };
+    });
+    app.context.runWebsiteQueue();
+    expect(app.fetch).toHaveBeenCalledOnce(); expect(app.send).toHaveBeenCalledOnce();
+    expect(app.properties.has('WEBSITE_WORKER_LEASE_V1')).toBe(false);
+  });
+  it('logs safe HTTP details, clears its lease and never retries a failed request', () => {
+    const app = setup();
+    app.fetch.mockReturnValueOnce({ getResponseCode: () => 503, getContentText: () => JSON.stringify({ stage: 'publication', secret, to: 'reader@example.test' }) });
+    expect(() => app.context.runWebsiteQueue()).toThrow(/HTTP 503; stage=publication; request=/);
+    expect(app.fetch).toHaveBeenCalledOnce(); expect(app.send).not.toHaveBeenCalled();
+    expect(app.properties.has('WEBSITE_WORKER_LEASE_V1')).toBe(false);
+  });
+  it('recovers an abandoned lease and does not clear a newer lease', () => {
+    const app = setup();
+    app.properties.set('WEBSITE_WORKER_LEASE_V1', JSON.stringify({ requestId: 'old', expiresAt: Date.now() - 1 }));
+    app.fetch.mockImplementationOnce(() => {
+      app.properties.set('WEBSITE_WORKER_LEASE_V1', JSON.stringify({ requestId: 'new', expiresAt: Date.now() + 600000 }));
+      return { getResponseCode: () => 200 };
+    });
+    app.context.runWebsiteQueue(); expect(app.fetch).toHaveBeenCalledOnce();
+    expect(JSON.parse(app.properties.get('WEBSITE_WORKER_LEASE_V1')!).requestId).toBe('new');
   });
 });

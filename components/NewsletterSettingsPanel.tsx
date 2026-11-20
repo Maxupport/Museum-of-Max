@@ -2,12 +2,17 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+type WorkerDiagnostic = { requestId: string; stage: string; outcome: string; startedAt: string; finishedAt?: string; elapsedMs?: number; code?: string };
+const workerStages: Record<string,string> = { lease: '取得處理權', publication: '連載發佈', 'owner-digest': '管理者摘要', queue: '寄信佇列', heartbeat: '更新成功紀錄', complete: '完成' };
+
 type Status = {
   configured: boolean; enabled: boolean; syncEnabled: boolean; testOnly: boolean; sender: string;
   dailyLimit: number; usedInLast24Hours: number; remaining: number; pending: number; uncertain: number;
   processing: number; syncPending: number; nextSlotAt: string | null; sheetUrl: string; missing: string[];
   autoUpdatesEnabled: boolean;
   lastWorkerAt: string | null;
+  lastWorkerAttempt?: WorkerDiagnostic | null;
+  lastWorkerFailure?: WorkerDiagnostic | null;
   campaigns: { id: string; title: string; createdAt: string; pending: number; sent: number; uncertain: number }[];
 };
 export default function NewsletterSettingsPanel() {
@@ -66,6 +71,12 @@ export default function NewsletterSettingsPanel() {
       <p>每 24 小時上限 {status.dailyLimit} 封；已預留 {status.usedInLast24Hours} 封，剩餘 {status.remaining} 封。歡迎信、測試信與群發共用額度。</p>
       <p>待處理 {status.pending} 筆（含名單同步 {status.syncPending} 筆），處理中 {status.processing} 筆，結果不明 {status.uncertain} 筆。</p>
       <p>最近一次處理：{status.lastWorkerAt ? new Date(status.lastWorkerAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚無紀錄，請先驗證排程觸發器'}。排入佇列不等於排程已運作。</p>
+      {status.lastWorkerAttempt && <p>最近執行：{workerStages[status.lastWorkerAttempt.stage] || '處理中'}，{status.lastWorkerAttempt.outcome === 'running' ? '尚未結束' : `耗時 ${Math.round((status.lastWorkerAttempt.elapsedMs || 0) / 1000)} 秒`}。</p>}
+      {status.lastWorkerFailure && <details style={{ marginBottom: '1rem' }}>
+        <summary>最近一次異常紀錄（保留供追查，不代表目前仍故障）</summary>
+        <p>時間：{new Date(status.lastWorkerFailure.finishedAt || status.lastWorkerFailure.startedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}；階段：{workerStages[status.lastWorkerFailure.stage] || '處理中'}；錯誤代碼：{status.lastWorkerFailure.code || '未提供'}。</p>
+        <p style={{ overflowWrap: 'anywhere' }}>追蹤編號：{status.lastWorkerFailure.requestId}</p>
+      </details>}
       {status.nextSlotAt && <p>下一個額度預計釋出：{new Date(status.nextSlotAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}（台灣時間）</p>}
       {status.uncertain > 0 && <p role="alert" style={{ color: '#fbbf24' }}>結果不明的信件不會自動重寄。請先檢查 Google 寄信紀錄與寄件備份。</p>}
       <p>名單同步：{status.syncEnabled ? '啟用' : '暫停'}；自動更新通知：{status.autoUpdatesEnabled ? '啟用' : '暫停'}。{status.missing.join('；')}</p>
